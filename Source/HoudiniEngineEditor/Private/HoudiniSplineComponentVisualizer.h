@@ -1,178 +1,176 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
-* Produced by:
-*      Mykola Konyk
-*      Side Effects Software Inc
-*      123 Front Street West, Suite 1401
-*      Toronto, Ontario
-*      Canada   M5J 2M2
-*      416-504-9876
-*
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once
 
 #include "HoudiniSplineComponent.h"
-#include "Framework/Commands/Commands.h"
+
 #include "ComponentVisualizer.h"
 #include "Framework/Commands/UICommandList.h"
+#include "Framework/Commands/Commands.h"
+
+class FEditorViewportClient;
 
 /** Base class for clickable spline editing proxies. **/
 struct HHoudiniSplineVisProxy : public HComponentVisProxy
 {
-    DECLARE_HIT_PROXY();
-    HHoudiniSplineVisProxy( const UActorComponent * InComponent );
+	DECLARE_HIT_PROXY();
+	HHoudiniSplineVisProxy(const UActorComponent * InComponent);
 };
 
 /** Proxy for a spline control point. **/
 struct HHoudiniSplineControlPointVisProxy : public HHoudiniSplineVisProxy
 {
-    DECLARE_HIT_PROXY();
-    HHoudiniSplineControlPointVisProxy( const UActorComponent * InComponent, int32 InControlPointIndex );
+	DECLARE_HIT_PROXY();
+	HHoudiniSplineControlPointVisProxy(const UActorComponent * InComponent, int32 InControlPointIndex);
 
-    int32 ControlPointIndex;
+	int32 ControlPointIndex;
 };
 
-/** Define commands for our component visualizer */
-class FHoudiniSplineComponentVisualizerCommands : public TCommands< FHoudiniSplineComponentVisualizerCommands >
+/** Proxy for a spline display point. **/
+struct HHoudiniSplineCurveSegmentVisProxy : public HHoudiniSplineVisProxy
 {
-    public:
+	DECLARE_HIT_PROXY();
+	HHoudiniSplineCurveSegmentVisProxy(const UActorComponent * InComponent, int32 IndisplayPointIndex);
 
-        /** Constructor. **/
-        FHoudiniSplineComponentVisualizerCommands();
-
-        /** Register commands. **/
-        virtual void RegisterCommands() override;
-
-    public:
-
-        /** Command for adding a control point. **/
-        TSharedPtr< FUICommandInfo > CommandAddControlPoint;
-
-        /** Command for duplicating a control point. **/
-        TSharedPtr< FUICommandInfo > CommandDuplicateControlPoint;
-
-        /** Command for deleting a control point. **/
-        TSharedPtr< FUICommandInfo > CommandDeleteControlPoint;
+	int32 DisplayPointIndex;
 };
 
-/** Our spline visualizer. **/
-class FHoudiniSplineComponentVisualizer : public FComponentVisualizer
+class FHoudiniSplineComponentVisualizerCommands : public TCommands< FHoudiniSplineComponentVisualizerCommands > 
 {
-    public:
+	public:
+		FHoudiniSplineComponentVisualizerCommands();
 
-        FHoudiniSplineComponentVisualizer();
-        virtual ~FHoudiniSplineComponentVisualizer();
+		/** Register commands. **/
+		virtual void RegisterCommands() override;
 
-    /** FComponentVisualizer methods. **/
-    public:
+	public:
+		TSharedPtr<FUICommandInfo> CommandAddControlPoint;
 
-        /** Registration of this component visualizer. **/
-        virtual void OnRegister() override;
+		TSharedPtr<FUICommandInfo> CommandDuplicateControlPoint;
 
-        /** Draw visualization for the given component. **/
-        virtual void DrawVisualization(
-            const UActorComponent * Component, const FSceneView * View,
-            FPrimitiveDrawInterface * PDI ) override;
+		TSharedPtr<FUICommandInfo> CommandDeleteControlPoint;
 
-        /** Handle a click on a registered hit box. **/
-        virtual bool VisProxyHandleClick(
-            FEditorViewportClient* InViewportClient, HComponentVisProxy* VisProxy, const FViewportClick& Click ) override;
+		TSharedPtr<FUICommandInfo> CommandDeselectAllControlPoints;
 
-        /** Handle modifier key presses and depresses such as Alt for key duplication. **/
-        virtual bool HandleInputKey(
-            FEditorViewportClient * ViewportClient, FViewport * Viewport, FKey Key, EInputEvent Event ) override;
+		TSharedPtr<FUICommandInfo> CommandInsertControlPoint;
+};
 
-        /** Called when editing is no longer being performed. **/
-        virtual void EndEditing() override;
 
-        /** Returns location of a gizmo widget. **/
-        virtual bool GetWidgetLocation(
-            const FEditorViewportClient * ViewportClient, FVector & OutLocation ) const override;
+/** **/
+class FHoudiniSplineComponentVisualizer : public FComponentVisualizer 
+{
+	public:
+		FHoudiniSplineComponentVisualizer();
 
-        /** Returns Coordinate System of a gizmo widget. **/
-        virtual bool GetCustomInputCoordinateSystem(
-            const FEditorViewportClient* ViewportClient, FMatrix& OutMatrix) const override;
+	private:
+		void RefreshViewport();
 
-        /** Handle input change. **/
-        virtual bool HandleInputDelta(
-            FEditorViewportClient * ViewportClient, FViewport * Viewport, FVector & DeltaTranslate,
-            FRotator & DeltaRotate, FVector & DeltaScale ) override;
+	public:
+		virtual void OnRegister() override;
 
-        /** Create context menu for this visualizer. **/
-        virtual TSharedPtr< SWidget > GenerateContextMenu() const override;
+		virtual void DrawVisualization(
+			const UActorComponent * Component, const FSceneView * View,
+			FPrimitiveDrawInterface * PDI) override;
 
-    protected:
+		virtual bool VisProxyHandleClick(
+			FEditorViewportClient* InViewportClient, HComponentVisProxy* VisProxy,
+			const FViewportClick& Click) override;
 
-        /** Update owner spline component and Houdini component it is attached to. **/
-        void UpdateHoudiniComponents();
+		virtual bool GetWidgetLocation(const FEditorViewportClient* ViewportClient, FVector& OutLocation) const override;
+		virtual bool IsVisualizingArchetype() const override;
 
-        /** Perform internal component update. **/
-        void NotifyComponentModified( int32 PointIndex, const FTransform & Point );
+		virtual void EndEditing() override;
 
-        /** Callbacks for Add control point action. **/
-        void OnAddControlPoint();
-        bool IsAddControlPointValid() const;
+		virtual bool HandleInputDelta(
+			FEditorViewportClient* ViewportClient, FViewport* Viewport,
+			FVector& DeltaTranslate, FRotator& DeltaRotate,
+			FVector& DeltaScale) override;
 
-        /** Callbacks for Delete control point action. **/
-        void OnDeleteControlPoint();
-        bool IsDeleteControlPointValid() const;
+		virtual bool HandleInputKey(FEditorViewportClient * ViewportClient, FViewport * Viewport, FKey Key, EInputEvent Event) override;
 
-        /** Callbacks for Duplicate control point action. **/
-        void OnDuplicateControlPoint();
-        bool IsDuplicateControlPointValid() const;
+		virtual TSharedPtr<SWidget> GenerateContextMenu() const override;
 
-        void DuplicateControlPoint();
-        int32 AddControlPointAfter( const FTransform & NewPoint, const int32& nIndex );
+	protected:
 
-        /** Store the current rotation to orient the rotation gizmo properly **/
-        void CacheRotation();
+		/** Callbacks for add control point action**/
+		void OnAddControlPoint();
+		bool IsAddControlPointValid() const;
 
-    protected:
+		/** Callbacks for delete control point action. **/
+		void OnDeleteControlPoint();
+		bool IsDeleteControlPointValid() const;
 
-        /** Visualizer actions. **/
-        TSharedPtr< FUICommandList > VisualizerActions;
+		/** Callbacks for duplicate control point action. **/
+		void OnDuplicateControlPoint();
+		bool IsDuplicateControlPointValid() const;
 
-        /** Houdini component which is being edited. **/
-        UHoudiniSplineComponent * EditedHoudiniSplineComponent;
+		/** Callbacks for deselect all control points action. **/
+		void OnDeselectAllControlPoints();
+		bool IsDeselectAllControlPointsValid() const;
 
-        /** Is set to true if we are editing corresponding curve. **/
-        bool bCurveEditing;
+		/** Callbacks for inserting a control point action.**/
+		void OnInsertControlPoint();
+		bool IsInsertControlPointValid() const;
+		// For alt-pressed inserting control point on curve.
+		int32 OnInsertControlPointWithoutUpdate();
 
-        /** Whether we currently allow duplication when dragging. */
-        bool bAllowDuplication;
+		int32 AddControlPointAfter(const FTransform & NewPoint, const int32 & nIndex);
 
-        /** Keeps index of currently selected control points, if editing is being performed. **/
-        TArray<int32> EditedControlPointsIndexes;
+	public:
+		/** Property path from the parent actor to the component */
+		// NOTE: We need to use SplinePropertyPath on the visualizer as opposed to a direct pointer since the
+		// direct pointer breaks during Blueprint reconstructions properly
+		// (see SplineComponent / SplineMeshComponent visualizers).
+		FComponentPropertyPath SplinePropertyPath;
+		UHoudiniSplineComponent* GetEditedHoudiniSplineComponent() const { return Cast<UHoudiniSplineComponent>(SplinePropertyPath.GetComponent()); }
 
-        /** Rotation used for the gizmo widgets **/
-        FQuat CachedRotation;
+	protected:
 
-        /** Indicates the current selection has been modified and the parent component must be updated **/
-        bool bComponentNeedUpdate;
+		bool bAllowDuplication;
 
-        /** Indicates if the curves should only cook on mouse release **/
-        bool bCookOnlyOnMouseRelease;
+		int32 EditedCurveSegmentIndex;
 
-        /** Indicates wether or not a transaction should be recorded when moving a point **/
-        bool bRecordTransactionOnMove;
+		TSharedPtr<FUICommandList> VisualizerActions;
+
+		/** Rotation used for the gizmo widgets **/
+		FQuat CachedRotation;
+
+		FVector CachedScale3D;
+
+		/** Indicates wether or not a transaction should be recorded when moving a point **/
+		bool bMovingPoints;
+
+		bool bInsertingOnCurveControlPoints;
+
+		bool bRecordingMovingPoints;
+
+	private:
+		FEditorViewportClient * FindViewportClient(const UHoudiniSplineComponent * InHoudiniSplineComponent, const FSceneView * View);
+
+		bool IsCookOnCurveChanged(UHoudiniSplineComponent* InHoudiniSplineComponent);
+
 };

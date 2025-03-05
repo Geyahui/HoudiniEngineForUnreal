@@ -1,67 +1,85 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once
 
 #include "Components/SceneComponent.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "HoudiniMeshSplitInstancerComponent.generated.h"
 
 /**
 * UHoudiniMeshSplitInstancerComponent is used to manage a single static mesh being
 * 'instanced' multiple times by multiple UStaticMeshComponents.  This is as opposed to the
-* UInstancedStaticMeshComponent wherein a signle mesh is instanced multiple times by one component.
+* UInstancedStaticMeshComponent wherein a single mesh is instanced multiple times by one component.
 */
-UCLASS( config = Engine )
+
+UCLASS()//( config = Engine )
 class HOUDINIENGINERUNTIME_API UHoudiniMeshSplitInstancerComponent : public USceneComponent
 {
-   GENERATED_UCLASS_BODY()
+	GENERATED_UCLASS_BODY()
 
-public:
-    virtual void OnComponentDestroyed( bool bDestroyingHierarchy ) override;
-    virtual void Serialize( FArchive & Ar ) override;
+	friend class UHoudiniMeshSplitInstancerComponent_V1;
 
-    static void AddReferencedObjects( UObject * InThis, FReferenceCollector & Collector );
+	public:
 
-    void SetStaticMesh(class UStaticMesh* StaticMesh) { InstancedMesh = StaticMesh; }
-    class UStaticMesh* GetStaticMesh() const { return InstancedMesh; }
+		virtual void Serialize(FArchive & Ar) override;
 
-    void SetOverrideMaterial(class UMaterialInterface* MI) { OverrideMaterial = MI; }
-    
-    // Set the instances. Transforms are given in local space of this component.
-    void SetInstances( const TArray<FTransform>& InstanceTransforms, const TArray<FLinearColor> & InstancedColors );
-    
-    // Destroy existing instances, keeping agiven number of them to be reused
-    void ClearInstances(int32 NumToKeep);
+		virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 
-    const TArray< class UStaticMeshComponent* >& GetInstances() const { return Instances; }
+		static void AddReferencedObjects(UObject * InThis, FReferenceCollector & Collector);
 
-private:
-    UPROPERTY( SkipSerialization, VisibleInstanceOnly, Category = Instances )
-    TArray< class UStaticMeshComponent* > Instances;
+		// Static Mesh mutator
+		void SetStaticMesh(class UStaticMesh* StaticMesh) { InstancedMesh = StaticMesh; }
 
-    UPROPERTY( SkipSerialization, VisibleInstanceOnly, Category=Instances)
-    class UMaterialInterface* OverrideMaterial;
+		// Static mesh accessor
+		class UStaticMesh* GetStaticMesh() const { return InstancedMesh; }
 
-    UPROPERTY(SkipSerialization, VisibleAnywhere, Category = Instances )
-    class UStaticMesh* InstancedMesh;
+		// Overide material mutator
+		void SetOverrideMaterials(const TArray<class UMaterialInterface*>& InMaterialOverrides) { OverrideMaterials = InMaterialOverrides; }
+
+		// Destroy existing instances, keeping a given number of them to be reused
+		void ClearInstances(int32 NumToKeep);
+
+		// Set the instances. Transforms are given in local space of this component.
+		bool SetInstanceTransforms(const TArray<FTransform>& InstanceTransforms);
+    		
+		// Instance Accessor
+		TArray<class UStaticMeshComponent*>& GetInstancesForWrite() { return Instances; }		
+		// const Instance accessor
+		const TArray<class UStaticMeshComponent*>& GetInstances() const { return Instances; }
+
+	private:
+
+		UPROPERTY(VisibleInstanceOnly, Category = Instances)
+		TArray<class UStaticMeshComponent*> Instances;
+
+		UPROPERTY(VisibleInstanceOnly, Category = Instances)
+		TArray<class UMaterialInterface*> OverrideMaterials;
+
+		UPROPERTY(VisibleAnywhere, Category = Instances)
+		class UStaticMesh* InstancedMesh;
 };

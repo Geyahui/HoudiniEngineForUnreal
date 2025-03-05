@@ -1,246 +1,255 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
-* Produced by:
-*      Side Effects Software Inc
-*      123 Front Street West, Suite 1401
-*      Toronto, Ontario
-*      Canada   M5J 2M2
-*      416-504-9876
-*
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "HoudiniHandleComponent.h"
 
-#include "HoudiniApi.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
-#include "HoudiniEngine.h"
-#include "HoudiniEngineUtils.h"
-#include "HoudiniEngineString.h"
-#include "HoudiniAssetComponent.h"
 
-HAPI_RSTOrder
-UHoudiniHandleComponent::GetHapiRSTOrder( const TSharedPtr< FString > & StrPtr )
-{
-    if ( StrPtr.Get() )
-    {
-        FString & Str = *StrPtr;
+#include "HoudiniParameter.h"
+#include "HoudiniParameterFloat.h"
+#include "HoudiniParameterChoice.h"
+#include "HoudiniRuntimeSettings.h"
 
-        if ( Str == "trs" )   return HAPI_TRS;
-        else if ( Str == "tsr" )  return HAPI_TSR;
-        else if ( Str == "rts" )  return HAPI_RTS;
-        else if ( Str == "rst" )  return HAPI_RST;
-        else if ( Str == "str" )  return HAPI_STR;
-        else if ( Str == "srt" )  return HAPI_SRT;
-    }
+#include "HoudiniPluginSerializationVersion.h"
+#include "HoudiniCompatibilityHelpers.h"
 
-    return HAPI_SRT;
-}
-
-HAPI_XYZOrder
-UHoudiniHandleComponent::GetHapiXYZOrder( const TSharedPtr< FString > & StrPtr )
-{
-    if ( StrPtr.Get() )
-    {
-        FString & Str = *StrPtr;
-
-        if ( Str == "xyz" )   return HAPI_XYZ;
-        else if ( Str == "xzy" )  return HAPI_XZY;
-        else if ( Str == "yxz" )  return HAPI_YXZ;
-        else if ( Str == "yzx" )  return HAPI_YZX;
-        else if ( Str == "zxy" )  return HAPI_ZXY;
-        else if ( Str == "zyx" )  return HAPI_ZYX;
-    }
-
-    return HAPI_XYZ;
-}
-
-UHoudiniHandleComponent::UHoudiniHandleComponent( const FObjectInitializer & ObjectInitializer )
-    : Super( ObjectInitializer )
-{}
-
-UHoudiniHandleComponent::~UHoudiniHandleComponent()
-{}
-
-bool
-UHoudiniHandleComponent::Construct(
-    HAPI_NodeId AssetId,
-    int32 HandleIdx,
-    const FString & HandleName,
-    const HAPI_HandleInfo & HandleInfo,
-    const TMap< HAPI_ParmId, UHoudiniAssetParameter * > & Parameters, EHoudiniHandleType InHandleType )
-{
-    HandleType = InHandleType;
-    TArray< HAPI_HandleBindingInfo > BindingInfos;
-    BindingInfos.SetNumZeroed( HandleInfo.bindingsCount );
-
-    if ( FHoudiniApi::GetHandleBindingInfo(
-        FHoudiniEngine::Get().GetSession(),
-        AssetId, HandleIdx, &BindingInfos[ 0 ], 0,
-        HandleInfo.bindingsCount ) != HAPI_RESULT_SUCCESS )
-    {
-        return false;
-    }
-
-    HAPI_TransformEuler HapiEulerXform;
-    FMemory::Memzero< HAPI_TransformEuler >( HapiEulerXform );
-    HapiEulerXform.position[ 0 ] = HapiEulerXform.position[ 1 ] = HapiEulerXform.position[ 2 ] = 0.0f;
-    HapiEulerXform.rotationEuler[ 0 ] = HapiEulerXform.rotationEuler[ 1 ] = HapiEulerXform.rotationEuler[ 2 ] = 0.0f;
-    HapiEulerXform.scale[ 0 ] = HapiEulerXform.scale[ 1 ] = HapiEulerXform.scale[ 2 ] = 1.0f;
-
-    TSharedPtr< FString > RSTOrderStrPtr, XYZOrderStrPtr;
-    
-    for ( const auto& BindingInfo : BindingInfos )
-    {
-        FString HandleParmName = TEXT( "" );
-        FHoudiniEngineString HoudiniEngineString( BindingInfo.handleParmNameSH );
-        HoudiniEngineString.ToFString( HandleParmName );
-
-        const HAPI_NodeId AssetParmId = BindingInfo.assetParmId;
-
-        (void)( XformParms[ EXformParameter::TX ].Bind( HapiEulerXform.position[ 0 ], "tx", 0, HandleParmName, AssetParmId, Parameters )
-            ||  XformParms[ EXformParameter::TY ].Bind( HapiEulerXform.position[ 1 ], "ty", 1, HandleParmName, AssetParmId, Parameters )
-            ||  XformParms[ EXformParameter::TZ ].Bind( HapiEulerXform.position[ 2 ], "tz", 2, HandleParmName, AssetParmId, Parameters )
-
-            ||  XformParms[ EXformParameter::RX ].Bind( HapiEulerXform.rotationEuler[ 0 ], "rx", 0, HandleParmName, AssetParmId, Parameters )
-            ||  XformParms[ EXformParameter::RY ].Bind( HapiEulerXform.rotationEuler[ 1 ], "ry", 1, HandleParmName, AssetParmId, Parameters )
-            ||  XformParms[ EXformParameter::RZ ].Bind( HapiEulerXform.rotationEuler[ 2 ], "rz", 2, HandleParmName, AssetParmId, Parameters )
-
-            ||  XformParms[ EXformParameter::SX ].Bind( HapiEulerXform.scale[ 0 ], "sx", 0, HandleParmName, AssetParmId, Parameters )
-            ||  XformParms[ EXformParameter::SY ].Bind( HapiEulerXform.scale[ 1 ], "sy", 1, HandleParmName, AssetParmId, Parameters )
-            ||  XformParms[ EXformParameter::SZ ].Bind( HapiEulerXform.scale[ 2 ], "sz", 2, HandleParmName, AssetParmId, Parameters )
-
-            ||  RSTParm.Bind( RSTOrderStrPtr, "trs_order", 0, HandleParmName, AssetParmId, Parameters )
-            ||  RotOrderParm.Bind( XYZOrderStrPtr, "xyz_order", 0, HandleParmName, AssetParmId, Parameters )
-        );
-    }
-
-    HapiEulerXform.rstOrder = GetHapiRSTOrder( RSTOrderStrPtr );
-    HapiEulerXform.rotationOrder = GetHapiXYZOrder( XYZOrderStrPtr );
-    constexpr float MaxFloat = TNumericLimits<float>::Max();
-    constexpr float MinFloat = TNumericLimits<float>::Min();
-    HapiEulerXform.scale[ 0 ] = FMath::Clamp( HapiEulerXform.scale[ 0 ], MinFloat, MaxFloat );
-    HapiEulerXform.scale[ 1 ] = FMath::Clamp( HapiEulerXform.scale[ 1 ], MinFloat, MaxFloat );
-    HapiEulerXform.scale[ 2 ] = FMath::Clamp( HapiEulerXform.scale[ 2 ], MinFloat, MaxFloat );
-
-    FTransform UnrealXform;
-    FHoudiniEngineUtils::TranslateHapiTransform( HapiEulerXform, UnrealXform );
-
-    SetRelativeTransform( UnrealXform );
-    return true;
-}
+#include "UObject/DevObjectVersion.h"
+#include "Serialization/CustomVersion.h"
 
 void
-UHoudiniHandleComponent::ResolveDuplicatedParameters( const TMap< HAPI_ParmId, UHoudiniAssetParameter * > & NewParameters )
+UHoudiniHandleComponent::Serialize(FArchive& Ar)
 {
-    for ( size_t i = 0; i < EXformParameter::COUNT; ++i )
-        XformParms[ i ].ResolveDuplicated( NewParameters );
+	int64 InitialOffset = Ar.Tell();
+	Ar.UsingCustomVersion(FHoudiniCustomSerializationVersion::GUID);
 
-    RSTParm.ResolveDuplicated( NewParameters );
-    RotOrderParm.ResolveDuplicated( NewParameters );
+	bool bLegacyComponent = false;
+	if (Ar.IsLoading())
+	{
+		int32 Ver = Ar.CustomVer(FHoudiniCustomSerializationVersion::GUID);
+		if (Ver < VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_V2_BASE && Ver >= VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_BASE)
+		{
+			bLegacyComponent = true;
+		}
+	}
+
+	if (bLegacyComponent)
+	{
+		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+		bool bEnableBackwardCompatibility = HoudiniRuntimeSettings->bEnableBackwardCompatibility;
+
+		if (bEnableBackwardCompatibility)
+		{
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniHandleComponent : converting v1 object to v2."));
+
+			Super::Serialize(Ar);
+
+			UHoudiniHandleComponent_V1* CompatibilityHC = NewObject<UHoudiniHandleComponent_V1>();
+			CompatibilityHC->Serialize(Ar);
+			CompatibilityHC->UpdateFromLegacyData(this);
+		}
+		else
+		{
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniHandleComponent : serialized data will be skipped."));
+
+			Super::Serialize(Ar);
+
+			// Skip v1 Serialized data
+			if (FLinker* Linker = Ar.GetLinker())
+			{
+				int32 const ExportIndex = this->GetLinkerIndex();
+				FObjectExport& Export = Linker->ExportMap[ExportIndex];
+				Ar.Seek(InitialOffset + Export.SerialSize);
+				return;
+			}
+		}
+	}
+	else
+	{
+		// Normal v2 serialization
+		Super::Serialize(Ar);
+	}
 }
 
-void
-UHoudiniHandleComponent::UpdateTransformParameters()
+UHoudiniHandleParameter::UHoudiniHandleParameter(const FObjectInitializer & ObjectInitializer) 
+	:Super(ObjectInitializer)
+{};
+
+UHoudiniHandleComponent::UHoudiniHandleComponent(const FObjectInitializer & ObjectInitializer)
+	:Super(ObjectInitializer) 
+{};
+
+
+bool 
+UHoudiniHandleParameter::Bind(float & OutValue, const char * CmpName, int32 InTupleIdx,
+			const FString & HandleParmName, UHoudiniParameter* Parameter) 
 {
-    HAPI_Transform HapiXform;
-    FMemory::Memzero< HAPI_Transform >( HapiXform );
-    FHoudiniEngineUtils::TranslateUnrealTransform( GetRelativeTransform(), HapiXform );
+	if (!Parameter)
+		return false;
 
-    const HAPI_Session * Session = FHoudiniEngine::Get().GetSession();
+	if (HandleParmName != CmpName)
+		return false;
 
-    float HapiMatrix[ 16 ];
-    FHoudiniApi::ConvertTransformQuatToMatrix( Session, &HapiXform, HapiMatrix );
+	UHoudiniParameterFloat* FloatParameter = Cast<UHoudiniParameterFloat>(Parameter);
 
-    HAPI_TransformEuler HapiEulerXform;
-    FMemory::Memzero< HAPI_TransformEuler >( HapiEulerXform );
-    FHoudiniApi::ConvertMatrixToEuler(
-        Session,
-        HapiMatrix,
-        GetHapiRSTOrder( RSTParm.Get( TSharedPtr< FString >() ) ),
-        GetHapiXYZOrder( RotOrderParm.Get( TSharedPtr< FString >() ) ),
-        &HapiEulerXform
-    );
+	if (!FloatParameter)
+		return false;
 
-    XformParms[ EXformParameter::TX ] = HapiEulerXform.position[ 0 ];
-    XformParms[ EXformParameter::TY ] = HapiEulerXform.position[ 1 ];
-    XformParms[ EXformParameter::TZ ] = HapiEulerXform.position[ 2 ];
+	AssetParameter = Parameter;
 
-    XformParms[ EXformParameter::RX ] = FMath::RadiansToDegrees(HapiEulerXform.rotationEuler[ 0 ]);
-    XformParms[ EXformParameter::RY ] = FMath::RadiansToDegrees(HapiEulerXform.rotationEuler[ 1 ]);
-    XformParms[ EXformParameter::RZ ] = FMath::RadiansToDegrees(HapiEulerXform.rotationEuler[ 2 ]);
+	if (FloatParameter) 
+	{
+		// It is possible that the handle param is bound to a single tuple param.
+		// Ignore the preset tuple index if that's the case or we'll crash.
+		if (Parameter->GetTupleSize() <= InTupleIdx)
+			InTupleIdx = 0;
 
-    constexpr float MaxFloat = TNumericLimits<float>::Max();
-    constexpr float MinFloat = TNumericLimits<float>::Min();
-    HapiEulerXform.scale[ 0 ] = FMath::Clamp( HapiEulerXform.scale[ 0 ], MinFloat, MaxFloat );
-    HapiEulerXform.scale[ 1 ] = FMath::Clamp( HapiEulerXform.scale[ 1 ], MinFloat, MaxFloat );
-    HapiEulerXform.scale[ 2 ] = FMath::Clamp( HapiEulerXform.scale[ 2 ], MinFloat, MaxFloat );
+		auto Optional = FloatParameter->GetValue(InTupleIdx);
+		if (Optional.IsSet())
+		{
+			TupleIndex = InTupleIdx;
+			OutValue = Optional.GetValue();
+			return true;
+		}
+	}
 
-    XformParms[ EXformParameter::SX ] = HapiEulerXform.scale[ 0 ];
-    XformParms[ EXformParameter::SY ] = HapiEulerXform.scale[ 1 ];
-    XformParms[ EXformParameter::SZ ] = HapiEulerXform.scale[ 2 ];
+	return false;
 }
 
-void
-UHoudiniHandleComponent::AddReferencedObjects( UObject * InThis, FReferenceCollector & Collector )
+bool 
+UHoudiniHandleParameter::Bind(TSharedPtr<FString> & OutValue, const char * CmpName,
+			int32 InTupleIdx, const FString & HandleParmName, UHoudiniParameter* Parameter) 
 {
-    UHoudiniHandleComponent* This = Cast< UHoudiniHandleComponent >( InThis );
+	if (!Parameter)
+		return false;
 
-    if ( This && !This->IsPendingKill() )
-    {
-        for ( size_t i = 0; i < EXformParameter::COUNT; ++i )
-            This->XformParms[ i ].AddReferencedObject( Collector, InThis );
+	if (HandleParmName != CmpName)
+		return false;
 
-        This->RSTParm.AddReferencedObject( Collector, InThis );
-        This->RotOrderParm.AddReferencedObject( Collector, InThis );
-    }
+	UHoudiniParameterChoice* ChoiceParameter = Cast<UHoudiniParameterChoice>(Parameter);
+
+	if (!ChoiceParameter)
+		return false;
+
+	AssetParameter = Parameter;
+
+	if (ChoiceParameter)
+	{
+		// It is possible that the handle param is bound to a single tuple param.
+		// Ignore the preset tuple index if that's the case or we'll crash.
+		if (Parameter->GetTupleSize() <= InTupleIdx)
+			InTupleIdx = 0;
+
+		auto Optional = ChoiceParameter->GetValue(InTupleIdx);
+		if (Optional.IsSet())
+		{
+			TupleIndex = InTupleIdx;
+			OutValue = Optional.GetValue();
+			return true;
+		}
+	}
+
+	return false;
 }
 
-void
-UHoudiniHandleComponent::Serialize( FArchive & Ar )
+TSharedPtr<FString> 
+UHoudiniHandleParameter::Get(TSharedPtr<FString> DefaultValue) const 
 {
-    Super::Serialize( Ar );
+	UHoudiniParameterChoice* ChoiceParameter = Cast<UHoudiniParameterChoice>(AssetParameter);
+	if (ChoiceParameter)
+	{
+		auto Optional = ChoiceParameter->GetValue(TupleIndex);
+		if (Optional.IsSet())
+			return Optional.GetValue();
+	}
 
-    Ar.UsingCustomVersion( FHoudiniCustomSerializationVersion::GUID );
-
-    for ( int32 i = 0; i < EXformParameter::COUNT; ++i )
-        Ar << XformParms[ i ];
-
-    Ar << RSTParm;
-    Ar << RotOrderParm;
+	return DefaultValue;
 }
 
-#if WITH_EDITOR
-
-void
-UHoudiniHandleComponent::PostEditUndo()
+UHoudiniHandleParameter & 
+UHoudiniHandleParameter::operator=(float Value) 
 {
-    Super::PostEditUndo();
+	UHoudiniParameterFloat* FloatParameter = Cast<UHoudiniParameterFloat>(AssetParameter);
+	if (FloatParameter)
+	{
+		FloatParameter->SetValue(Value, TupleIndex);
+		FloatParameter->MarkChanged(true);
+	}
 
-    UHoudiniAssetComponent * AttachComponent = Cast< UHoudiniAssetComponent >( GetAttachParent() );
-    if ( AttachComponent )
-    {
-        //UploadControlPoints();
-        AttachComponent->StartTaskAssetCooking( true );
-    }
+	return *this;
 }
 
-#endif // WITH_EDITOR
+void 
+UHoudiniHandleComponent::InitializeHandleParameters() 
+{
+	if (XformParms.Num() < int32(EXformParameter::COUNT)) 
+	{
+		XformParms.Empty();
+		for (int32 n = 0; n < int32(EXformParameter::COUNT); ++n)
+		{
+			UHoudiniHandleParameter* XformHandle = NewObject<UHoudiniHandleParameter>(this, UHoudiniHandleParameter::StaticClass());
+			XformParms.Add(XformHandle);
+		}
+	}
+
+	if (!RSTParm) 
+	{
+		RSTParm = NewObject<UHoudiniHandleParameter>(this, UHoudiniHandleParameter::StaticClass());
+	}
+
+	if (!RotOrderParm) 
+	{
+		RotOrderParm = NewObject<UHoudiniHandleParameter>(this, UHoudiniHandleParameter::StaticClass());
+	}
+}
+
+bool 
+UHoudiniHandleComponent::CheckHandleValid() const
+{
+	if (XformParms.Num() < int32(EXformParameter::COUNT))
+		return false;
+
+	for (auto& XformParm : XformParms) 
+	{
+		if (!XformParm)
+			return false;
+	}
+
+	if (!RSTParm)
+		return false;
+
+	if (!RotOrderParm)
+		return false;
+
+	return true;
+}
+
+FBox
+UHoudiniHandleComponent::GetBounds() const 
+{
+	FBox BoxBounds(ForceInitToZero);
+	return BoxBounds + GetComponentLocation();
+}
+

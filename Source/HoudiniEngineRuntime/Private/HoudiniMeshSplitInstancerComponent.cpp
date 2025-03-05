@@ -1,45 +1,112 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "HoudiniMeshSplitInstancerComponent.h"
 
-#include "HoudiniApi.h"
 #include "HoudiniAssetComponent.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
 
+#include "HoudiniPluginSerializationVersion.h"
+#include "HoudiniCompatibilityHelpers.h"
+
+#include "UObject/DevObjectVersion.h"
+#include "Serialization/CustomVersion.h"
+
 #include "Components/StaticMeshComponent.h"
+
+/*
 #if WITH_EDITOR
-#include "LevelEditorViewport.h"
-#include "MeshPaintHelpers.h"
+	#include "ScopedTransaction.h"
+	#include "LevelEditorViewport.h"
+	#include "MeshPaintHelpers.h"
 #endif
+*/
 
 #include "Internationalization/Internationalization.h"
-#define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
-UHoudiniMeshSplitInstancerComponent::UHoudiniMeshSplitInstancerComponent( const FObjectInitializer& ObjectInitializer )
-: Super( ObjectInitializer )
-, InstancedMesh( nullptr )
+#define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE  
+
+UHoudiniMeshSplitInstancerComponent::UHoudiniMeshSplitInstancerComponent(const FObjectInitializer& ObjectInitializer)
+	: Super( ObjectInitializer )
+	, InstancedMesh( nullptr )
 {
+}
+
+void
+UHoudiniMeshSplitInstancerComponent::Serialize(FArchive& Ar)
+{
+	int64 InitialOffset = Ar.Tell();
+
+	bool bLegacyComponent = false;
+	if (Ar.IsLoading())
+	{
+		int32 Ver = Ar.CustomVer(FHoudiniCustomSerializationVersion::GUID);
+		if (Ver < VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_V2_BASE && Ver >= VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_BASE)
+		{
+			bLegacyComponent = true;
+		}
+	}
+
+	if (bLegacyComponent)
+	{
+		// Legacy serialization
+		// Either try to convert or skip depending on the setting value
+		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+		bool bEnableBackwardCompatibility = HoudiniRuntimeSettings->bEnableBackwardCompatibility;
+		if (bEnableBackwardCompatibility)
+		{
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniMeshSplitInstancerComponent : converting v1 object to v2."));
+
+			Super::Serialize(Ar);
+
+			UHoudiniMeshSplitInstancerComponent_V1* CompatibilityMSIC = NewObject<UHoudiniMeshSplitInstancerComponent_V1>();
+			CompatibilityMSIC->Serialize(Ar);
+			CompatibilityMSIC->UpdateFromLegacyData(this);
+		}
+		else
+		{
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniMeshSplitInstancerComponent : serialization will be skipped."));
+
+			Super::Serialize(Ar);
+
+			// Skip v1 Serialized data
+			if (FLinker* Linker = Ar.GetLinker())
+			{
+				int32 const ExportIndex = this->GetLinkerIndex();
+				FObjectExport& Export = Linker->ExportMap[ExportIndex];
+				Ar.Seek(InitialOffset + Export.SerialSize);
+				return;
+			}
+		}
+	}
+	else
+	{
+		// Normal v2 serialization
+		Super::Serialize(Ar);
+	}
 }
 
 void
@@ -49,16 +116,6 @@ UHoudiniMeshSplitInstancerComponent::OnComponentDestroyed( bool bDestroyingHiera
     Super::OnComponentDestroyed( bDestroyingHierarchy );
 }
 
-void
-UHoudiniMeshSplitInstancerComponent::Serialize( FArchive & Ar )
-{
-    Super::Serialize( Ar );
-    Ar.UsingCustomVersion( FHoudiniCustomSerializationVersion::GUID );
-
-    Ar << InstancedMesh;
-    Ar << OverrideMaterial;
-    Ar << Instances;
-}
 
 void 
 UHoudiniMeshSplitInstancerComponent::AddReferencedObjects( UObject * InThis, FReferenceCollector & Collector )
@@ -67,104 +124,96 @@ UHoudiniMeshSplitInstancerComponent::AddReferencedObjects( UObject * InThis, FRe
     if ( ThisMSIC && !ThisMSIC->IsPendingKill() )
     {
         Collector.AddReferencedObject(ThisMSIC->InstancedMesh, ThisMSIC);
-        Collector.AddReferencedObject(ThisMSIC->OverrideMaterial, ThisMSIC);
+		for(auto& Mat : ThisMSIC->OverrideMaterials)
+			Collector.AddReferencedObject(Mat, ThisMSIC);
         Collector.AddReferencedObjects(ThisMSIC->Instances, ThisMSIC);
     }
 }
 
-void 
-UHoudiniMeshSplitInstancerComponent::SetInstances( 
-    const TArray<FTransform>& InstanceTransforms,
-    const TArray<FLinearColor> & InstancedColors)
+bool 
+UHoudiniMeshSplitInstancerComponent::SetInstanceTransforms( 
+    const TArray<FTransform>& InstanceTransforms)
 {
-#if WITH_EDITOR
-    if ( Instances.Num() || InstanceTransforms.Num() )
+	if (Instances.Num() <= 0 && InstanceTransforms.Num() <= 0)
+		return false;
+
+    if (!GetOwner() || GetOwner()->IsPendingKill())
+        return false;
+
+    // Destroy previous instances while keeping some of the one that we'll be able to reuse
+    ClearInstances(InstanceTransforms.Num());
+
+	//
+    if( !InstancedMesh || InstancedMesh->IsPendingKill() )
     {
-        if (!GetOwner() || GetOwner()->IsPendingKill())
-            return;
-
-        const FScopedTransaction Transaction( LOCTEXT( "UpdateInstances", "Update Instances" ) );
-        GetOwner()->Modify();
-
-        // Destroy previous instances while keeping some of the one that we'll be able to reuse
-        ClearInstances(InstanceTransforms.Num());
-
-        if( !InstancedMesh || InstancedMesh->IsPendingKill() )
-        {
-            HOUDINI_LOG_ERROR(TEXT("%s: Null InstancedMesh for split instanced mesh override"), *GetOwner()->GetName());
-            return;
-        }
-
-        TArray<FColor> InstanceColorOverride;
-        InstanceColorOverride.SetNumUninitialized(InstancedColors.Num());
-        for( int32 ix = 0; ix < InstancedColors.Num(); ++ix )
-        {
-            InstanceColorOverride[ix] = InstancedColors[ix].GetClamped().ToFColor(false);
-        }
-
-        // Only create new SMC for newly added instances
-        for (int32 iAdd = Instances.Num(); iAdd < InstanceTransforms.Num(); ++iAdd)
-        {
-            const FTransform& InstanceTransform = InstanceTransforms[iAdd];
-
-            UStaticMeshComponent* SMC = NewObject< UStaticMeshComponent >(
-                GetOwner(), UStaticMeshComponent::StaticClass(),
-                NAME_None, RF_Transactional);
-
-            SMC->SetRelativeTransform(InstanceTransform);
-
-            Instances.Add(SMC);
-        }
-
-        ensure(InstanceTransforms.Num() == Instances.Num());
-        if (InstanceTransforms.Num() == Instances.Num())
-        {
-            for (int32 iIns = 0; iIns < Instances.Num(); ++iIns)
-            {
-                UStaticMeshComponent* SMC = Instances[iIns];
-                const FTransform& InstanceTransform = InstanceTransforms[iIns];
-
-                if (!SMC || SMC->IsPendingKill())
-                    continue;
-
-                SMC->SetRelativeTransform(InstanceTransform);
-
-                // Attach created static mesh component to this thing
-                SMC->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-
-                SMC->SetStaticMesh(InstancedMesh);
-                SMC->SetVisibility(IsVisible());
-                SMC->SetMobility(Mobility);
-                if (OverrideMaterial && !OverrideMaterial->IsPendingKill())
-                {
-                    int32 MeshMaterialCount = InstancedMesh->StaticMaterials.Num();
-                    for (int32 Idx = 0; Idx < MeshMaterialCount; ++Idx)
-                        SMC->SetMaterial(Idx, OverrideMaterial);
-                }
-
-                // If we have override colors, apply them
-                int32 InstIndex = Instances.Num();
-                if (InstanceColorOverride.IsValidIndex(InstIndex))
-                {
-                    MeshPaintHelpers::FillStaticMeshVertexColors(SMC, -1, InstanceColorOverride[InstIndex], FColor::White);
-                    //FIXME: How to get rid of the warning about fixup vertex colors on load?
-                    //SMC->FixupOverrideColorsIfNecessary();
-                }
-
-                SMC->RegisterComponent();
-
-                // Adding to the array has been done above
-                // Instances.Add(SMC);
-
-                // Properties not being propagated to newly created UStaticMeshComponents
-                if (UHoudiniAssetComponent * pHoudiniAsset = Cast<UHoudiniAssetComponent>(GetAttachParent()))
-                {
-                    pHoudiniAsset->CopyComponentPropertiesTo(SMC);
-                }
-            }
-        }
+        HOUDINI_LOG_ERROR(TEXT("%s: Null InstancedMesh for split instanced mesh override"), *GetOwner()->GetName());
+        return false;
     }
-#endif
+
+    // Only create new SMC for newly added instances
+    for (int32 iAdd = Instances.Num(); iAdd < InstanceTransforms.Num(); iAdd++)
+    {
+        const FTransform& InstanceTransform = InstanceTransforms[iAdd];
+        UStaticMeshComponent* SMC = NewObject< UStaticMeshComponent >(
+            GetOwner(), UStaticMeshComponent::StaticClass(), NAME_None, RF_Transactional);
+
+        SMC->SetRelativeTransform(InstanceTransform);
+        Instances.Add(SMC);
+		GetOwner()->AddInstanceComponent(SMC);
+    }
+
+	// We should now have the same number of instances than transform
+	ensure(InstanceTransforms.Num() == Instances.Num());	
+	if (InstanceTransforms.Num() != Instances.Num())
+		return false;
+
+    for (int32 iIns = 0; iIns < Instances.Num(); ++iIns)
+    {
+        UStaticMeshComponent* SMC = Instances[iIns];
+        const FTransform& InstanceTransform = InstanceTransforms[iIns];
+
+        if (!SMC || SMC->IsPendingKill())
+            continue;
+
+        SMC->SetRelativeTransform(InstanceTransform);
+
+        // Attach created static mesh component to this thing
+        SMC->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+
+        SMC->SetStaticMesh(InstancedMesh);
+        SMC->SetVisibility(IsVisible());
+        SMC->SetMobility(Mobility);
+
+		// TODO: Revert to default if override is null??
+		UMaterialInterface* MI = nullptr;
+		if (OverrideMaterials.Num() > 0)
+		{
+			if (OverrideMaterials.IsValidIndex(iIns))
+				MI = OverrideMaterials[iIns];
+			else
+				MI = OverrideMaterials[0];
+		}		
+
+		if (MI && !MI->IsPendingKill())
+        {
+            int32 MeshMaterialCount = InstancedMesh->StaticMaterials.Num();
+            for (int32 Idx = 0; Idx < MeshMaterialCount; ++Idx)
+                SMC->SetMaterial(Idx, MI);
+        }
+
+        SMC->RegisterComponent();
+
+		/*
+		// TODO:
+        // Properties not being propagated to newly created UStaticMeshComponents
+        if (UHoudiniAssetComponent * pHoudiniAsset = Cast<UHoudiniAssetComponent>(GetAttachParent()))
+        {
+            pHoudiniAsset->CopyComponentPropertiesTo(SMC);
+        }
+		*/
+    }
+
+	return true;
 }
 
 void 

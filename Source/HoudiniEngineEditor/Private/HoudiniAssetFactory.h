@@ -1,66 +1,71 @@
 /*
- * Copyright (c) <2017> Side Effects Software Inc.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * Produced by:
- *      Mykola Konyk
- *      Side Effects Software Inc
- *      123 Front Street West, Suite 1401
- *      Toronto, Ontario
- *      Canada   M5J 2M2
- *      416-504-9876
- *
- */
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
+*
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #pragma once
+
 #include "EditorReimportHandler.h"
-#if WITH_EDITOR
 #include "Factories/Factory.h"
-#endif
 #include "HoudiniAssetFactory.generated.h"
 
 class UClass;
 class UObject;
 class FFeedbackContext;
 
-UCLASS( config = Editor )
+UCLASS(config = Editor)
 class UHoudiniAssetFactory : public UFactory, public FReimportHandler
 {
-    GENERATED_UCLASS_BODY()
+	GENERATED_UCLASS_BODY()
 
-    /** UFactory methods. **/
-    private:
+	public:
 
-        virtual bool DoesSupportClass( UClass * Class ) override;
-        virtual FText GetDisplayName() const override;
-        virtual UObject * FactoryCreateBinary(
-            UClass * InClass, UObject * InParent, FName InName, EObjectFlags Flags,
-            UObject * Context, const TCHAR * Type, const uint8 *& Buffer, const uint8 * BufferEnd,
-            FFeedbackContext * Warn ) override;
+		// UFactory methods.
+		// return true if it supports this class
+		virtual bool DoesSupportClass(UClass * Class) override;
 
-    /** FReimportHandler methods. **/
-    public:
+		// Returns the name of the factory for menus
+		virtual FText GetDisplayName() const override;
 
-        virtual bool CanReimport( UObject * Obj, TArray< FString > & OutFilenames ) override;
-        virtual void SetReimportPaths( UObject * Obj, const TArray< FString > & NewReimportPaths ) override;
-        virtual EReimportResult::Type Reimport( UObject * Obj ) override;
+		// Create a new object by importing it from a binary buffer.
+		virtual UObject * FactoryCreateBinary(
+			UClass * InClass, UObject * InParent, FName InName, EObjectFlags Flags,
+			UObject * Context, const TCHAR * Type, const uint8 *& Buffer, const uint8 * BufferEnd,
+			FFeedbackContext * Warn) override;
 
-        virtual UObject* FactoryCreateFile(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, const FString& Filename, const TCHAR* Parms, FFeedbackContext* Warn, bool& bOutOperationCanceled) override;
+		// Create a new object by importing it from a file name.
+		virtual UObject* FactoryCreateFile(UClass* InClass, UObject* InParent, FName InName,
+			EObjectFlags Flags, const FString& Filename, const TCHAR* Parms,
+			FFeedbackContext* Warn, bool& bOutOperationCanceled) override;
+
+		// FReimportHandler methods.
+		// Check to see if we have a handler to manage the reimporting of the object
+		virtual bool CanReimport(UObject * Obj, TArray< FString > & OutFilenames) override;
+
+		// Sets the reimport path(s) for the specified object
+		virtual void SetReimportPaths(UObject * Obj, const TArray< FString > & NewReimportPaths) override;
+
+		// Attempt to reimport the specified object from its source
+		virtual EReimportResult::Type Reimport(UObject * Obj) override;
 };

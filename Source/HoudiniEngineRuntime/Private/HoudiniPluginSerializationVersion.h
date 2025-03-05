@@ -1,37 +1,32 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
-* Produced by:
-*      Chris Grebeldinger
-*      Side Effects Software Inc
-*      123 Front Street West, Suite 1401
-*      Toronto, Ontario
-*      Canada   M5J 2M2
-*      416-504-9876
-*
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once
 
-struct FGuid;
+#include "Misc/Guid.h"
 
 // Deprecated per-class versions used to load old files
 //
@@ -47,6 +42,7 @@ struct FGuid;
 #define VER_HOUDINI_ENGINE_PARAM_ASSET_INSTANCE_MEMBER 2
 // World Outliner inputs.
 #define VER_HOUDINI_ENGINE_PARAM_WORLD_OUTLINER_INPUT 3
+
 
 enum EHoudiniPluginSerializationVersion
 {
@@ -74,9 +70,12 @@ enum EHoudiniPluginSerializationVersion
     VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_OUTLINER_INSTANCE_INDEX = 26,
     VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_INPUT_LANDSCAPE_TRANSFORM = 27,
     VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_OUTLINER_INPUT_SAVE_ACTOR_PATHNAME = 28,
-    VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_419_SERIALIZATION_FIX = 29, // Version 29 is a fix for a serialization issue with UE4.19 / H17.0/16.5, 29 is actually version 26 minus the version 24 changes...
+	VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_419_SERIALIZATION_FIX = 29, // Version 29 is a fix for a serialization issue with UE4.19 / H17.0/16.5, 29 is actually version 26 minus the version 24 changes...
     VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_POST_419_SERIALIZATION_FIX = 30,
-    VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_INPUT_SOFT_REF = 31,
+	VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_INPUT_SOFT_REF = 31,
+
+	//------<Legacy v1 versions go above this line>------------------------------------------------------
+	VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_V2_BASE = 100,
 
     // -----<new versions can be added before this line>-------------------------------------------------
     // - this needs to be the last line (see note below)

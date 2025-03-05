@@ -1,74 +1,91 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
-* Produced by:
-*      Chris Grebeldinger
-*      Side Effects Software Inc
-*      123 Front Street West, Suite 1401
-*      Toronto, Ontario
-*      Canada   M5J 2M2
-*      416-504-9876
-*
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once
 
 #include "Components/SceneComponent.h"
+
 #include "HoudiniInstancedActorComponent.generated.h"
 
 
-UCLASS( config = Engine )
+UCLASS()//( config = Engine )
 class HOUDINIENGINERUNTIME_API UHoudiniInstancedActorComponent : public USceneComponent
 {
-   GENERATED_UCLASS_BODY()
+	GENERATED_UCLASS_BODY()
 
-public:
-    virtual void OnComponentCreated() override;
-    virtual void OnComponentDestroyed( bool bDestroyingHierarchy ) override;
-    virtual void Serialize( FArchive & Ar ) override;
+		friend class UHoudiniInstancedActorComponent_V1;
 
-    static void AddReferencedObjects( UObject * InThis, FReferenceCollector & Collector );
+	public:
+
+		virtual void Serialize(FArchive & Ar) override;
+
+		virtual void OnComponentCreated() override;
+		virtual void OnComponentDestroyed( bool bDestroyingHierarchy ) override;
+
+		static void AddReferencedObjects( UObject * InThis, FReferenceCollector & Collector );
+
+		// Object mutator
+		void SetInstancedObject(class UObject* InObject) { InstancedObject = InObject; }
+		// Object accessor
+		class UObject* GetInstancedObject() const { return InstancedObject; }
+		
+
+		// Instance Accessor
+		TArray<class AActor*>& GetInstancedActorsForWrite() { return InstancedActors; }
+		// const Instance accessor
+		const TArray<class AActor*>& GetInstancedActors() const { return InstancedActors; }
+
+		// Returns the instanced actor at a given index
+		AActor* GetInstancedActorAt(const int32& Idx) { return InstancedActors.IsValidIndex(Idx) ? InstancedActors[Idx] : nullptr; }
+
+		// Add an instance to this component. Transform is given in local space of this component.
+		int32 AddInstance(const FTransform& InstanceTransform, AActor * NewActor);
+
+		// Sets the instance at a given index in this component. Transform is given in local space of this component. 
+		bool SetInstanceAt(const int32& Idx, const FTransform& InstanceTransform, AActor * NewActor);
+
+		// Updates the transform for a given actor. Transform is given in local space of this component.
+		bool SetInstanceTransformAt(const int32& Idx, const FTransform& InstanceTransform);
     
-    /** Set the instances. Transforms are given in local space of this component. */
-    void SetInstances( const TArray<FTransform>& InstanceTransforms );
+		// Destroy all existing instances
+		void ClearAllInstances();
 
-    /** Add an instance to this component. Transform is given in local space of this component. */
-    int32 AddInstance( const FTransform& InstanceTransform );
-    
-    /** Destroy all extant instances */
-    void ClearInstances();
+		// Sets the number of instances needed
+		// Properly deletes extras, new instance actors are nulled 
+		void SetNumberOfInstances(const int32& NewInstanceNum);
 
-    /** Spawn a single instance */
-    AActor* SpawnInstancedActor( const FTransform& InstancedTransform ) const;
+		// Set the instances. Transforms are given in local space of this component.
+		bool SetInstanceTransforms(const TArray<FTransform>& InstanceTransforms);
+  
+	private:
 
-    /** Update instances of a given instancer component. (could be ISMC, IAC or MSIC) **/
-    static void UpdateInstancerComponentInstances(
-        USceneComponent * Component,
-        const TArray< FTransform > & ProcessedTransforms,
-        const TArray<FLinearColor> & InstancedColors );
+		UPROPERTY(VisibleAnywhere, Category = Instances )
+		UObject* InstancedObject;
 
-    UPROPERTY( SkipSerialization, VisibleAnywhere, Category = Instances )
-    UObject* InstancedAsset;
-
-    UPROPERTY( SkipSerialization, VisibleInstanceOnly, Category = Instances )
-    TArray< AActor* > Instances;
+		UPROPERTY(VisibleInstanceOnly, Category = Instances )
+		TArray<AActor*> InstancedActors;
 
 };

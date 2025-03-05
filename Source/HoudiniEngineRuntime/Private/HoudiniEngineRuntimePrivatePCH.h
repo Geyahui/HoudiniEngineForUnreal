@@ -1,494 +1,273 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once
 
-/** Unreal Editor headers. **/
-#if WITH_EDITOR
 #include "CoreMinimal.h"
-#include "ObjectTools.h"
-#include "AssetTypeActions_Base.h"
-#include "ComponentAssetBroker.h"
-#include "PackageTools.h"
-#include "ThumbnailHelpers.h"
-#include "LevelEditor.h"
-#include "Interfaces/IMainFrameModule.h"
-#include "ClassIconFinder.h"
-#include "ScopedTransaction.h"
-#include "RawMesh.h"
-#include "Kismet2/KismetEditorUtilities.h"
-#include "Interfaces/IPluginManager.h"
-#include "ISettingsModule.h"
-#include "DesktopPlatformModule.h"
-#include "Editor.h"
-#endif
+#include "Logging/LogMacros.h"
 
-/** Other Unreal headers. **/
-//#include "CoreUObject.h"
-#include "Modules/ModuleManager.h"
-#include "EngineModule.h"
-#include "Engine/TextureDefines.h"
-#include "Engine/EngineTypes.h"
-#include "MaterialShared.h"
-#include "CollisionQueryParams.h"
-#include "Engine/CollisionProfile.h"
-#include "PhysicsEngine/BodyInstance.h"
-#include "PhysicsEngine/BodySetup.h"
-#include "AssetData.h"
-#include "AssetRegistryModule.h"
-#include "HitProxies.h"
-#include "Components.h"
-#include "ComponentReregisterContext.h"
-#include "Engine/StaticMesh.h"
-#include "LandscapeProxy.h"
-#include "LandscapeDataAccess.h"
-#include "Engine/Level.h"
-#include "Curves/CurveBase.h"
-#include "Curves/CurveFloat.h"
-#include "Curves/CurveLinearColor.h"
-#include "ImageUtils.h"
-#include "Internationalization/Internationalization.h"
-
-/** Houdini Engine Runtime Module Localization. **/
-#include "HoudiniEngineRuntimeLocalization.h"
-
-/** Plugin version enum and CustomVersionRegistration */
-#include "HoudiniPluginSerializationVersion.h"
-
-/** Houdini Engine headers. **/
-#include <vector>
-#include <string>
-#include <stdint.h>
-
-#include "HAPI.h"
-#include "HAPI_Version.h"
-
-/** Whether to enable logging. **/
-#define HOUDINI_ENGINE_LOGGING 1
-
-/** Define module names. **/
+// Define module names.
+#define HOUDINI_MODULE "HoudiniEngine"
 #define HOUDINI_MODULE_EDITOR "HoudiniEngineEditor"
-#define HOUDINI_MODULE_RUNTIME "HoudiniEngine"
+#define HOUDINI_MODULE_RUNTIME "HoudiniEngineRuntime"
 
-/** See whether we are in Editor or Engine module. **/
+// Declare the log category depending on the module we're in
 #ifdef HOUDINI_ENGINE_EDITOR
-    #define HOUDINI_LOCTEXT_NAMESPACE HOUDINI_MODULE_EDITOR
-    DECLARE_LOG_CATEGORY_EXTERN( LogHoudiniEngineEditor, Log, All );
+	#define HOUDINI_LOCTEXT_NAMESPACE HOUDINI_MODULE_EDITOR
+HOUDINIENGINEEDITOR_API DECLARE_LOG_CATEGORY_EXTERN(LogHoudiniEngineEditor, Log, All);
 #else
-#define HOUDINI_LOCTEXT_NAMESPACE HOUDINI_MODULE_RUNTIME
-    DECLARE_LOG_CATEGORY_EXTERN( LogHoudiniEngine, Log, All );
+	#ifdef HOUDINI_ENGINE
+		#define HOUDINI_LOCTEXT_NAMESPACE HOUDINI_MODULE
+		HOUDINIENGINE_API DECLARE_LOG_CATEGORY_EXTERN(LogHoudiniEngine, Log, All);
+	#else
+		#define HOUDINI_LOCTEXT_NAMESPACE HOUDINI_MODULE_RUNTIME
+		HOUDINIENGINERUNTIME_API DECLARE_LOG_CATEGORY_EXTERN(LogHoudiniEngineRuntime, Log, All);
+	#endif
 #endif
 
-/** Definitions coming from UBT. **/
-#ifndef HOUDINI_ENGINE_HFS_PATH_DEFINE
-#define HOUDINI_ENGINE_HFS_PATH ""
-#else
-#define HOUDINI_ENGINE_STRINGIFY_HELPER(X) #X
-#define HOUDINI_ENGINE_STRINGIFY(X) HOUDINI_ENGINE_STRINGIFY_HELPER(X)
-#define HOUDINI_ENGINE_HFS_PATH HOUDINI_ENGINE_STRINGIFY(HOUDINI_ENGINE_HFS_PATH_DEFINE)
-#endif
-
-/** Some additional logging macros. **/
-#ifdef HOUDINI_ENGINE_LOGGING
-
-#ifdef HOUDINI_ENGINE_EDITOR
-#define HOUDINI_LOG_HELPER(VERBOSITY, HOUDINI_LOG_TEXT, ...) \
-    do \
-    { \
-        UE_LOG( LogHoudiniEngineEditor, VERBOSITY, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ); \
-    } \
-    while ( 0 )
-#else
-#define HOUDINI_LOG_HELPER( VERBOSITY, HOUDINI_LOG_TEXT, ... ) \
-    do \
-    { \
-        UE_LOG( LogHoudiniEngine, VERBOSITY, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ); \
-    } \
-    while ( 0 )
-#endif
-
-#define HOUDINI_LOG_MESSAGE( HOUDINI_LOG_TEXT, ... ) \
-    HOUDINI_LOG_HELPER( Log, HOUDINI_LOG_TEXT, ##__VA_ARGS__ )
-
-#define HOUDINI_LOG_FATAL( HOUDINI_LOG_TEXT, ... ) \
-    HOUDINI_LOG_HELPER( Fatal, HOUDINI_LOG_TEXT, ##__VA_ARGS__ )
-
-#define HOUDINI_LOG_ERROR( HOUDINI_LOG_TEXT, ... ) \
-    HOUDINI_LOG_HELPER( Error, HOUDINI_LOG_TEXT, ##__VA_ARGS__ )
-
-#define HOUDINI_LOG_WARNING( HOUDINI_LOG_TEXT, ... ) \
-    HOUDINI_LOG_HELPER( Warning, HOUDINI_LOG_TEXT, ##__VA_ARGS__ )
-
-#define HOUDINI_LOG_DISPLAY( HOUDINI_LOG_TEXT, ... ) \
-    HOUDINI_LOG_HELPER( Display, HOUDINI_LOG_TEXT, ##__VA_ARGS__ )
-
-#else
-
-#define HOUDINI_LOG_MESSAGE( HOUDINI_LOG_TEXT, ... )
-#define HOUDINI_LOG_FATAL( HOUDINI_LOG_TEXT, ... )
-#define HOUDINI_LOG_ERROR( HOUDINI_LOG_TEXT, ... )
-#define HOUDINI_LOG_WARNING( HOUDINI_LOG_TEXT, ... )
-#define HOUDINI_LOG_DISPLAY( HOUDINI_LOG_TEXT, ... )
-
-#endif // HOUDINI_ENGINE_LOGGING
-
-
-/** Error checking - this macro will check the status and return specified parameter. **/
-#define HOUDINI_CHECK_ERROR_RETURN_HELPER( HAPI_PARAM_CALL, HAPI_PARAM_RETURN, HAPI_LOG_ROUTINE ) \
-    do \
-    { \
-        HAPI_Result ResultVariable = HAPI_PARAM_CALL; \
-        if ( ResultVariable != HAPI_RESULT_SUCCESS ) \
-        { \
-            HAPI_LOG_ROUTINE( TEXT( "Hapi failed: %s" ), *FHoudiniEngineUtils::GetErrorDescription() ); \
-            return HAPI_PARAM_RETURN; \
-        } \
-    } \
-    while ( 0 )
-
-#define HOUDINI_CHECK_ERROR_RETURN( HAPI_PARAM_CALL, HAPI_PARAM_RETURN ) \
-    HOUDINI_CHECK_ERROR_RETURN_HELPER( HAPI_PARAM_CALL, HAPI_PARAM_RETURN, HOUDINI_LOG_ERROR )
-
-/* Error checking - this macro will check the status. **/
-#define HOUDINI_CHECK_ERROR_HELPER( HAPI_PARAM_RESULT, HAPI_PARAM_CALL, HAPI_LOG_ROUTINE ) \
-    do \
-    { \
-        *HAPI_PARAM_RESULT = HAPI_PARAM_CALL; \
-        if ( *HAPI_PARAM_RESULT != HAPI_RESULT_SUCCESS ) \
-        { \
-            HAPI_LOG_ROUTINE( TEXT( "Hapi failed: %s" ), *FHoudiniEngineUtils::GetErrorDescription() ); \
-        } \
-    } \
-    while ( 0 )
-
-#define HOUDINI_CHECK_ERROR( HAPI_PARAM_RESULT, HAPI_PARAM_CALL ) \
-    HOUDINI_CHECK_ERROR_HELPER( HAPI_PARAM_RESULT, HAPI_PARAM_CALL, HOUDINI_LOG_ERROR )
-
-/** HAPI related attribute definitions. **/
-
-#define HAPI_UNREAL_CLIENT_NAME                         "unreal"
-
-/** Names of attributes used for data exchange between Unreal and Houdini Engine. **/
-#define HAPI_UNREAL_ATTRIB_INSTANCE_OVERRIDE            "unreal_instance"
-#define HAPI_UNREAL_ATTRIB_SPLIT_INSTANCES              "unreal_split_instances"
-#define HAPI_UNREAL_ATTRIB_MATERIAL                     "unreal_material"
-#define HAPI_UNREAL_ATTRIB_MATERIAL_HOLE                "unreal_material_hole"
-#define HAPI_UNREAL_ATTRIB_MATERIAL_FALLBACK            "unreal_face_material"
-#define HAPI_UNREAL_ATTRIB_MATERIAL_INSTANCE            "unreal_material_instance"
-#define HAPI_UNREAL_ATTRIB_MATERIAL_HOLE_INSTANCE       "unreal_material_hole_instance"
-#define HAPI_UNREAL_ATTRIB_FACE_SMOOTHING_MASK          "unreal_face_smoothing_mask"
-#define HAPI_UNREAL_ATTRIB_LIGHTMAP_RESOLUTION          "unreal_lightmap_resolution"
-#define HAPI_UNREAL_ATTRIB_GENERATED_MESH_NAME          "unreal_generated_mesh_name"
-#define HAPI_UNREAL_ATTRIB_LANDSCAPE_TILE_NAME          HAPI_ATTRIB_NAME
-#define HAPI_UNREAL_ATTRIB_LANDSCAPE_VERTEX_INDEX       "unreal_vertex_index"
-//#define HAPI_UNREAL_ATTRIB_LANDSCAPE_NAME               "unreal_landscape"
-#define HAPI_UNREAL_ATTRIB_INPUT_MESH_NAME              "unreal_input_mesh_name"
-#define HAPI_UNREAL_ATTRIB_INPUT_SOURCE_FILE            "unreal_input_source_file"
-#define HAPI_UNREAL_ATTRIB_MESH_SOCKET_PREFIX           "mesh_socket"
-#define HAPI_UNREAL_ATTRIB_MESH_SOCKET_NAME             "mesh_socket_name"
-#define HAPI_UNREAL_ATTRIB_MESH_SOCKET_NAME_OLD         "unreal_mesh_socket_name"
-#define HAPI_UNREAL_ATTRIB_MESH_SOCKET_ACTOR            "mesh_socket_actor"
-#define HAPI_UNREAL_ATTRIB_MESH_SOCKET_ACTOR_OLD        "unreal_mesh_socket_actor"
-#define HAPI_UNREAL_ATTRIB_MESH_SOCKET_TAG              "mesh_socket_tag"
-#define HAPI_UNREAL_ATTRIB_MESH_SOCKET_TAG_OLD          "unreal_mesh_socket_tag"
-
-#define HAPI_UNREAL_ATTRIB_GENERIC_UPROP_PREFIX         "unreal_uproperty_"
-#define HAPI_UNREAL_ATTRIB_GENERIC_MAT_PARAM_PREFIX     "unreal_material_parameter_"
-#define HAPI_UNREAL_ATTRIB_INSTANCE_COLOR               "unreal_instance_color"
-
-#define HAPI_UNREAL_ATTRIB_BAKE_FOLDER                  "unreal_bake_folder"
-#define HAPI_UNREAL_ATTRIB_BAKE_NAME                    "unreal_bake_name"
-
-/** Names of other Houdini Engine attributes and parameters. **/
-#define HAPI_UNREAL_ATTRIB_INSTANCE                     "instance"
-#define HAPI_UNREAL_ATTRIB_INSTANCE_ROTATION            "rot"
-#define HAPI_UNREAL_ATTRIB_INSTANCE_SCALE               "scale"
-#define HAPI_UNREAL_ATTRIB_INSTANCE_POSITION            HAPI_ATTRIB_POSITION
-#define HAPI_UNREAL_ATTRIB_POSITION                     HAPI_ATTRIB_POSITION
-#define HAPI_UNREAL_ATTRIB_ROTATION                     "rot"
-#define HAPI_UNREAL_ATTRIB_SCALE                        "scale"
-#define HAPI_UNREAL_ATTRIB_UNIFORM_SCALE                "pscale"
-#define HAPI_UNREAL_ATTRIB_COLOR                        HAPI_ATTRIB_COLOR
-#define HAPI_UNREAL_ATTRIB_ALPHA                        "Alpha"
-#define HAPI_UNREAL_ATTRIB_LIGHTMAP_COLOR               "unreal_lightmap_color"
-#define HAPI_UNREAL_ATTRIB_NORMAL                       HAPI_ATTRIB_NORMAL
-#define HAPI_UNREAL_ATTRIB_TANGENTU                     HAPI_ATTRIB_TANGENT
-#define HAPI_UNREAL_ATTRIB_TANGENTV                     HAPI_ATTRIB_TANGENT2
-
-#define HAPI_UNREAL_ATTRIB_UV                           HAPI_ATTRIB_UV
-#define HAPI_UNREAL_ATTRIB_UV2                          HAPI_ATTRIB_UV2
-//#define HAPI_UNREAL_ATTRIB_UV_WEIGHTMAP                 "unreal_weightmap_uv"
-
-#define HAPI_UNREAL_PARAM_CURVE_TYPE                    "type"
-#define HAPI_UNREAL_PARAM_CURVE_METHOD                  "method"
-#define HAPI_UNREAL_PARAM_CURVE_COORDS                  "coords"
-#define HAPI_UNREAL_PARAM_CURVE_CLOSED                  "close"
-
-#define HAPI_UNREAL_PARAM_TRANSLATE                     "t"
-#define HAPI_UNREAL_PARAM_ROTATE                        "r"
-#define HAPI_UNREAL_PARAM_SCALE                         "s"
-#define HAPI_UNREAL_PARAM_PIVOT                         "p"
-#define HAPI_UNREAL_PARAM_UNIFORMSCALE                  "scale"
-
-#define HAPI_UNREAL_PARAM_FILE                          "file"
-
-/** Handle types. **/
-#define HAPI_UNREAL_HANDLE_TRANSFORM                    "xform"
-#define HAPI_UNREAL_HANDLE_BOUNDER                      "bound"
-
-/** Ramp related defines. **/
-#define HAPI_UNREAL_RAMP_FLOAT_AXIS_X                   "position"
-#define HAPI_UNREAL_RAMP_FLOAT_AXIS_Y                   "value"
-#define HAPI_UNREAL_RAMP_COLOR_AXIS_X                   "position"
-#define HAPI_UNREAL_RAMP_COLOR_AXIS_Y                   "color"
-
-/** Ramp Key interpolation values. **/
-#define HAPI_UNREAL_RAMP_KEY_INTERPOLATION_CONSTANT         "Constant"
-#define HAPI_UNREAL_RAMP_KEY_INTERPOLATION_LINEAR           "Linear"
-#define HAPI_UNREAL_RAMP_KEY_INTERPOLATION_CATMULL_ROM      "Catmull-Rom"
-#define HAPI_UNREAL_RAMP_KEY_INTERPOLATION_MONOTONE_CUBIC   "Monotone Cubic"
-#define HAPI_UNREAL_RAMP_KEY_INTERPOLATION_BEZIER           "Bezier"
-#define HAPI_UNREAL_RAMP_KEY_INTERPOLATION_B_SPLINE         "B-Spline"
-#define HAPI_UNREAL_RAMP_KEY_INTERPOLATION_HERMITE          "Hermite"
-
-/** Texture planes. **/
-#define HAPI_UNREAL_MATERIAL_TEXTURE_COLOR_ALPHA        "C A"
-#define HAPI_UNREAL_MATERIAL_TEXTURE_COLOR              "C"
-#define HAPI_UNREAL_MATERIAL_TEXTURE_ALPHA              "A"
-#define HAPI_UNREAL_MATERIAL_TEXTURE_NORMAL             "N"
-
-/** Materials Diffuse. **/
-#define HAPI_UNREAL_PARAM_TEXTURE_LAYERS_NUM            "ogl_numtex"
-
-#define HAPI_UNREAL_PARAM_MAP_DIFFUSE_0                 "ogl_tex1"
-#define HAPI_UNREAL_PARAM_MAP_DIFFUSE_1                 "basecolor_texture"
-
-#define HAPI_UNREAL_PARAM_COLOR_DIFFUSE_0               "ogl_diff"
-#define HAPI_UNREAL_PARAM_COLOR_DIFFUSE_1               "basecolor"
-
-#define HAPI_UNREAL_PARAM_MAP_DIFFUSE_COLOR_SPACE       "basecolor_textureColorSpace"
-
-/** Materials Normal. **/
-#define HAPI_UNREAL_PARAM_MAP_NORMAL_0                  "ogl_normalmap"
-#define HAPI_UNREAL_PARAM_MAP_NORMAL_1                  "normalTexture"
-
-#define HAPI_UNREAL_PARAM_MAP_NORMAL_TYPE               "ogl_normalmap_type"
-#define HAPI_UNREAL_PARAM_MAP_NORMAL_TYPE_TANGENT       "Tangent Space"
-#define HAPI_UNREAL_PARAM_MAP_NORMAL_TYPE_WORLD         "World Space"
-
-#define HAPI_UNREAL_PARAM_MAP_NORMAL_COLOR_SPACE        "normalTexColorSpace"
-
-/** Materials Specular. **/
-#define HAPI_UNREAL_PARAM_MAP_SPECULAR_0                "ogl_specmap"
-#define HAPI_UNREAL_PARAM_MAP_SPECULAR_1                "reflect_texture"
-
-#define HAPI_UNREAL_PARAM_COLOR_SPECULAR_0              "ogl_spec"
-#define HAPI_UNREAL_PARAM_COLOR_SPECULAR_1              "reflect"
-
-#define HAPI_UNREAL_PARAM_MAP_SPECULAR_COLOR_SPACE      "reflect_textureColorSpace"
-
-/** Materials Roughness. **/
-#define HAPI_UNREAL_PARAM_MAP_ROUGHNESS_0               "ogl_roughmap"
-#define HAPI_UNREAL_PARAM_MAP_ROUGHNESS_1               "rough_texture"
-
-#define HAPI_UNREAL_PARAM_VALUE_ROUGHNESS_0             "ogl_rough"
-#define HAPI_UNREAL_PARAM_VALUE_ROUGHNESS_1             "rough"
-
-#define HAPI_UNREAL_PARAM_MAP_ROUGHNESS_COLOR_SPACE     "rough_textureColorSpace"
-
-/** Materials Metallic. **/
-#define HAPI_UNREAL_PARAM_MAP_METALLIC                  "metallic_texture"
-#define HAPI_UNREAL_PARAM_VALUE_METALLIC                "metallic"
-#define HAPI_UNREAL_PARAM_MAP_METALLIC_COLOR_SPACE      "metallic_textureColorSpace"
-
-/** Materials Emissive. **/
-#define HAPI_UNREAL_PARAM_MAP_EMISSIVE                  "emitcolor_texture"
-#define HAPI_UNREAL_PARAM_MAP_EMISSIVE_COLOR_SPACE      "emitcolor_textureColorSpace"
-
-#define HAPI_UNREAL_PARAM_VALUE_EMISSIVE_0              "ogl_emit"
-#define HAPI_UNREAL_PARAM_VALUE_EMISSIVE_1              "emitcolor"
-
-/** Materials Opacity. **/
-#define HAPI_UNREAL_PARAM_ALPHA_0                       "ogl_alpha"
-#define HAPI_UNREAL_PARAM_ALPHA_1                       "opac"
-
-#define HAPI_UNREAL_PARAM_MAP_OPACITY_0                 "ogl_opacitymap"
-#define HAPI_UNREAL_PARAM_MAP_OPACITY_1                 "opaccolor_texture"
-
-/** Default values for new curves. **/
-#define HAPI_UNREAL_PARAM_INPUT_CURVE_COORDS_DEFAULT    "0.0, 0.0, 3.0 3.0, 0.0, 3.0"
-#define HAPI_UNREAL_PARAM_SPLINE_RESOLUTION_DEFAULT     50.0f
-
-/** Default values for certain UI min and max parameter values **/
-#define HAPI_UNREAL_PARAM_INT_UI_MIN                    0
-#define HAPI_UNREAL_PARAM_INT_UI_MAX                    10
-#define HAPI_UNREAL_PARAM_FLOAT_UI_MIN                  0.0f
-#define HAPI_UNREAL_PARAM_FLOAT_UI_MAX                  10.0f
-
-/** Suffix for all Unreal materials which are generated from Houdini. **/
-#define HAPI_UNREAL_GENERATED_MATERIAL_SUFFIX           TEXT("_houdini_material")
-
-/** Group name prefix used for collision geometry generation. **/
-#define HAPI_UNREAL_GROUP_GEOMETRY_COLLISION            "collision_geo"
-
-/** Group name prefix used for rendered collision geometry generation. **/
-#define HAPI_UNREAL_GROUP_GEOMETRY_RENDERED_COLLISION   "rendered_collision_geo"
-
-/** Group name prefix used for UCX collision geometry generation **/
-#define HAPI_UNREAL_GROUP_GEOMETRY_COLLISION_UCX        "collision_geo_ucx"
-#define HAPI_UNREAL_GROUP_GEOMETRY_RENDERED_COLLISION_UCX "rendered_collision_geo_ucx"
-
-#define HAPI_UNREAL_GROUP_GEOMETRY_SIMPLE_COLLISION             "collision_geo_simple"
-#define HAPI_UNREAL_GROUP_GEOMETRY_SIMPLE_RENDERED_COLLISION    "rendered_collision_geo_simple"
-
-/** Group name used to mark everything that is not a member of collision or rendered collision group. **/
-#define HAPI_UNREAL_GROUP_GEOMETRY_NOT_COLLISION        "main_geo"
-
-/** Group name prefix used to mark mesh sockets **/
-#define HAPI_UNREAL_GROUP_MESH_SOCKETS                  "mesh_socket"
-#define HAPI_UNREAL_GROUP_MESH_SOCKETS_OLD              "socket"
-
-/** Details panel desired sizes. **/
-#define HAPI_UNREAL_DESIRED_ROW_VALUE_WIDGET_WIDTH              270
-#define HAPI_UNREAL_DESIRED_ROW_FULL_WIDGET_WIDTH               310
-#define HAPI_UNREAL_DESIRED_SETTINGS_ROW_VALUE_WIDGET_WIDTH     350
-#define HAPI_UNREAL_DESIRED_SETTINGS_ROW_FULL_WIDGET_WIDTH      400
-
-/** Various variable names used to store meta information in generated packages. **/
-#define HAPI_UNREAL_PACKAGE_META_GENERATED_OBJECT               TEXT( "HoudiniGeneratedObject" )
-#define HAPI_UNREAL_PACKAGE_META_GENERATED_NAME                 TEXT( "HoudiniGeneratedName" )
-#define HAPI_UNREAL_PACKAGE_META_GENERATED_TEXTURE_TYPE         TEXT( "HoudiniGeneratedTextureType" )
-#define HAPI_UNREAL_PACKAGE_META_NODE_PATH                      TEXT( "HoudiniNodePath" )
-
-#define HAPI_UNREAL_PACKAGE_META_GENERATED_TEXTURE_NORMAL       TEXT( "N" )
-#define HAPI_UNREAL_PACKAGE_META_GENERATED_TEXTURE_DIFFUSE      TEXT( "C_A" )
-#define HAPI_UNREAL_PACKAGE_META_GENERATED_TEXTURE_SPECULAR     TEXT( "S" )
-#define HAPI_UNREAL_PACKAGE_META_GENERATED_TEXTURE_ROUGHNESS    TEXT( "R" )
-#define HAPI_UNREAL_PACKAGE_META_GENERATED_TEXTURE_METALLIC     TEXT( "M" )
-#define HAPI_UNREAL_PACKAGE_META_GENERATED_TEXTURE_EMISSIVE     TEXT( "E" )
-#define HAPI_UNREAL_PACKAGE_META_GENERATED_TEXTURE_OPACITY_MASK TEXT( "O" )
-
-/** Various session related settings. **/
-#define HAPI_UNREAL_SESSION_SERVER_HOST                     TEXT( "localhost" )
-#define HAPI_UNREAL_SESSION_SERVER_PORT                     9090
-
-#if PLATFORM_MAC
-#define HAPI_UNREAL_SESSION_SERVER_PIPENAME                 TEXT( "/tmp/hapi" )
-#else
-#define HAPI_UNREAL_SESSION_SERVER_PIPENAME                 TEXT( "hapi" )
-#endif
+//---------------------------------------------------------------------------------------------------------------------
+// Default session settings
+//---------------------------------------------------------------------------------------------------------------------
 
 #define HAPI_UNREAL_SESSION_SERVER_AUTOSTART                true
 #define HAPI_UNREAL_SESSION_SERVER_TIMEOUT                  3000.0f
+#define HAPI_UNREAL_SESSION_SERVER_HOST                     TEXT( "localhost" )
+#define HAPI_UNREAL_SESSION_SERVER_PORT                     9090
+#if PLATFORM_MAC
+	#define HAPI_UNREAL_SESSION_SERVER_PIPENAME                 TEXT( "/tmp/hapi" )
+#else
+	#define HAPI_UNREAL_SESSION_SERVER_PIPENAME                 TEXT( "hapi" )
+#endif
 
-/** Default position and transformation scaling options. **/
-#define HAPI_UNREAL_SCALE_FACTOR_POSITION                   100.0f
-#define HAPI_UNREAL_SCALE_FACTOR_TRANSLATION                100.0f
 
-/** Small value used for comparisons. **/
-#define HAPI_UNREAL_SCALE_SMALL_VALUE                       KINDA_SMALL_NUMBER * 2.0f
 
-/** Default material name. **/
-#define HAPI_UNREAL_DEFAULT_MATERIAL_NAME                   TEXT( "default_material" )
-
-/** Threshold alpha. **/
-#define HAPI_UNREAL_ALPHA_THRESHOLD                         0.95f
-
-/** Defines used for Substance processing. **/
-#define HAPI_UNREAL_PARAM_SUBSTANCE_PREFIX                  TEXT( "_substanceInput" )
-#define HAPI_UNREAL_PARAM_SUBSTANCE_LABEL                   TEXT( "Substance" )
-#define HAPI_UNREAL_PARAM_SUBSTANCE_FILENAME                TEXT( "filename" )
-
-/** Names for Substance classes which we are retrieving through RTTI. **/
-#define HAPI_UNREAL_SUBSTANCE_CLASS_INSTANCE_FACTORY        TEXT( "SubstanceInstanceFactory" )
-#define HAPI_UNREAL_SUBSTANCE_CLASS_GRAPH_INSTANCE          TEXT( "SubstanceGraphInstance" )
-#define HAPI_UNREAL_SUBSTANCE_CLASS_UTILITY                 TEXT( "SubstanceUtility" )
-
-/** Names of Substance class properties we are using. **/
-#define HAPI_UNREAL_SUBSTANCE_PROPERTY_FACTORY_PARENT       TEXT( "Parent" )
-
-/** Names of HAPI libraries on different platforms. **/
+// Names of HAPI libraries on different platforms.
 #define HAPI_LIB_OBJECT_WINDOWS         TEXT( "libHAPIL.dll" )
 #define HAPI_LIB_OBJECT_MAC             TEXT( "libHAPIL.dylib" )
 #define HAPI_LIB_OBJECT_LINUX           TEXT( "libHAPIL.so" )
 
-/** HFS subfolder containing HAPI lib. **/
-#define HAPI_HFS_SUBFOLDER_WINDOWS      TEXT( "bin" )
-#define HAPI_HFS_SUBFOLDER_MAC          TEXT( "dsolib" )
-#define HAPI_HFS_SUBFOLDER_LINUX        TEXT( "dsolib" )
+//---------------------------------------------------------------------------------------------------------------------
+// LOG MACROS
+//---------------------------------------------------------------------------------------------------------------------
 
-/** Unreal HAPI Resources. **/
-#define HAPI_UNREAL_RESOURCE_HOUDINI_LOGO       TEXT( "/HoudiniEngine/houdini_logo.houdini_logo" )
-#define HAPI_UNREAL_RESOURCE_HOUDINI_MATERIAL   TEXT( "/HoudiniEngine/houdini_default_material.houdini_default_material" )
-#define HAPI_UNREAL_RESOURCE_BGEO_IMPORT        TEXT( "/HoudiniEngine/houdini_bgeo_import.houdini_bgeo_import" )
+// Whether to enable logging.
+#define HOUDINI_ENGINE_LOGGING 1
 
-/** Helper function to serialize enumerations. **/
-template < typename TEnum >
-FORCEINLINE FArchive &
-SerializeEnumeration( FArchive & Ar, TEnum & E )
+#ifdef HOUDINI_ENGINE_LOGGING
+	#ifdef HOUDINI_ENGINE
+		#define HOUDINI_LOG_HELPER(VERBOSITY, HOUDINI_LOG_TEXT, ...) \
+				do \
+				{ \
+					UE_LOG( LogHoudiniEngine, VERBOSITY, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ); \
+				} \
+				while ( 0 )
+	#else
+		#ifdef HOUDINI_ENGINE_EDITOR
+			#define HOUDINI_LOG_HELPER(VERBOSITY, HOUDINI_LOG_TEXT, ...) \
+				do \
+				{ \
+					UE_LOG( LogHoudiniEngineEditor, VERBOSITY, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ); \
+				} \
+				while ( 0 )
+		#else
+			#define HOUDINI_LOG_HELPER( VERBOSITY, HOUDINI_LOG_TEXT, ... ) \
+				do \
+				{ \
+					UE_LOG( LogHoudiniEngineRuntime, VERBOSITY, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ); \
+				} \
+				while ( 0 )
+		#endif
+	#endif
+
+	#define HOUDINI_LOG_MESSAGE( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_LOG_HELPER( Log, HOUDINI_LOG_TEXT, ##__VA_ARGS__ )
+
+	#define HOUDINI_LOG_FATAL( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_LOG_HELPER( Fatal, HOUDINI_LOG_TEXT, ##__VA_ARGS__ )
+
+	#define HOUDINI_LOG_ERROR( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_LOG_HELPER( Error, HOUDINI_LOG_TEXT, ##__VA_ARGS__ )
+
+	#define HOUDINI_LOG_WARNING( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_LOG_HELPER( Warning, HOUDINI_LOG_TEXT, ##__VA_ARGS__ )
+
+	#define HOUDINI_LOG_DISPLAY( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_LOG_HELPER( Display, HOUDINI_LOG_TEXT, ##__VA_ARGS__ )
+#else
+	#define HOUDINI_LOG_MESSAGE( HOUDINI_LOG_TEXT, ... )
+	#define HOUDINI_LOG_FATAL( HOUDINI_LOG_TEXT, ... )
+	#define HOUDINI_LOG_ERROR( HOUDINI_LOG_TEXT, ... )
+	#define HOUDINI_LOG_WARNING( HOUDINI_LOG_TEXT, ... )
+	#define HOUDINI_LOG_DISPLAY( HOUDINI_LOG_TEXT, ... )
+#endif
+
+
+#define HOUDINI_DEBUG_EXPAND_UE_LOG(LONG_NAME, VERBOSITY, HOUDINI_LOG_TEXT, ...) \
+	do \
+	{ \
+		UE_LOG( LogHoudiniEngine##LONG_NAME, VERBOSITY, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ); \
+	} \
+	while ( 0 )
+
+
+// ---------------------------------------------------------
+// Blueprint Debug Logging
+// ---------------------------------------------------------
+// Set HOUDINI_ENGINE_DEBUG_BP=1 to enable Blueprint logging
+#if defined(HOUDINI_ENGINE_LOGGING) && defined(HOUDINI_ENGINE_DEBUG_BP)
+	DECLARE_LOG_CATEGORY_EXTERN(LogHoudiniEngineBlueprint, Log, All);
+	#define HOUDINI_BP_DEFINE_LOG_CATEGORY() \
+			DEFINE_LOG_CATEGORY(LogHoudiniEngineBlueprint);
+	#define HOUDINI_BP_MESSAGE( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Blueprint, Log, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_BP_FATAL( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Blueprint, Fatal, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_BP_ERROR( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Blueprint, Error, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_BP_WARNING( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Blueprint, Warning, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+#else 
+	#define HOUDINI_BP_DEFINE_LOG_CATEGORY() 
+	#define HOUDINI_BP_MESSAGE( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_BP_FATAL( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_BP_ERROR( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_BP_WARNING( HOUDINI_LOG_TEXT, ... ) 
+#endif
+
+
+// ---------------------------------------------------------
+// PDG Debug Logging
+// ---------------------------------------------------------
+// Set HOUDINI_ENGINE_DEBUG_PDG=1 to enable PDG logging
+#if defined(HOUDINI_ENGINE_LOGGING) && defined(HOUDINI_ENGINE_DEBUG_PDG)
+	DECLARE_LOG_CATEGORY_EXTERN(LogHoudiniEnginePDG, Log, All);
+	#define HOUDINI_PDG_DEFINE_LOG_CATEGORY() \
+			DEFINE_LOG_CATEGORY(LogHoudiniEnginePDG);
+	#define HOUDINI_PDG_MESSAGE( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( PDG, Log, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_PDG_FATAL( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( PDG, Fatal, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_PDG_ERROR( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( PDG, Error, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_PDG_WARNING( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( PDG, Warning, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+#else 
+	#define HOUDINI_PDG_DEFINE_LOG_CATEGORY() 
+	#define HOUDINI_PDG_MESSAGE( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_PDG_FATAL( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_PDG_ERROR( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_PDG_WARNING( HOUDINI_LOG_TEXT, ... ) 
+#endif
+
+
+// ---------------------------------------------------------
+// Landscape Debug Logging
+// ---------------------------------------------------------
+// Set HOUDINI_ENGINE_DEBUG_LANDSCAPE=1 to enable PDG logging
+#if defined(HOUDINI_ENGINE_LOGGING) && defined(HOUDINI_ENGINE_DEBUG_LANDSCAPE)
+	DECLARE_LOG_CATEGORY_EXTERN(LogHoudiniEngineLandscape, Log, All);
+	#define HOUDINI_LANDSCAPE_DEFINE_LOG_CATEGORY() \
+			DEFINE_LOG_CATEGORY(LogHoudiniEngineLandscape);
+	#define HOUDINI_LANDSCAPE_MESSAGE( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Landscape, Log, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_LANDSCAPE_FATAL( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Landscape, Fatal, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_LANDSCAPE_ERROR( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Landscape, Error, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_LANDSCAPE_WARNING( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Landscape, Warning, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+#else 
+	#define HOUDINI_LANDSCAPE_DEFINE_LOG_CATEGORY() 
+	#define HOUDINI_LANDSCAPE_MESSAGE( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_LANDSCAPE_FATAL( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_LANDSCAPE_ERROR( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_LANDSCAPE_WARNING( HOUDINI_LOG_TEXT, ... ) 
+#endif
+
+
+// ---------------------------------------------------------
+// Baking Debug Logging
+// ---------------------------------------------------------
+// Set HOUDINI_ENGINE_DEBUG_BAKING=1 to enable PDG logging
+#if defined(HOUDINI_ENGINE_LOGGING) && defined(HOUDINI_ENGINE_DEBUG_BAKING)
+	DECLARE_LOG_CATEGORY_EXTERN(LogHoudiniEngineBaking, Log, All);
+	#define HOUDINI_BAKING_DEFINE_LOG_CATEGORY() \
+			DEFINE_LOG_CATEGORY(LogHoudiniEngineBaking);
+	#define HOUDINI_BAKING_MESSAGE( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Landscape, Log, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_BAKING_FATAL( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Landscape, Fatal, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_BAKING_ERROR( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Landscape, Error, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+	#define HOUDINI_BAKING_WARNING( HOUDINI_LOG_TEXT, ... ) \
+			HOUDINI_DEBUG_EXPAND_UE_LOG( Landscape, Warning, HOUDINI_LOG_TEXT, ##__VA_ARGS__ ) 
+#else 
+	#define HOUDINI_BAKING_DEFINE_LOG_CATEGORY() 
+	#define HOUDINI_BAKING_MESSAGE( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_BAKING_FATAL( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_BAKING_ERROR( HOUDINI_LOG_TEXT, ... ) 
+	#define HOUDINI_BAKING_WARNING( HOUDINI_LOG_TEXT, ... ) 
+#endif
+
+
+// HAPI_Common
+enum HAPI_UNREAL_NodeType 
 {
-    uint8 B = (uint8) E;
-    Ar << B;
+	HAPI_UNREAL_NODETYPE_ANY		=		-1,
+	HAPU_UNREAL_NODETYPE_NONE		=		 0
+};
 
-    if ( Ar.IsLoading() )
-        E = (TEnum) B;
+enum HAPI_UNREAL_NodeFlags
+{
+	HAPI_UNREAL_NODEFLAGS_ANY = -1,
+	HAPI_UNREAL_NODEFLAGS_NONE = 0
+};
 
-    return Ar;
-}
+// Default cook/bake folder
+#define HAPI_UNREAL_DEFAULT_BAKE_FOLDER					TEXT("/Game/HoudiniEngine/Bake");
+#define HAPI_UNREAL_DEFAULT_TEMP_COOK_FOLDER			TEXT("/Game/HoudiniEngine/Temp");
 
-/** Struct to enable global silent flag - this will force dialogs to not show up. **/
+// Default PDG Filters
+#define HAPI_UNREAL_PDG_DEFAULT_TOP_FILTER				"HE_";
+#define HAPI_UNREAL_PDG_DEFAULT_TOP_OUTPUT_FILTER		"HE_OUT_";
+
+// Struct to enable global silent flag - this will force dialogs to not show up.
 struct FHoudiniScopedGlobalSilence
 {
-    FHoudiniScopedGlobalSilence()
-    {
-        bGlobalSilent = GIsSilent;
-        GIsSilent = true;
-    }
+	FHoudiniScopedGlobalSilence()
+	{
+		bGlobalSilent = GIsSilent;
+		GIsSilent = true;
+	}
 
-    ~FHoudiniScopedGlobalSilence()
-    {
-        GIsSilent = bGlobalSilent;
-    }
+	~FHoudiniScopedGlobalSilence()
+	{
+		GIsSilent = bGlobalSilent;
+	}
 
-    bool bGlobalSilent;
+	bool bGlobalSilent;
 };
 
-/** Struct to disable transactional buffer serialization. This is used to avoid including undo reference count. **/
-struct FHoudiniScopedGlobalTransactionDisable
-{
-    FHoudiniScopedGlobalTransactionDisable()
-    {
-#if WITH_EDITOR
-        if ( GEditor && GEditor->Trans )
-            GEditor->Trans->DisableObjectSerialization();
-#endif
-    }
-
-    ~FHoudiniScopedGlobalTransactionDisable()
-    {
-#if WITH_EDITOR
-        if (GEditor && GEditor->Trans)
-            GEditor->Trans->EnableObjectSerialization();
-#endif
-    }
-};

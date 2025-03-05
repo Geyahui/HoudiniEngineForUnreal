@@ -1,144 +1,211 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "HoudiniInstancedActorComponent.h"
 
-#include "HoudiniApi.h"
 #include "HoudiniMeshSplitInstancerComponent.h"
+#include "HoudiniRuntimeSettings.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
+
+#include "HoudiniPluginSerializationVersion.h"
+#include "HoudiniCompatibilityHelpers.h"
+
+#include "UObject/DevObjectVersion.h"
+#include "Serialization/CustomVersion.h"
 
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
-#if WITH_EDITOR
-#include "LevelEditorViewport.h"
-#endif
+
 #include "Internationalization/Internationalization.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
 UHoudiniInstancedActorComponent::UHoudiniInstancedActorComponent( const FObjectInitializer& ObjectInitializer )
 : Super( ObjectInitializer )
-, InstancedAsset( nullptr )
+, InstancedObject( nullptr )
 {
+	//
+	// 	Set default component properties.
+	//
+	Mobility = EComponentMobility::Static;
+	bCanEverAffectNavigation = true;
+	bNeverNeedsRenderUpdate = false;
+	Bounds = FBox(ForceInitToZero);
+}
+
+
+void
+UHoudiniInstancedActorComponent::Serialize(FArchive& Ar)
+{
+	int64 InitialOffset = Ar.Tell();
+
+	bool bLegacyComponent = false;
+	if (Ar.IsLoading())
+	{
+		int32 Ver = Ar.CustomVer(FHoudiniCustomSerializationVersion::GUID);
+		if (Ver < VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_V2_BASE && Ver >= VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_BASE)
+		{
+			bLegacyComponent = true;
+		}
+	}
+
+	if (bLegacyComponent)
+	{
+		// Legacy serialization
+		// Either try to convert or skip depending on the setting value
+		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+		bool bEnableBackwardCompatibility = HoudiniRuntimeSettings->bEnableBackwardCompatibility;
+		if (bEnableBackwardCompatibility)
+		{
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniInstancedActorComponent : converting v1 object to v2."));
+
+			Super::Serialize(Ar);
+
+			UHoudiniInstancedActorComponent_V1* CompatibilityIAC = NewObject<UHoudiniInstancedActorComponent_V1>();
+			CompatibilityIAC->Serialize(Ar);
+			CompatibilityIAC->UpdateFromLegacyData(this);
+		}
+		else
+		{
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniInstancedActorComponent : serialization will be skipped."));
+
+			Super::Serialize(Ar);
+
+			// Skip v1 Serialized data
+			if (FLinker* Linker = Ar.GetLinker())
+			{
+				int32 const ExportIndex = this->GetLinkerIndex();
+				FObjectExport& Export = Linker->ExportMap[ExportIndex];
+				Ar.Seek(InitialOffset + Export.SerialSize);
+				return;
+			}
+		}
+	}
+	else
+	{
+		// Normal v2 serialization
+		Super::Serialize(Ar);
+	}
 }
 
 
 void UHoudiniInstancedActorComponent::OnComponentDestroyed( bool bDestroyingHierarchy )
 {
-    ClearInstances();
+    ClearAllInstances();
     Super::OnComponentDestroyed( bDestroyingHierarchy );
 }
 
-void
-UHoudiniInstancedActorComponent::Serialize( FArchive & Ar )
-{
-    Super::Serialize( Ar );
-    Ar.UsingCustomVersion( FHoudiniCustomSerializationVersion::GUID );
-
-    Ar << InstancedAsset;
-    Ar << Instances;
-}
 
 void 
-UHoudiniInstancedActorComponent::AddReferencedObjects( UObject * InThis, FReferenceCollector & Collector )
+UHoudiniInstancedActorComponent::AddReferencedObjects(UObject * InThis, FReferenceCollector & Collector )
 {
     UHoudiniInstancedActorComponent * ThisHIAC = Cast< UHoudiniInstancedActorComponent >(InThis);
     if ( ThisHIAC && !ThisHIAC->IsPendingKill() )
     {
-        if ( ThisHIAC->InstancedAsset && !ThisHIAC->InstancedAsset->IsPendingKill() )
-            Collector.AddReferencedObject( ThisHIAC->InstancedAsset, ThisHIAC );
+        if ( ThisHIAC->InstancedObject && !ThisHIAC->InstancedObject->IsPendingKill() )
+            Collector.AddReferencedObject( ThisHIAC->InstancedObject, ThisHIAC );
 
-        Collector.AddReferencedObjects(ThisHIAC->Instances, ThisHIAC );
+        Collector.AddReferencedObjects(ThisHIAC->InstancedActors, ThisHIAC );
     }
 }
+
+
+int32
+UHoudiniInstancedActorComponent::AddInstance(const FTransform& InstanceTransform, AActor * NewActor)
+{
+	if (!NewActor || NewActor->IsPendingKill())
+		return -1;
+
+	NewActor->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+	NewActor->SetActorRelativeTransform(InstanceTransform);
+	return InstancedActors.Add(NewActor);
+}
+
+
+bool
+UHoudiniInstancedActorComponent::SetInstanceAt(const int32& Idx, const FTransform& InstanceTransform, AActor * NewActor)
+{
+	if (!NewActor || NewActor->IsPendingKill())
+		return false;
+
+	if (!InstancedActors.IsValidIndex(Idx))
+		return false;
+
+	NewActor->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+	NewActor->SetActorRelativeTransform(InstanceTransform);
+	NewActor->RegisterAllComponents();
+	InstancedActors[Idx] = NewActor;
+
+	return true;
+}
+
+
+bool
+UHoudiniInstancedActorComponent::SetInstanceTransformAt(const int32& Idx, const FTransform& InstanceTransform)
+{
+	if (!InstancedActors.IsValidIndex(Idx))
+		return false;
+
+	InstancedActors[Idx]->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+	InstancedActors[Idx]->SetActorRelativeTransform(InstanceTransform);
+
+	return true;
+}
+
 
 void 
-UHoudiniInstancedActorComponent::SetInstances( const TArray<FTransform>& InstanceTransforms )
+UHoudiniInstancedActorComponent::ClearAllInstances()
 {
-#if WITH_EDITOR
-    if ( Instances.Num() || InstanceTransforms.Num() )
-    {
-        const FScopedTransaction Transaction( LOCTEXT( "UpdateInstances", "Update Instances" ) );
-        GetOwner()->Modify();
-        ClearInstances();
-
-        if( InstancedAsset && !InstancedAsset->IsPendingKill() )
-        {
-            for( const FTransform& InstanceTransform : InstanceTransforms )
-            {
-                AddInstance( InstanceTransform );
-            }
-        }
-        else
-        {
-            HOUDINI_LOG_ERROR( TEXT( "%s: Null InstancedAsset for instanced actor override" ), *GetOwner()->GetName() );
-        }
-    }
-#endif
-}
-
-int32 
-UHoudiniInstancedActorComponent::AddInstance( const FTransform& InstanceTransform )
-{
-    AActor * NewActor = SpawnInstancedActor(InstanceTransform);
-    if ( NewActor && !NewActor->IsPendingKill() )
-    {
-        NewActor->AttachToComponent( this, FAttachmentTransformRules::KeepRelativeTransform );
-        NewActor->SetActorRelativeTransform( InstanceTransform );
-        return Instances.Add( NewActor );
-    }
-    return -1;
-}
-
-AActor*
-UHoudiniInstancedActorComponent::SpawnInstancedActor( const FTransform& InstancedTransform ) const
-{
-#if WITH_EDITOR
-    if (InstancedAsset && !InstancedAsset->IsPendingKill())
-    {
-        GEditor->ClickLocation = InstancedTransform.GetTranslation();
-        GEditor->ClickPlane = FPlane(GEditor->ClickLocation, FVector::UpVector);
-        TArray<AActor*> NewActors = FLevelEditorViewportClient::TryPlacingActorFromObject(GetOwner()->GetLevel(), InstancedAsset, false, RF_Transactional, nullptr);
-
-        if (NewActors.Num() > 0)
-        {
-            if ( NewActors[0] && !NewActors[0]->IsPendingKill() )
-                return NewActors[0];
-        }
-    }
-#endif
-    return nullptr;
-}
-
-void 
-UHoudiniInstancedActorComponent::ClearInstances()
-{
-    for ( AActor* Instance : Instances )
+    for ( AActor* Instance : InstancedActors )
     {
         if ( Instance && !Instance->IsPendingKill() )
             Instance->Destroy();
     }
-    Instances.Empty();
+    InstancedActors.Empty();
+}
+
+
+void
+UHoudiniInstancedActorComponent::SetNumberOfInstances(const int32& NewInstanceNum)
+{
+	int32 OldInstanceNum = InstancedActors.Num();
+
+	// If we want less instances than we already have, destroy the extra properly
+	if (NewInstanceNum < OldInstanceNum)
+	{
+		for (int32 Idx = NewInstanceNum - 1; Idx < InstancedActors.Num(); Idx++)
+		{
+			AActor* Instance = InstancedActors.IsValidIndex(Idx) ? InstancedActors[Idx] : nullptr;
+			if (Instance && !Instance->IsPendingKill())
+				Instance->Destroy();
+		}
+	}
+	
+	// Grow the array with nulls if needed
+	InstancedActors.SetNumZeroed(NewInstanceNum);
 }
 
 
@@ -149,7 +216,7 @@ UHoudiniInstancedActorComponent::OnComponentCreated()
 
     // If our instances are parented to another actor we should duplicate them
     bool bNeedDuplicate = false;
-    for (auto CurrentInstance : Instances)
+    for (auto CurrentInstance : InstancedActors)
     {
         if ( !CurrentInstance || CurrentInstance->IsPendingKill() )
             continue;
@@ -161,10 +228,11 @@ UHoudiniInstancedActorComponent::OnComponentCreated()
     if ( !bNeedDuplicate )
         return;
 
+	// TODO: CHECK ME!
     // We need to duplicate our instances
-    TArray< AActor* > SourceInstances = Instances;
-    Instances.Empty();
-    for ( AActor* CurrentInstance : SourceInstances )
+    TArray<AActor*> SourceInstances = InstancedActors;
+    InstancedActors.Empty();
+    for (AActor* CurrentInstance : SourceInstances)
     {
         if ( !CurrentInstance || CurrentInstance->IsPendingKill() )
             continue;
@@ -173,57 +241,7 @@ UHoudiniInstancedActorComponent::OnComponentCreated()
         if ( CurrentInstance->GetRootComponent() )
             InstanceTransform = CurrentInstance->GetRootComponent()->GetRelativeTransform();
 
-        AddInstance( InstanceTransform );
-    }
-}
-
-void UHoudiniInstancedActorComponent::UpdateInstancerComponentInstances(
-    USceneComponent * Component,
-    const TArray< FTransform > & ProcessedTransforms, const TArray<FLinearColor> & InstancedColors )
-{
-    UInstancedStaticMeshComponent* ISMC = Cast<UInstancedStaticMeshComponent>( Component );
-    UHierarchicalInstancedStaticMeshComponent* HISMC = Cast<UHierarchicalInstancedStaticMeshComponent>(Component);
-    UHoudiniInstancedActorComponent* IAC = Cast<UHoudiniInstancedActorComponent>( Component );
-    UHoudiniMeshSplitInstancerComponent* MSIC = Cast<UHoudiniMeshSplitInstancerComponent>( Component );
-
-    if(!ISMC && !IAC && !MSIC)
-        return;
-
-    if( ISMC && !ISMC->IsPendingKill() )
-    {
-        ISMC->ClearInstances();
-        if( HISMC )
-        {
-            // HISM need a special treatment as calling AddInstance multiple times on them can cause crashes:
-            // see UE4 bug UE-68582
-            // Calling UHierarchicalInstancedStaticMeshComponent::AddInstance multiple times causes 
-            // multiple BuildTrees to be created and run asynchronously at the same time.
-            bool bAautoRebuildState = HISMC->bAutoRebuildTreeOnInstanceChanges;
-            HISMC->bAutoRebuildTreeOnInstanceChanges = false;
-
-            for( int32 InstanceIdx = 0; InstanceIdx < ProcessedTransforms.Num(); ++InstanceIdx )
-            {
-                HISMC->AddInstance(ProcessedTransforms[InstanceIdx]);
-            }
-            
-            HISMC->bAutoRebuildTreeOnInstanceChanges = bAautoRebuildState;
-            HISMC->BuildTreeIfOutdated(true, true);
-        }
-        else
-        {
-            for( int32 InstanceIdx = 0; InstanceIdx < ProcessedTransforms.Num(); ++InstanceIdx )
-            {
-                ISMC->AddInstance(ProcessedTransforms[InstanceIdx]);
-            }
-        }
-    }
-    else if( IAC && !IAC->IsPendingKill() )
-    {
-        IAC->SetInstances(ProcessedTransforms);
-    }
-    else if( MSIC && !MSIC->IsPendingKill() )
-    {
-        MSIC->SetInstances(ProcessedTransforms, InstancedColors );
+       // AddInstance( InstanceTransform );
     }
 }
 

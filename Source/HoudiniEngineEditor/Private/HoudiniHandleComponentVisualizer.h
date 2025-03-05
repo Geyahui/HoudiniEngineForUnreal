@@ -1,115 +1,114 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
-* Produced by:
-*      Side Effects Software Inc
-*      123 Front Street West, Suite 1401
-*      Toronto, Ontario
-*      Canada   M5J 2M2
-*      416-504-9876
-*
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once
 
-#include "HoudiniHandleComponent.h"
 #include "ComponentVisualizer.h"
 #include "Framework/Commands/Commands.h"
 #include "Framework/Commands/UICommandList.h"
 
+#include "Components/ActorComponent.h"
+#include "HoudiniHandleComponent.h"
+
 /** Base class for clickable editing proxies. **/
 struct HHoudiniHandleVisProxy : public HComponentVisProxy
 {
-    DECLARE_HIT_PROXY();
-    HHoudiniHandleVisProxy( const UActorComponent * InComponent );
+	DECLARE_HIT_PROXY();
+	HHoudiniHandleVisProxy(const UActorComponent * InComponent);
 };
 
 /** Define commands for our component visualizer */
 class FHoudiniHandleComponentVisualizerCommands : public TCommands< FHoudiniHandleComponentVisualizerCommands >
 {
-    public:
+public:
 
-        /** Constructor. **/
-        FHoudiniHandleComponentVisualizerCommands();
+	/** Constructor. **/
+	FHoudiniHandleComponentVisualizerCommands();
 
-        /** Register commands. **/
-        virtual void RegisterCommands() override;
+	/** Register commands. **/
+	virtual void RegisterCommands() override;
 
-    public:
+public:
 
-        /** Command for adding a control point. **/
-        TSharedPtr< FUICommandInfo > CommandAddControlPoint;
+	/** Command for adding a control point. **/
+	TSharedPtr< FUICommandInfo > CommandAddControlPoint;
 
-        /** Command for deleting a control point. **/
-        TSharedPtr< FUICommandInfo > CommandDeleteControlPoint;
+	/** Command for deleting a control point. **/
+	TSharedPtr< FUICommandInfo > CommandDeleteControlPoint;
 };
 
 
 /** Our handle visualizer. **/
 class FHoudiniHandleComponentVisualizer : public FComponentVisualizer
 {
-    public:
+public:
+	FHoudiniHandleComponentVisualizer();
 
-        FHoudiniHandleComponentVisualizer();
-        virtual ~FHoudiniHandleComponentVisualizer();
+	virtual ~FHoudiniHandleComponentVisualizer();
 
-        /** FComponentVisualizer methods. **/
-    public:
+	/** FComponentVisualizer methods. **/
 
-        /** Draw visualization for the given component. **/
-        virtual void DrawVisualization(
-            const UActorComponent * Component, const FSceneView * View,
-            FPrimitiveDrawInterface * PDI) override;
+	/** Draw visualization for the given component. **/
+	virtual void DrawVisualization(
+		const UActorComponent * Component, const FSceneView * View,
+		FPrimitiveDrawInterface * PDI) override;
 
-        /** Handle a click on a registered hit box. **/
-        virtual bool VisProxyHandleClick(
-            FEditorViewportClient* InViewportClient, HComponentVisProxy* VisProxy, const FViewportClick& Click ) override;
+	/** Handle a click on a registered hit box. **/
+	virtual bool VisProxyHandleClick(FEditorViewportClient* InViewportClient, HComponentVisProxy* VisProxy, const FViewportClick& Click) override;
 
-        /** Called when editing is no longer being performed. **/
-        virtual void EndEditing() override;
+	virtual void EndEditing();
 
-        /** Returns location of a gizmo widget. **/
-        virtual bool GetWidgetLocation(
-            const FEditorViewportClient *, FVector & OutLocation) const override;
+	/** Returns location of a gizmo widget. **/
+	virtual bool GetWidgetLocation(
+		const FEditorViewportClient *, FVector & OutLocation) const override;
 
-        virtual bool GetCustomInputCoordinateSystem(
-            const FEditorViewportClient * ViewportClient, FMatrix & OutMatrix) const override;
+	virtual bool GetCustomInputCoordinateSystem(
+		const FEditorViewportClient * ViewportClient, FMatrix & OutMatrix) const override;
 
-        /** Handle input change. **/
-        virtual bool HandleInputDelta(
-            FEditorViewportClient *, FViewport *, FVector & DeltaTranslate,
-            FRotator & DeltaRotate, FVector & DeltaScale) override;
+	/** Handle input change. **/
+	virtual bool HandleInputDelta(
+		FEditorViewportClient *, FViewport *, FVector & DeltaTranslate,
+		FRotator & DeltaRotate, FVector & DeltaScale) override;
 
-        virtual bool HandleInputKey( FEditorViewportClient* ViewportClient, FViewport* Viewport, FKey Key, EInputEvent Event ) override;
+	virtual bool HandleInputKey(FEditorViewportClient* ViewportClient, FViewport* Viewport, FKey Key, EInputEvent Event) override;
 
-    protected:
-        /** Visualizer actions. **/
-        TSharedPtr< FUICommandList > VisualizerActions;
+	void SetEditedComponent(UHoudiniHandleComponent* InComponent) { EditedComponent = InComponent; };
+	void ClearEditedComponent() { EditedComponent = nullptr; };
 
-        /** Houdini component which is being edited. **/
-        UHoudiniHandleComponent * EditedComponent;
 
-        /** Is set to true if we are editing. **/
-        uint32 bEditing : 1;
-        uint32 bAllowTranslate : 1;
-        uint32 bAllowRotation : 1;
-        uint32 bAllowScale : 1;
+protected:
+	/** Visualizer actions. **/
+	TSharedPtr< FUICommandList > VisualizerActions;
+
+	/** Houdini component which is being edited. **/
+	UHoudiniHandleComponent* EditedComponent;
+
+	/** Is set to true if we are editing. **/
+	uint32 bEditing : 1;
+	uint32 bAllowTranslate : 1;
+	uint32 bAllowRotation : 1;
+	uint32 bAllowScale : 1;
 };

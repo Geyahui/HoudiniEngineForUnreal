@@ -1,198 +1,200 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
-* Produced by:
-*      Mykola Konyk
-*      Side Effects Software Inc
-*      123 Front Street West, Suite 1401
-*      Toronto, Ontario
-*      Canada   M5J 2M2
-*      416-504-9876
-*
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "HoudiniAsset.h"
+#include "HoudiniPluginSerializationVersion.h"
 
-#include "HoudiniApi.h"
-#include "HoudiniEngineRuntimePrivatePCH.h"
 #include "Misc/Paths.h"
-#include "HoudiniEngineUtils.h"
+#include "HAL/UnrealMemory.h"
 
-const uint32
-UHoudiniAsset::PersistenceFormatVersion = 2u;
-
-UHoudiniAsset::UHoudiniAsset( const FObjectInitializer & ObjectInitializer )
-    : Super( ObjectInitializer )
-    , AssetFileName( TEXT( "" ) )
-    , AssetBytes( nullptr )
-    , AssetBytesCount( 0 )
-    , FileFormatVersion( UHoudiniAsset::PersistenceFormatVersion )
-    , HoudiniAssetFlagsPacked ( 0u )
+UHoudiniAsset::UHoudiniAsset(const FObjectInitializer & ObjectInitializer)
+	: Super(ObjectInitializer)
+	, AssetFileName(TEXT(""))
+	, AssetBytesCount(0)	
+	, bAssetLimitedCommercial(false)
+	, bAssetNonCommercial(false)
+	, bAssetExpanded(false)
 {}
 
 void
-UHoudiniAsset::CreateAsset( const uint8 * BufferStart, const uint8 * BufferEnd, const FString & InFileName )
+UHoudiniAsset::CreateAsset(const uint8 * BufferStart, const uint8 * BufferEnd, const FString & InFileName)
 {
-    AssetFileName = InFileName;
+	AssetFileName = InFileName;
 
-    // Calculate buffer size.
-    AssetBytesCount = BufferEnd - BufferStart;
+	// Calculate buffer size.
+	AssetBytesCount = BufferEnd - BufferStart;
 
-    if ( AssetBytesCount )
-    {
-        // Allocate buffer to store OTL raw data.
-        AssetBytes = static_cast< uint8 * >( FMemory::Malloc( AssetBytesCount ) );
+	if (AssetBytesCount)
+	{
+		// Allocate buffer to store the raw data.
+		AssetBytes.SetNumUninitialized(AssetBytesCount);
+		// Copy data into the newly allocated buffer.
+		FMemory::Memcpy(AssetBytes.GetData(), BufferStart, AssetBytesCount);
+	}
 
-        if ( AssetBytes )
-        {
-            // Copy data into a newly allocated buffer.
-            FMemory::Memcpy( AssetBytes, BufferStart, AssetBytesCount );
-        }
-    }
+	FString FileExtension = FPaths::GetExtension(InFileName);
 
-    FString FileExtension = FPaths::GetExtension( InFileName );
+	// Expanded HDAs are imported via a "houdini.hdalibrary" file inside the .hda directory
+	// Identify them first, then update the file path to point to the .hda dir
+	if (FileExtension.Equals(TEXT("hdalibrary"), ESearchCase::IgnoreCase))
+	{
+		bAssetExpanded = true;
 
-    if ( FileExtension.Equals( TEXT( "hdalc" ), ESearchCase::IgnoreCase ) ||
-        FileExtension.Equals( TEXT( "otlc" ), ESearchCase::IgnoreCase ) )
-    {
-        bAssetLimitedCommercial = true;
-    }
-    else if ( FileExtension.Equals( TEXT( "hdanc" ), ESearchCase::IgnoreCase ) ||
-        FileExtension.Equals( TEXT( "otlnc" ), ESearchCase::IgnoreCase ) )
-    {
-        bAssetNonCommercial = true;
-    }
-}
-
-const uint8 *
-UHoudiniAsset::GetAssetBytes() const
-{
-    return AssetBytes;
-}
-
-const FString &
-UHoudiniAsset::GetAssetFileName() const
-{
-    return AssetFileName;
-}
-
-uint32
-UHoudiniAsset::GetAssetBytesCount() const
-{
-    return AssetBytesCount;
-}
-
-bool
-UHoudiniAsset::IsPreviewHoudiniLogo() const
-{
-    return bPreviewHoudiniLogo;
+		// Use the parent ".hda" directory as the filename
+		AssetFileName = FPaths::GetPath(AssetFileName);
+		FileExtension = FPaths::GetExtension(AssetFileName);
+	}
+	
+	if (FileExtension.Equals(TEXT("hdalc"), ESearchCase::IgnoreCase)
+		|| FileExtension.Equals(TEXT("otlc"), ESearchCase::IgnoreCase))
+	{
+		// Check if the HDA is limited (Indie) ...
+		bAssetLimitedCommercial = true;
+	}
+	else if (FileExtension.Equals(TEXT("hdanc"), ESearchCase::IgnoreCase)
+		|| FileExtension.Equals(TEXT("otlnc"), ESearchCase::IgnoreCase))
+	{
+		// ... or non commercial (Apprentice)
+		bAssetNonCommercial = true;
+	}
 }
 
 void
 UHoudiniAsset::FinishDestroy()
 {
-    // Release buffer which was used to store raw OTL data.
-    if ( AssetBytes )
-    {
-        FMemory::Free( AssetBytes );
-        AssetBytes = nullptr;
-        AssetBytesCount = 0;
-    }
+	// Release buffer which was used to store raw OTL data.
+	AssetBytes.Empty();
+	Super::FinishDestroy();
+}
 
-    Super::FinishDestroy();
+const uint8 *
+UHoudiniAsset::GetAssetBytes() const
+{
+	return AssetBytes.GetData();
+}
+
+const FString &
+UHoudiniAsset::GetAssetFileName() const
+{
+	return AssetFileName;
+}
+
+uint32
+UHoudiniAsset::GetAssetBytesCount() const
+{
+	return AssetBytesCount;
 }
 
 void
-UHoudiniAsset::Serialize( FArchive & Ar )
+UHoudiniAsset::Serialize(FArchive & Ar)
 {
-    Super::Serialize( Ar );
+	// Serializes our UProperties
+	Super::Serialize(Ar);
+	Ar.UsingCustomVersion(FHoudiniCustomSerializationVersion::GUID);
 
-    Ar.UsingCustomVersion( FHoudiniCustomSerializationVersion::GUID );
+	// Get the version
+	uint32 HoudiniAssetVersion = Ar.CustomVer(FHoudiniCustomSerializationVersion::GUID);
 
-    // Properties will get serialized.
-
-    // Serialize persistence format version.
-    Ar << FileFormatVersion;
-
-    Ar << AssetBytesCount;
-
-    if ( Ar.IsLoading() )
-    {
-        // If buffer was previously used, release it.
-        if ( AssetBytes )
-        {
-            FMemory::Free( AssetBytes );
-            AssetBytes = nullptr;
-        }
-
-        // Allocate sufficient space to read stored raw OTL data.
-        if ( AssetBytesCount )
-            AssetBytes = static_cast< uint8 * >( FMemory::Malloc( AssetBytesCount ) );
-    }
-
-    if ( AssetBytes && AssetBytesCount )
-        Ar.Serialize( AssetBytes, AssetBytesCount );
-
-    // Serialize flags.
-    Ar << HoudiniAssetFlagsPacked;
-
-    // Serialize asset file path.
-    Ar << AssetFileName;
+	// Only version 1 assets needs manual serialization
+	if ( HoudiniAssetVersion < VER_HOUDINI_PLUGIN_SERIALIZATION_VERSION_V2_BASE 
+		|| HoudiniAssetVersion > VER_HOUDINI_PLUGIN_SERIALIZATION_AUTOMATIC_VERSION )
+		return SerializeLegacy(Ar);
 }
 
 void
-UHoudiniAsset::GetAssetRegistryTags( TArray< FAssetRegistryTag > & OutTags ) const
+UHoudiniAsset::SerializeLegacy(FArchive & Ar)
 {
-    OutTags.Add( FAssetRegistryTag( "FileName", AssetFileName, FAssetRegistryTag::TT_Alphabetical ) );
-    OutTags.Add(
-        FAssetRegistryTag( "FileFormatVersion", FString::FromInt( FileFormatVersion ),
-        FAssetRegistryTag::TT_Numerical ) );
-    OutTags.Add( FAssetRegistryTag( "Bytes", FString::FromInt( AssetBytesCount ), FAssetRegistryTag::TT_Numerical ) );
+	uint32 FileFormatVersion;
+	Ar << FileFormatVersion;
 
-    FString AssetType = TEXT( "Full" );
+	Ar << AssetBytesCount;
+	if (Ar.IsLoading())
+	{
+		// Allocate sufficient space to read stored raw OTL data.
+		AssetBytes.SetNumUninitialized(AssetBytesCount);
+	}
 
-    if ( bAssetLimitedCommercial )
-        AssetType = TEXT( "Limited Commercial (LC)" );
-    else if( bAssetNonCommercial )
-        AssetType = TEXT( "Non Commercial (NC)" );
+	if (AssetBytesCount)
+		Ar.Serialize(AssetBytes.GetData(), AssetBytesCount);
 
-    OutTags.Add( FAssetRegistryTag( "Asset Type", AssetType, FAssetRegistryTag::TT_Alphabetical ) );
+	// Serialized flags.
+	union
+	{
+		struct
+		{
+			uint32 bLegacyPreviewHoudiniLogo : 1;
+			uint32 bLegacyAssetLimitedCommercial : 1;
+			uint32 bLegacyAssetNonCommercial : 1;
+		};
+		uint32 HoudiniAssetFlagsPacked;
+	};
+	Ar << HoudiniAssetFlagsPacked;
 
-    Super::GetAssetRegistryTags( OutTags );
+	bAssetNonCommercial = bLegacyAssetNonCommercial;
+	bAssetLimitedCommercial = bLegacyAssetLimitedCommercial;
+
+	// Serialize asset file path.
+	Ar << AssetFileName;
+}
+
+void
+UHoudiniAsset::GetAssetRegistryTags(TArray< FAssetRegistryTag > & OutTags) const
+{
+	// Filename
+	OutTags.Add(FAssetRegistryTag("FileName", AssetFileName, FAssetRegistryTag::TT_Alphabetical));
+
+	// Bytes
+	OutTags.Add(FAssetRegistryTag("Bytes", FString::FromInt(AssetBytesCount), FAssetRegistryTag::TT_Numerical));
+
+	// Indicate if the Asset is Full / Indie / NC
+	FString AssetType = TEXT("Full");
+	if (bAssetLimitedCommercial)
+		AssetType = TEXT("Limited Commercial (LC)");
+	else if (bAssetNonCommercial)
+		AssetType = TEXT("Non Commercial (NC)");
+
+	OutTags.Add(FAssetRegistryTag("Asset Type", AssetType, FAssetRegistryTag::TT_Alphabetical));
+
+	Super::GetAssetRegistryTags(OutTags);
 }
 
 bool
 UHoudiniAsset::IsAssetLimitedCommercial() const
 {
-    return bAssetLimitedCommercial;
+	return bAssetLimitedCommercial;
 }
 
 bool
 UHoudiniAsset::IsAssetNonCommercial() const
 {
-    return bAssetNonCommercial;
+	return bAssetNonCommercial;
 }
 
-bool 
-UHoudiniAsset::GetAssetNames( HAPI_AssetLibraryId & AssetLibraryId, TArray< HAPI_StringHandle > & AssetNames )
+bool
+UHoudiniAsset::IsExpandedHDA() const
 {
-    return FHoudiniEngineUtils::GetAssetNames( this, AssetLibraryId, AssetNames );
+	return bAssetExpanded;
 }

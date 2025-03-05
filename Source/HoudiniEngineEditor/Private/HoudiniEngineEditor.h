@@ -1,407 +1,350 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once
+
 #include "IHoudiniEngineEditor.h"
-#include "ComponentVisualizer.h"
-#include "Styling/SlateStyle.h"
-#include "EditorUndoClient.h"
-#include "Framework/MultiBox/MultiBoxExtender.h"
-#include "HoudiniRuntimeSettings.h"
-#include "Framework/Commands/Commands.h"
-#include "HAPI.h"
+#include "HoudiniInputTypes.h"
+
+#include "CoreTypes.h"
+#include "Templates/SharedPointer.h"
+#include "Framework/Commands/UICommandList.h"
+#include "Brushes/SlateDynamicImageBrush.h"
 
 
+class FExtender;
 class IAssetTools;
 class IAssetTypeActions;
 class IComponentAssetBroker;
-class UHoudiniAssetComponent;
+class FComponentVisualizer;
 class FMenuBuilder;
+class FMenuBarBuilder;
+class FUICommandList;
+class AActor;
 
-struct FSlateBrush;
-struct FHoudiniToolDescription;
+struct IConsoleCommand;
+struct FSlateDynamicImageBrush;
 
-struct FHoudiniTool
+enum class EHoudiniCurveType : int8;
+enum class EHoudiniCurveMethod: int8;
+enum class EHoudiniLandscapeOutputBakeType: uint8;
+enum class EHoudiniEngineBakeOption : uint8;
+enum class EPDGBakeSelectionOption : uint8;
+enum class EPDGBakePackageReplaceModeOption : uint8;
+enum class EPackageReplaceMode : int8;
+
+class HOUDINIENGINEEDITOR_API FHoudiniEngineEditor : public IHoudiniEngineEditor
 {
-    FHoudiniTool()
-        : HoudiniAsset( nullptr)
-        , Name()
-        , ToolTipText()
-        , Icon()
-        , HelpURL()
-        , Type(EHoudiniToolType::HTOOLTYPE_OPERATOR_SINGLE)
-        , DefaultTool(false)
-        , SelectionType(EHoudiniToolSelectionType::HTOOL_SELECTION_ALL)
-        , SourceAssetPath()
-        , ToolDirectory()
-        , JSONFile()
-    {
-    }
+	public:
+		FHoudiniEngineEditor();
 
-    FHoudiniTool(
-        TSoftObjectPtr < class UHoudiniAsset > InHoudiniAsset, const FText& InName,
-        const EHoudiniToolType& InType, const EHoudiniToolSelectionType& InSelType,
-        const FText& InToolTipText, const FSlateBrush* InIcon, const FString& InHelpURL,
-        const bool& isDefault, const FFilePath& InAssetPath, const FHoudiniToolDirectory& InToolDirectory,
-        const FString& InJSONFile )
-        : HoudiniAsset( InHoudiniAsset )
-        , Name( InName )
-        , ToolTipText( InToolTipText )
-        , Icon( InIcon )
-        , HelpURL( InHelpURL )
-        , Type( InType )
-        , DefaultTool( isDefault )
-        , SelectionType( InSelType )
-        , SourceAssetPath( InAssetPath )
-        , ToolDirectory( InToolDirectory )
-        , JSONFile( InJSONFile )
-    {
-    }
+		// IModuleInterface methods.
+		virtual void StartupModule() override;
+		virtual void ShutdownModule() override;
 
-    /** The Houdini Asset used by the tool **/ 
-    TSoftObjectPtr < class UHoudiniAsset > HoudiniAsset;
+		// IHoudiniEngineEditor methods
+		virtual void RegisterComponentVisualizers() override;
+		virtual void UnregisterComponentVisualizers() override;
+		virtual void RegisterDetails() override;
+		virtual void UnregisterDetails() override;
+		virtual void RegisterAssetTypeActions() override;
+		virtual void UnregisterAssetTypeActions() override;
+		virtual void RegisterAssetBrokers() override;
+		virtual void UnregisterAssetBrokers() override;
+		virtual void RegisterActorFactories() override;
+		virtual void ExtendMenu() override;
+		virtual void RegisterForUndo() override;
+		virtual void UnregisterForUndo() override;
+		virtual void RegisterPlacementModeExtensions() override;
+		virtual void UnregisterPlacementModeExtensions() override;
 
-    /** The name to be displayed */
-    FText Name;
+		// Return singleton instance of Houdini Engine Editor, used internally.
+		static FHoudiniEngineEditor & Get();
 
-    /** The name to be displayed */
-    FText ToolTipText;
+		// Return true if singleton instance has been created.
+		static bool IsInitialized();
 
-    /** The icon to be displayed */
-    const FSlateBrush* Icon;
+		// Returns the plugin's directory
+		static FString GetHoudiniEnginePluginDir();
 
-    /** The help URL for this tool */
-    FString HelpURL;
+		// Initializes Widget resources
+		void InitializeWidgetResource();
 
-    /** The type of tool, this will change how the asset handles the current selection **/
-    EHoudiniToolType Type;
+		// Menu action to pause cooking for all Houdini Assets
+		void PauseAssetCooking();
 
-    /** Indicate this is one of the default tools **/
-    bool DefaultTool;
+		// Helper delegate used to determine if PauseAssetCooking can be executed.
+		bool CanPauseAssetCooking();
 
-    /** Indicate what the tool should consider for selection **/
-    EHoudiniToolSelectionType SelectionType;
+		// Helper delegate used to get the current state of PauseAssetCooking.
+		bool IsAssetCookingPaused();
 
-    /** Path to the Asset used **/
-    FFilePath SourceAssetPath;
+		// Returns a pointer to the input choice types
+		TArray<TSharedPtr<FString>>* GetInputTypeChoiceLabels() { return &InputTypeChoiceLabels; };
+		TArray<TSharedPtr<FString>>* GetBlueprintInputTypeChoiceLabels() { return &BlueprintInputTypeChoiceLabels; };
 
-    /** Directory containing the tool **/
-    FHoudiniToolDirectory ToolDirectory;
+		// Returns a pointer to the Houdini curve types
+		TArray<TSharedPtr<FString>>* GetHoudiniCurveTypeChoiceLabels() { return &HoudiniCurveTypeChoiceLabels; };
 
-    /** Name of the JSON containing the tool's description **/
-    FString JSONFile;
+		// Returns a pointer to the Houdini curve methods
+		TArray<TSharedPtr<FString>>* GetHoudiniCurveMethodChoiceLabels() { return &HoudiniCurveMethodChoiceLabels; };
 
-    /** Returns the file path to the JSOn file containing the tool's description **/
-    FString GetJSonFilePath() { return ToolDirectory.Path.Path / JSONFile; };
+		// Returns a pointer to the Houdini ramp parameter interpolation methods
+		TArray<TSharedPtr<FString>>* GetHoudiniParameterRampInterpolationMethodLabels() {return &HoudiniParameterRampInterpolationLabels;}
+
+		// Returns a pointer to the Houdini curve output export types
+		TArray<TSharedPtr<FString>>* GetHoudiniCurveOutputExportTypeLabels() { return &HoudiniCurveOutputExportTypeLabels; };
+
+		TArray<TSharedPtr<FString>>* GetHoudiniLandscapeOutputBakeOptionsLabels() { return &HoudiniLandscapeOutputBakeOptionLabels; };
+
+		// Returns a pointer to the Houdini Engine PDG Bake Type labels
+		TArray<TSharedPtr<FString>>* GetHoudiniEnginePDGBakeTypeOptionsLabels() { return &HoudiniEnginePDGBakeTypeOptionLabels; };
+
+		// Returns a pointer to the Houdini Engine Bake Type labels
+		TArray<TSharedPtr<FString>>* GetHoudiniEngineBakeTypeOptionsLabels() { return &HoudiniEngineBakeTypeOptionLabels; };
+
+		// Returns a pointer to the Houdini Engine PDG Bake Target labels
+		TArray<TSharedPtr<FString>>* GetHoudiniEnginePDGBakeSelectionOptionsLabels() { return &HoudiniEnginePDGBakeSelectionOptionLabels; };
+
+		// Returns a pointer to the Houdini Engine PDG Bake Package Replace Mode labels
+		TArray<TSharedPtr<FString>>* GetHoudiniEnginePDGBakePackageReplaceModeOptionsLabels() { return &HoudiniEnginePDGBakePackageReplaceModeOptionLabels; };
+
+		// Returns a shared Ptr to the Houdini logo
+		TSharedPtr<FSlateDynamicImageBrush> GetHoudiniLogoBrush() const { return HoudiniLogoBrush; };
+		TSharedPtr<FSlateDynamicImageBrush> GetHoudiniEngineLogoBrush() const { return HoudiniEngineLogoBrush; };
+
+		// Functions Return a shared Ptr to the Houdini Engine UI Icon
+		TSharedPtr<FSlateDynamicImageBrush> GetHoudiniEngineUIIconBrush() const { return HoudiniEngineUIIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush> GetHoudiniEngineUIRebuildIconBrush() const { return HoudiniEngineUIRebuildIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush> GetHoudiniEngineUIRecookIconBrush() const { return HoudiniEngineUIRecookIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush> GetHoudiniEngineUIResetParametersIconBrush() const { return HoudiniEngineUIResetParametersIconBrush; }
+
+		TSharedPtr<FSlateDynamicImageBrush>	GetHoudiniEngineUIBakeIconBrush() const { return HoudiniEngineUIBakeIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush>	GetHoudiniEngineUICookLogIconBrush() const { return HoudiniEngineUICookLogIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush> GetHoudiniEngineUIAssetHelpIconBrush() const { return HoudiniEngineUIAssetHelpIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush>	GetHoudiniEngineUIPDGIconBrush() const { return HoudiniEngineUIPDGIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush>	GetHoudiniEngineUIPDGCancelIconBrush() const { return HoudiniEngineUIPDGCancelIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush>	GetHoudiniEngineUIPDGDirtyAllIconBrush() const { return HoudiniEngineUIPDGDirtyAllIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush>	GetHoudiniEngineUIPDGDirtyNodeIconBrush() const { return HoudiniEngineUIPDGDirtyNodeIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush>	GetHoudiniEngineUIPDGPauseIconBrush() const { return HoudiniEngineUIPDGPauseIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush>	GetHoudiniEngineUIPDGResetIconBrush() const { return HoudiniEngineUIPDGResetIconBrush; }
+		TSharedPtr<FSlateDynamicImageBrush>	GetHoudiniEngineUIPDGRefreshIconBrush() const { return HoudiniEngineUIPDGRefreshIconBrush; }
+
+		// Returns a pointer to Unreal output curve types (for temporary)
+		TArray<TSharedPtr<FString>>* GetUnrealOutputCurveTypeLabels() { return &UnrealCurveOutputCurveTypeLabels; };
+
+		// returns string from Houdini Engine Bake Option
+		FString GetStringFromHoudiniEngineBakeOption(const EHoudiniEngineBakeOption & BakeOption);
+
+		// returns string from Houdini Engine PDG Bake Target Option
+		FString GetStringFromPDGBakeTargetOption(const EPDGBakeSelectionOption& BakeOption);
+
+		// returns string from PDG package replace mode option
+		FString GetStringFromPDGBakePackageReplaceModeOption(const EPDGBakePackageReplaceModeOption & InOption);
+	
+		// Return HoudiniEngineBakeOption from FString
+		const EHoudiniEngineBakeOption StringToHoudiniEngineBakeOption(const FString & InString);
+
+		// Return EPDGBakeSelectionOption from FString
+		const EPDGBakeSelectionOption StringToPDGBakeSelectionOption(const FString& InString);
+
+		// Return EPDGBakePackageReplaceModeOption from FString
+		const EPDGBakePackageReplaceModeOption StringToPDGBakePackageReplaceModeOption(const FString & InString);
+
+		// Convert EPDGBakePackageReplaceModeOption to EPackageReplaceMode
+		// TODO: perhaps EPackageReplaceMode can be moved to HoudiniEngineRuntime to avoid having both
+		// TODO: EPDGBakePackageReplaceModeOption and EPackageReplaceMode?
+		const EPackageReplaceMode PDGBakePackageReplaceModeToPackageReplaceMode(const EPDGBakePackageReplaceModeOption& InReplaceMode);
+
+		// Get the reference of the radio button folder circle point arrays reference
+		TArray<FVector2D> & GetHoudiniParameterRadioButtonPointsOuter() { return HoudiniParameterRadioButtonPointsOuter; };
+		TArray<FVector2D> & GetHoudiniParameterRadioButtonPointsInner() { return HoudiniParameterRadioButtonPointsInner; };
+
+		// Gets the PostSaveWorldOnceHandle
+		FDelegateHandle& GetOnPostSaveWorldOnceHandle() { return PostSaveWorldOnceHandle; }
+
+	protected:
+
+		// Binds the commands used by the menus
+		void BindMenuCommands();
+
+		// Register AssetType action. 
+		void RegisterAssetTypeAction(IAssetTools& AssetTools, TSharedRef< IAssetTypeActions > Action);
+
+		// Add menu extension for our module.
+		void AddHoudiniFileMenuExtension(FMenuBuilder& MenuBuilder);
+
+		// Add the Houdini Engine editor menu
+		void AddHoudiniEditorMenu(FMenuBarBuilder& MenuBarBuilder);
+
+		// Add menu extension for our module.
+		void AddHoudiniMainMenuExtension(FMenuBuilder & MenuBuilder);
+
+		// Adds the custom Houdini Engine commands to the world outliner context menu
+		void AddLevelViewportMenuExtender();
+
+		// Removes the custom Houdini Engine commands to the world outliner context menu
+		void RemoveLevelViewportMenuExtender();
+
+		// Returns all the custom Houdini Engine commands for the world outliner context menu
+		TSharedRef<FExtender> GetLevelViewportContextMenuExtender(
+			const TSharedRef<FUICommandList> CommandList, const TArray<AActor*> InActors);
+
+		// Register all console commands provided by this module
+		void RegisterConsoleCommands();
+
+		// Unregister all registered console commands provided by this module
+		void UnregisterConsoleCommands();
+
+		// Register for any FEditorDelegates that we are interested in, such as
+		// PreSaveWorld and PreBeginPIE, for HoudiniStaticMesh -> UStaticMesh builds
+		void RegisterEditorDelegates();
+
+		// Deregister editor delegates
+		void UnregisterEditorDelegates();
+
+		// Process the OnDeleteActorsBegin call received from FEditorDelegates.
+		// Check if any AHoudiniAssetActors with PDG links are selected for deletion. If so,
+		// check if these still have temporary outputs and give the user to option to skip
+		// deleting the ones with temporary output.
+		void HandleOnDeleteActorsBegin();
+
+		// Re-select AHoudiniAssetActors that were deselected (to avoid deletion) by HandleOnDeleteActorsBegin 
+		void HandleOnDeleteActorsEnd();
+
+	private:
+
+		// Singleton instance of Houdini Engine Editor.
+		static FHoudiniEngineEditor * HoudiniEngineEditorInstance;
+
+		// AssetType actions associated with Houdini asset.
+		TArray<TSharedPtr<IAssetTypeActions>> AssetTypeActions;
+
+		// Broker associated with Houdini asset.
+		TSharedPtr<IComponentAssetBroker> HoudiniAssetBroker;
+
+		// Widget resources: Input Type combo box labels
+		TArray<TSharedPtr<FString>> InputTypeChoiceLabels;
+		TArray<TSharedPtr<FString>> BlueprintInputTypeChoiceLabels;
+
+		// Widget resources: Houdini Curve Type combo box labels
+		TArray<TSharedPtr<FString>> HoudiniCurveTypeChoiceLabels;
+
+		// Widget resources: Houdini Curve Method combo box labels
+		TArray<TSharedPtr<FString>> HoudiniCurveMethodChoiceLabels;
+
+		// Widget resources: Houdini Ramp Interpolation method combo box labels
+		TArray<TSharedPtr<FString>> HoudiniParameterRampInterpolationLabels;
+
+		// Widget resources: Houdini Curve Output type labels
+		TArray<TSharedPtr<FString>> HoudiniCurveOutputExportTypeLabels;
+
+		// Widget resources: Unreal Curve type labels (for temporary, we need to figure out a way to access the output curve's info later)
+		TArray<TSharedPtr<FString>> UnrealCurveOutputCurveTypeLabels;
+
+		// Widget resources: Landscape output Bake type labels
+		TArray<TSharedPtr<FString>> HoudiniLandscapeOutputBakeOptionLabels;
+
+		// Widget resources: PDG Bake type labels
+		TArray<TSharedPtr<FString>> HoudiniEnginePDGBakeTypeOptionLabels;
+
+		// Widget resources: Bake type labels
+		TArray<TSharedPtr<FString>> HoudiniEngineBakeTypeOptionLabels;
+
+		// Widget resources: PDG Bake target labels
+		TArray<TSharedPtr<FString>> HoudiniEnginePDGBakeSelectionOptionLabels;
+
+		// Widget resources: PDG Bake package replace mode labels
+		TArray<TSharedPtr<FString>> HoudiniEnginePDGBakePackageReplaceModeOptionLabels;
+
+		// List of UI commands used by the various menus
+		TSharedPtr<class FUICommandList> HEngineCommands;
+
+		// Houdini logo brush.
+		TSharedPtr<FSlateDynamicImageBrush> HoudiniLogoBrush;
+		// Houdini Engine logo brush
+		TSharedPtr<FSlateDynamicImageBrush> HoudiniEngineLogoBrush;
+
+		// houdini Engine UI Brushes
+		TSharedPtr<FSlateDynamicImageBrush> HoudiniEngineUIIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush> HoudiniEngineUIRebuildIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush> HoudiniEngineUIRecookIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush> HoudiniEngineUIResetParametersIconBrush;
+
+		TSharedPtr<FSlateDynamicImageBrush>	HoudiniEngineUIBakeIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush>	HoudiniEngineUICookLogIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush> HoudiniEngineUIAssetHelpIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush>	HoudiniEngineUIPDGIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush>	HoudiniEngineUIPDGCancelIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush>	HoudiniEngineUIPDGDirtyAllIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush>	HoudiniEngineUIPDGDirtyNodeIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush>	HoudiniEngineUIPDGPauseIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush>	HoudiniEngineUIPDGResetIconBrush;
+		TSharedPtr<FSlateDynamicImageBrush>	HoudiniEngineUIPDGRefreshIconBrush;
+
+		// The extender to pass to the level editor to extend it's File menu.
+		TSharedPtr<FExtender> MainMenuExtender;
+
+		// The extender to pass to the level editor to extend it's Main menu.
+		//TSharedPtr<FExtender> FileMenuExtender;
+
+		// DelegateHandle for the viewport's context menu extender
+		FDelegateHandle LevelViewportExtenderHandle;
+
+		// SplineComponentVisualizer
+		TSharedPtr<FComponentVisualizer> SplineComponentVisualizer;
+
+		TSharedPtr<FComponentVisualizer> HandleComponentVisualizer;
+
+		// Array of HoudiniEngine console commands
+		TArray<IConsoleCommand*> ConsoleCommands;
+
+		// Delegate handle for the PreSaveWorld editor delegate
+		FDelegateHandle PreSaveWorldEditorDelegateHandle;
+
+		// Delegate handle for the PostSaveWorld editor delegate: this
+		// is bound on PreSaveWorld with specific captures and then unbound
+		// by itself
+		FDelegateHandle PostSaveWorldOnceHandle;
+
+		// Delegate handle for the PreBeginPIE editor delegate
+		FDelegateHandle PreBeginPIEEditorDelegateHandle;
+
+		// Delegate handle for OnDeleteActorsBegin
+		FDelegateHandle OnDeleteActorsBegin;
+
+		// Delegate handle for OnDeleteActorsEnd
+		FDelegateHandle OnDeleteActorsEnd;
+
+		// List of actors that HandleOnDeleteActorsBegin marked to _not_ be deleted. This
+		// is used to re-select these actors in HandleOnDeleteActorsEnd.
+		TArray<AActor*> ActorsToReselectOnDeleteActorsEnd;
+
+		// Cache the points of radio button folder circle points to avoid huge amount of repeat computation.
+		// (Computing points are time consuming since it uses trigonometric functions)
+		TArray<FVector2D> HoudiniParameterRadioButtonPointsOuter;
+		TArray<FVector2D> HoudiniParameterRadioButtonPointsInner;
 };
-
-class FHoudiniEngineStyle
-{
-public:
-    static void Initialize();
-    static void Shutdown();
-    static TSharedPtr<class ISlateStyle> Get();
-    static FName GetStyleSetName();
-
-private:
-    //static FString InContent(const FString &RelativePath, const ANSICHAR *Extension);
-
-    static TSharedPtr<class FSlateStyleSet> StyleSet;
-};
-
-class FHoudiniEngineEditor : public IHoudiniEngineEditor, public FEditorUndoClient
-{
-    public:
-        FHoudiniEngineEditor();
-
-    /** IModuleInterface methods. **/
-    public:
-
-        virtual void StartupModule() override;
-        virtual void ShutdownModule() override;
-
-    /** IHoudiniEngineEditor methods. **/
-    public:
-
-        virtual void RegisterComponentVisualizers() override;
-        virtual void UnregisterComponentVisualizers() override;
-        virtual void RegisterDetails() override;
-        virtual void UnregisterDetails() override;
-        virtual void RegisterAssetTypeActions() override;
-        virtual void UnregisterAssetTypeActions() override;
-        virtual void RegisterAssetBrokers() override;
-        virtual void UnregisterAssetBrokers() override;
-        virtual void RegisterActorFactories() override;
-        virtual void ExtendMenu() override;
-        virtual void RegisterForUndo() override;
-        virtual void UnregisterForUndo() override;
-        virtual void RegisterPlacementModeExtensions() override;
-        virtual void UnregisterPlacementModeExtensions() override;
-
-    /** FEditorUndoClient methods. **/
-    public:
-
-        virtual bool MatchesContext(const FTransactionContext& InContext, const TArray<TPair<UObject*, FTransactionObjectEvent>>& TransactionObjects) const override;
-        virtual void PostUndo( bool bSuccess ) override;
-        virtual void PostRedo( bool bSuccess ) override;
-
-    public:
-
-        /** App identifier string. **/
-        static const FName HoudiniEngineEditorAppIdentifier;
-
-        /** Selected Houdini Tool Dir **/
-        int32 CurrentHoudiniToolDirIndex;
-
-    public:
-
-        /** Return singleton instance of Houdini Engine Editor, used internally. **/
-        static FHoudiniEngineEditor & Get();
-
-        /** Return true if singleton instance has been created. **/
-        static bool IsInitialized();
-
-    public:
-
-        /** Menu action called to save a HIP file. **/
-        void SaveHIPFile();
-
-        /** Helper delegate used to determine if HIP file save can be executed. **/
-        bool CanSaveHIPFile() const;
-
-        /** Menu action called to report a bug. **/
-        void ReportBug();
-
-        /** Helper delegate used to determine if report a bug can be executed. **/
-        bool CanReportBug() const;
-
-        /** Menu action called to open the current scene in Houdini. **/
-        void OpenInHoudini();
-
-        /** Helper delegate used to determine if open in Houdini can be executed. **/
-        bool CanOpenInHoudini() const; 
-
-        /** Menu action called to clean up all unused files in the cook temp folder **/
-        void CleanUpTempFolder();
-
-        /** Helper delegate used to determine if Clean up temp can be executed. **/
-        bool CanCleanUpTempFolder() const;
-
-        /** Menu action to bake/replace all current Houdini Assets with blueprints **/
-        void BakeAllAssets();
-
-        /** Helper function for baking/replacing the current select Houdini Assets with blueprints **/
-        void BakeSelection();
-
-        /** Helper delegate used to determine if BakeAllAssets can be executed. **/
-        bool CanBakeAllAssets() const;
-
-        /** Helper function for restarting the current Houdini Engine session. **/
-        void RestartSession();
-
-        /** Helper delegate used to determine if RestartSession can be executed. **/
-        bool CanRestartSession() const;
-
-        /** Returns the plugin's directory **/
-        static FString GetHoudiniEnginePluginDir();
-
-        /** Returns the Default Icon to be used by Houdini Tools**/
-        static FString GetDefaultHoudiniToolIcon();
-
-        /** Returns the HoudiniTools currently available for the shelf **/
-        const TArray< TSharedPtr<FHoudiniTool> >& GetHoudiniTools() { return HoudiniTools; }
-
-        /** Reads the Houdini Tool Description from a JSON file **/
-        bool GetHoudiniToolDescriptionFromJSON(
-            const FString& JsonFilePath,
-            FString& OutName, EHoudiniToolType& OutType, EHoudiniToolSelectionType& OutSelectionType,
-            FString& OutToolTip, FFilePath& OutIconPath, FFilePath& OutAssetPath, FString& OutHelpURL );
-
-        bool WriteJSONFromHoudiniTool(const FHoudiniTool& Tool);
-
-        /** Returns the HoudiniTools array  **/
-        TArray< TSharedPtr<FHoudiniTool> >* GetHoudiniToolsForWrite() { return &HoudiniTools; }
-
-        /** Menu action to pause cooking for all Houdini Assets  **/
-        void PauseAssetCooking();
-
-        /** Helper delegate used to determine if PauseAssetCooking can be executed. **/
-        bool CanPauseAssetCooking();
-
-        /** Helper delegate used to get the current state of PauseAssetCooking. **/
-        bool IsAssetCookingPaused();
-
-        /** Helper function for recooking all assets in the current level **/
-        void RecookAllAssets();
-
-        /** Helper function for rebuilding all assets in the current level **/
-        void RebuildAllAssets();
-
-        /** Helper function for recooking selected assets **/
-        void RecookSelection();
-
-        /** Helper function for rebuilding selected assets **/
-        void RebuildSelection();
-
-        /** Helper function for rebuilding selected assets **/
-        void RecentreSelection();
-
-        /** Helper function for accessing the current CB selection **/
-        static int32 GetContentBrowserSelection( TArray< UObject* >& ContentBrowserSelection );
-
-        /** Helper function for accessing the current world selection **/
-        static int32 GetWorldSelection( TArray< UObject* >& WorldSelection, bool bHoudiniAssetActorsOnly = false );
-
-        /** Helper function for retrieving an HoudiniTool in the Editor list **/
-        bool FindHoudiniTool( const FHoudiniTool& Tool, int32& FoundIndex, bool& IsDefault );
-
-        /** Helper function for retrieving an HoudiniTool in the Houdini Runtime Settings list **/
-        bool FindHoudiniToolInHoudiniSettings( const FHoudiniTool& Tool, int32& FoundIndex );
-
-        /** Rebuild the editor's Houdini Tool list **/
-        void UpdateHoudiniToolList(int32 SelectedDir = -1);
-
-        /** Rebuild the editor's Houdini Tool list for a directory **/
-        void UpdateHoudiniToolList(const FHoudiniToolDirectory& HoudiniToolsDirectory, const bool& isDefault );
-
-        /** Return all the directories where we should look for houdini tools**/
-        void GetAllHoudiniToolDirectories(TArray<FHoudiniToolDirectory>& HoudiniToolsDirectoryArray) const;
-
-        /** Return the directories where we should look for houdini tools**/
-        void GetHoudiniToolDirectories(const int32& SelectedIndex, TArray<FHoudiniToolDirectory>& HoudiniToolsDirectoryArray) const;
-
-    protected:
-
-        /** Register AssetType action. **/
-        void RegisterAssetTypeAction( IAssetTools & AssetTools, TSharedRef< IAssetTypeActions > Action );
-
-        /** Binds the menu extension's UICommands to their corresponding functions **/
-        void BindMenuCommands();
-
-        /** Add menu extension for our module. **/
-        void AddHoudiniMenuExtension( FMenuBuilder & MenuBuilder );
-
-        /** Add the default Houdini Tools to the Houdini Engine Shelft tool **/
-        void AddDefaultHoudiniToolToArray( TArray< FHoudiniToolDescription >& ToolArray );
-
-        /** Adds the custom Houdini Engine console commands **/
-        void RegisterConsoleCommands();
-
-        /** Adds the custom Houdini Engine commands to the world outliner context menu **/
-        void AddLevelViewportMenuExtender();
-
-        /** Removes the custom Houdini Engine commands from the world outliner context menu **/
-        void RemoveLevelViewportMenuExtender();
-
-        /** Return all the custom Houdini Engine commands for the world outliner context menu **/
-        TSharedRef<FExtender> GetLevelViewportContextMenuExtender(
-            const TSharedRef<FUICommandList> CommandList, const TArray<AActor*> InActors );
-
-    private:
-
-        /** Singleton instance of Houdini Engine Editor. **/
-        static FHoudiniEngineEditor * HoudiniEngineEditorInstance;
-
-    private:
-
-        /** AssetType actions associated with Houdini asset. **/
-        TArray< TSharedPtr< IAssetTypeActions > > AssetTypeActions;
-
-        /** Visualizer for our spline component. **/
-        TSharedPtr< FComponentVisualizer > HandleComponentVisualizer;
-
-        /** Visualizer for our spline component. **/
-        TSharedPtr< FComponentVisualizer > SplineComponentVisualizer;
-
-        /** Broker associated with Houdini asset. **/
-        TSharedPtr< IComponentAssetBroker > HoudiniAssetBroker;
-
-        /** The extender to pass to the level editor to extend it's window menu. **/
-        TSharedPtr< FExtender > MainMenuExtender;
-
-        /** Stored last used Houdini component which was involved in undo. **/
-        mutable UHoudiniAssetComponent * LastHoudiniAssetComponentUndoObject;
-
-        TArray< TSharedPtr<FHoudiniTool> > HoudiniTools;
-
-        TSharedPtr<class FUICommandList> HEngineCommands;
-
-        FDelegateHandle LevelViewportExtenderHandle;
-};
-
-
-/**
-* Class containing commands for Houdini Engine actions
-*/
-class FHoudiniEngineCommands : public TCommands<FHoudiniEngineCommands>
-{
-public:
-    FHoudiniEngineCommands()
-        : TCommands<FHoudiniEngineCommands>
-        (
-            TEXT("HoudiniEngine"), // Context name for fast lookup
-            NSLOCTEXT("Contexts", "HoudiniEngine", "Houdini Engine Plugin"), // Localized context name for displaying
-            NAME_None, // Parent context name. 
-            FHoudiniEngineStyle::GetStyleSetName() // Icon Style Set
-        )
-    {
-    }
-
-    // TCommand<> interface
-    virtual void RegisterCommands() override;
-
-    /** Menu action called to save a HIP file. **/
-    TSharedPtr<FUICommandInfo> SaveHIPFile;
-
-    /** Menu action called to report a bug. **/
-    TSharedPtr<FUICommandInfo> ReportBug;
-
-    /** Menu action called to open the current scene in Houdini. **/
-    TSharedPtr<FUICommandInfo> OpenInHoudini;
-
-    /** Menu action called to clean up all unused files in the cook temp folder **/
-    TSharedPtr<FUICommandInfo> CleanUpTempFolder;
-
-    /** Menu action to bake/replace all current Houdini Assets with blueprints **/
-    TSharedPtr<FUICommandInfo> BakeAllAssets;
-
-    /** Menu action to pause cooking for all Houdini Assets  **/
-    TSharedPtr<FUICommandInfo> PauseAssetCooking;
-
-    /** UI Action to recook the current world selection  **/
-    TSharedPtr<FUICommandInfo> CookSelec;
-
-    /** UI Action to rebuild the current world selection  **/
-    TSharedPtr<FUICommandInfo> RebuildSelec;
-
-    /** UI Action to bake and replace the current world selection  **/
-    TSharedPtr<FUICommandInfo> BakeSelec;
-
-    /** UI Action to restart the current Houdini Engine Session  **/
-    TSharedPtr<FUICommandInfo> RestartSession;
-
-    /** UI Action to recentre the current selection  **/
-    TSharedPtr<FUICommandInfo> RecentreSelec;
-
-};
-

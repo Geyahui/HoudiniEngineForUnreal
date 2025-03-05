@@ -1,212 +1,135 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
-* Produced by:
-*      Side Effects Software Inc
-*      123 Front Street West, Suite 1401
-*      Toronto, Ontario
-*      Canada   M5J 2M2
-*      416-504-9876
-*
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once
-
-#include "HoudiniGeoPartObject.h"
-#include "HoudiniAssetParameterChoice.h"
-#include "HoudiniAssetParameterFloat.h"
 
 #include "Components/SceneComponent.h"
 
 #include "HoudiniHandleComponent.generated.h"
 
+class UHoudiniParameter;
 
 UENUM()
-enum class EHoudiniHandleType : uint8
+enum class EXformParameter : uint8
 {
-    Xform,
-    Bounder,
-    Unsupported
+	TX, TY, TZ,
+	RX, RY, RZ,
+	SX, SY, SZ,
+	COUNT
 };
 
-UCLASS( config = Engine )
-class HOUDINIENGINERUNTIME_API UHoudiniHandleComponent : public USceneComponent
+UCLASS()
+class HOUDINIENGINERUNTIME_API UHoudiniHandleParameter : public UObject
 {
-    public:
+public:
+	GENERATED_UCLASS_BODY()
 
-        friend class UHoudiniAssetComponent;
+	UPROPERTY()
+	UHoudiniParameter* AssetParameter;
 
-#if WITH_EDITOR
+	UPROPERTY()
+	int32 TupleIndex;
 
-        friend class FHoudiniHandleComponentVisualizer;
+	
+	bool Bind(
+	    float & OutValue,
+		const char * CmpName,
+		int32 InTupleIdx,
+		const FString & HandleParmName,
+		UHoudiniParameter* Parameter);
 
-#endif // WITH_EDITOR
+	bool Bind(
+		TSharedPtr<FString> & OutValue,
+		const char * CmpName,
+		int32 InTupleIdx,
+		const FString & HandleParmName,
+		UHoudiniParameter* Parameter);
 
-        GENERATED_UCLASS_BODY()
+	TSharedPtr<FString> Get(TSharedPtr<FString> DefaultValue) const;
 
-        virtual ~UHoudiniHandleComponent();
+	UHoudiniHandleParameter & operator=(float Value);
 
-    /** UObject methods. **/
-    public:
+};
 
-        virtual void Serialize( FArchive & Ar ) override;
+UENUM()
+enum class EHoudiniHandleType : uint8 
+{
+	Xform,
+	Bounder,
+	Unsupported
+};
 
-#if WITH_EDITOR
+UCLASS(Blueprintable, BlueprintType, EditInlineNew, config = Engine, meta = (BlueprintSpawnableComponent))
+class HOUDINIENGINERUNTIME_API UHoudiniHandleComponent : public USceneComponent 
+{
+public:	
 
-        virtual void PostEditUndo() override;
+	friend class UHoudiniAssetComponent;
 
-#endif // WITH_EDITOR
+	friend class FHoudiniHandleComponentVisualizer;
 
-    public:
-        bool Construct(
-            HAPI_NodeId AssetId, int32 HandleIdx, const FString & HandleName,
-            const HAPI_HandleInfo &, const TMap< HAPI_ParmId, UHoudiniAssetParameter * > &, EHoudiniHandleType InHandleType);
+	GENERATED_UCLASS_BODY()
 
-        void ResolveDuplicatedParameters( const TMap< HAPI_ParmId, UHoudiniAssetParameter * > & );
+	virtual void Serialize(FArchive & Ar) override;
 
-        // Update HAPI transform handle parameters from the current ComponentToWorld Unreal transform
-        void UpdateTransformParameters();
+	FString GetHandleName() const { return HandleName; };
+	EHoudiniHandleType GetHandleType() const { return HandleType; };
 
-        static void AddReferencedObjects( UObject * InThis, FReferenceCollector & Collector );
+	void SetHandleName(const FString& InHandleName) { HandleName = InHandleName; };
+	void SetHandleType(const EHoudiniHandleType& InHandleType) { HandleType = InHandleType; };
 
-    private:
-        static HAPI_RSTOrder GetHapiRSTOrder( const TSharedPtr< FString > & );
-        static HAPI_XYZOrder GetHapiXYZOrder( const TSharedPtr< FString > & );
+	// Equality, consider two handle equals if they have the same name, type, tuple size and disabled status
+	bool operator==(const UHoudiniHandleComponent& other) const
+	{
+		return (HandleType == other.HandleType && HandleName.Equals(other.HandleName));
+	}
 
-        template < class ASSET_PARM >
-        class THandleParameter
-        {
-            public:
-                THandleParameter()
-                    : AssetParameter( nullptr )
-                    , TupleIdx( 0 )
-                {}
+	bool Matches(const UHoudiniHandleComponent& other) const { return (*this == other); };
 
-                void AddReferencedObject( FReferenceCollector & Collector, const UObject * ReferencingObject )
-                {
-                    if ( AssetParameter )
-                        Collector.AddReferencedObject( AssetParameter, ReferencingObject );
-                }
+	void InitializeHandleParameters();
 
-                friend FArchive & operator<<( FArchive & Ar, THandleParameter & InThis )
-                {
-                    Ar << InThis.AssetParameter;
-                    Ar << InThis.TupleIdx;
+	bool CheckHandleValid() const;
 
-                    return Ar;
-                }
+	FBox GetBounds() const;
 
-                template < typename VALUE >
-                bool Bind(
-                    VALUE & OutValue,
-                    const char * CmpName,
-                    int32 InTupleIdx,
-                    const FString & HandleParmName,
-                    HAPI_ParmId AssetParamId,
-                    const TMap< HAPI_ParmId, UHoudiniAssetParameter * > & Parameters )
-                {
-                    if (HandleParmName != CmpName)
-                    {
-                        return false;
-                    }
+public:
+	UPROPERTY()
+	TArray<UHoudiniHandleParameter*> XformParms;
 
-                    UHoudiniAssetParameter * const * FoundAbstractParm = Parameters.Find(AssetParamId);
-                    if (!FoundAbstractParm)
-                    {
-                        return false;
-                    }
+	UPROPERTY()
+	UHoudiniHandleParameter* RSTParm;
 
-                    AssetParameter = Cast< ASSET_PARM >( *FoundAbstractParm );
-                    if ( AssetParameter )
-                    {
-                        // It is possible that the handle param is bound to a single tuple param.
-                        // Ignore the preset tuple index if that's the case or we'll crash.
-                        if ((*FoundAbstractParm)->GetTupleSize() <= InTupleIdx)
-                            InTupleIdx = 0;
+	UPROPERTY()
+	UHoudiniHandleParameter* RotOrderParm;
 
-                        auto Optional = AssetParameter->GetValue( InTupleIdx );
-                        if ( Optional.IsSet() )
-                        {
-                            TupleIdx = InTupleIdx;
-                            OutValue = static_cast< VALUE >( Optional.GetValue() );
-                            return true;
-                        }
-                    }
+private:
+	UPROPERTY()
+	EHoudiniHandleType HandleType;
 
-                    return false;
-                }
+	UPROPERTY()
+	FString HandleName;
 
-                void ResolveDuplicated( const TMap< HAPI_ParmId, UHoudiniAssetParameter * > & NewParameters )
-                {
-                    if ( AssetParameter )
-                    {
-                        if ( UHoudiniAssetParameter * const * FoundNewParameter = NewParameters.Find( AssetParameter->GetParmId() ) )
-                            AssetParameter = Cast< ASSET_PARM >( *FoundNewParameter );
-                        else
-                            AssetParameter = nullptr;
-                    }
-                }
-
-                template < typename VALUE >
-                VALUE Get( VALUE DefaulValue ) const
-                {
-                    if ( AssetParameter )
-                    {
-                        auto Optional = AssetParameter->GetValue( TupleIdx );
-                        if ( Optional.IsSet() )
-                            return static_cast< VALUE >( Optional.GetValue() );
-                    }
-
-                    return DefaulValue;
-                }
-
-                template < typename VALUE >
-                THandleParameter & operator=( VALUE Value )
-                {
-                    if ( AssetParameter )
-                        AssetParameter->SetValue( Value, TupleIdx );
-
-                    return *this;
-                }
-
-                ASSET_PARM * AssetParameter;
-                int32 TupleIdx;
-        };
-
-        struct EXformParameter
-        {
-            enum Type
-            {
-                TX, TY, TZ,
-                RX, RY, RZ,
-                SX, SY, SZ,
-                COUNT
-            };
-        };
-
-        typedef THandleParameter< UHoudiniAssetParameterFloat > FXformParameter;
-        FXformParameter XformParms[ EXformParameter::COUNT ];
-
-        THandleParameter< UHoudiniAssetParameterChoice > RSTParm;
-        THandleParameter< UHoudiniAssetParameterChoice > RotOrderParm;
-        UPROPERTY()
-        EHoudiniHandleType HandleType;
 };

@@ -1,200 +1,299 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
-* Produced by:
-*      Mykola Konyk
-*      Side Effects Software Inc
-*      123 Front Street West, Suite 1401
-*      Toronto, Ontario
-*      Canada   M5J 2M2
-*      416-504-9876
-*
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #pragma once
 
-#include "HoudiniGeoPartObject.h"
+#include "CoreMinimal.h"
+
+#include "HoudiniEngineCopyPropertiesInterface.h"
+#include "UObject/ObjectMacros.h"
 #include "Components/SceneComponent.h"
+#include "HoudiniGeoPartObject.h"
+
 #include "HoudiniSplineComponent.generated.h"
 
+class UHoudiniAssetComponent;
 
-namespace EHoudiniSplineComponentType
-{
-    enum Enum
-    {
-        Polygon,
-        Nurbs,
-        Bezier
-    };
-}
+enum class EHoudiniCurveType : int8;
 
-namespace EHoudiniSplineComponentMethod
-{
-    enum Enum
-    {
-        CVs,
-        Breakpoints,
-        Freehand
-    };
-}
+enum class EHoudiniCurveMethod : int8;
 
-UCLASS( config = Engine )
-class HOUDINIENGINERUNTIME_API UHoudiniSplineComponent : public USceneComponent
+class UHoudiniInputObject;
+
+UCLASS(Blueprintable, BlueprintType, EditInlineNew, config = Engine, meta = (BlueprintSpawnableComponent))
+class HOUDINIENGINERUNTIME_API UHoudiniSplineComponent : public USceneComponent, public IHoudiniEngineCopyPropertiesInterface
 {
-    public:
-        friend class UHoudiniAssetComponent;
+	GENERATED_UCLASS_BODY()
+
+	friend class UHoudiniSplineComponent_V1;
+
+	virtual ~UHoudiniSplineComponent();
+
+	virtual void Serialize(FArchive & Ar) override;
+
+	public:
+
+		void Construct(TArray<FVector>& InCurveDisplayPoints, int32 InsertedPoint = -1);
+
+		void CopyHoudiniData(const UHoudiniSplineComponent* OtherHoudiniSplineComponent);
+
+		void ResetCurvePoints();
+
+		void ResetDisplayPoints();
+
+		void AddCurvePoints(const TArray<FTransform>& Points);
+
+		void AddDisplayPoints(const TArray<FVector>& Points);
+
+		void AppendPoint(const FTransform& NewPoint);
+
+		void InsertPointAtIndex(const FTransform& NewPoint, const int32& Index);
+
+		void RemovePointAtIndex(const int32& Index);
+
+		void EditPointAtindex(const FTransform& NewPoint, const int32& Index);
+
+		// UHoudiniAssetComponent* GetParentHAC();
+
+		void MarkModified(const bool & InModified) { bHasChanged = InModified; };
+
+		// To set the offset of default position of houdini curve
+		void SetOffset(const float& Offset);
+
+		UE_DEPRECATED(4.25, "Use MarkChanged() instead")
+		// This component should not be aware of whether it is being referenced by any input
+		// or output objects.
+		void MarkInputObjectChanged();
+
+		bool HasChanged() const;
+
+		void MarkChanged(const bool& Changed);
+
+		FORCEINLINE
+		FString& GetHoudiniSplineName() { return HoudiniSplineName; }
+
+		FORCEINLINE
+		void SetHoudiniSplineName(const FString& NewName) { HoudiniSplineName = NewName; }
+
+		bool NeedsToTriggerUpdate() const;
+
+		void SetNeedsToTriggerUpdate(const bool& NeedsToTriggerUpdate);
+
+		// FORCEINLINE
+		// UHoudiniInputObject* GetInputObject() const { return InputObject; }
+
+		// FORCEINLINE
+		// void SetInputObject(UHoudiniInputObject* NewInputObject) { InputObject = NewInputObject; }
+
+		FORCEINLINE
+		EHoudiniCurveType GetCurveType() const { return CurveType; }
+
+		void SetCurveType(const EHoudiniCurveType& NewCurveType);
+
+		FORCEINLINE
+		EHoudiniCurveMethod GetCurveMethod() const { return CurveMethod; }
+
+		FORCEINLINE
+		void SetCurveMethod(const EHoudiniCurveMethod& NewCurveMethod) { CurveMethod = NewCurveMethod; }
+
+		FORCEINLINE
+		int32 GetCurvePointCount() const { return CurvePoints.Num(); }
+
+		FORCEINLINE
+		bool IsClosedCurve() const { return bClosed; }
+
+		FORCEINLINE
+		void SetClosedCurve(const bool& Closed) { bClosed = Closed; }
+
+		FORCEINLINE
+		bool IsReversed() const { return bReversed; }
+
+		void SetReversed(const bool& Reversed);
+
+		FORCEINLINE
+		bool IsInputCurve() const { return bIsInputCurve; }
+
+		FORCEINLINE
+		void SetIsInputCurve(const bool& bIsInput) { bIsInputCurve = bIsInput; }
+
+		FORCEINLINE
+		bool IsEditableOutputCurve() const { return bIsEditableOutputCurve; }
+		
+		FORCEINLINE
+		void SetIsEditableOutputCurve(const bool& bInIsEditable) { bIsEditableOutputCurve = bInIsEditable; };
+
+		FORCEINLINE
+		int32 GetNodeId() const { return NodeId; }
+
+		FORCEINLINE
+		void SetNodeId(const int32& NewNodeId) { NodeId = NewNodeId; }
+
+		FORCEINLINE
+		FString GetGeoPartName() const { return PartName; }
+
+		FORCEINLINE
+		bool IsHoudiniSplineVisible() const { return bIsHoudiniSplineVisible; }
+
+		FORCEINLINE
+		void SetHoudiniSplineVisible(bool Visible) { bIsHoudiniSplineVisible = Visible; }
+
+		FORCEINLINE
+		void SetGeoPartName(const FString & InPartName) { PartName = InPartName; }
+
+		virtual void OnUnregister() override;
+
+		virtual void OnComponentCreated() override;
+
+		virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
 
 #if WITH_EDITOR
+		virtual void PostEditUndo() override;
+		virtual void PostEditChangeProperty(FPropertyChangedEvent & PeopertyChangedEvent) override;
+#endif
 
-        friend class FHoudiniSplineComponentVisualizer;
+		virtual void PostLoad() override;
 
-#endif // WITH_EDITOR
+		virtual TStructOnScope<FActorComponentInstanceData> GetComponentInstanceData() const override;
+		void ApplyComponentInstanceData(struct FHoudiniSplineComponentInstanceData* ComponentInstanceData, const bool bPostUCS);
 
-        GENERATED_UCLASS_BODY()
+		virtual void CopyPropertiesFrom(UObject* FromObject) override;
 
-        virtual ~UHoudiniSplineComponent();
+	private:
 
-    /** UObject methods. **/
-    public:
+		void ReverseCurvePoints();
 
-        virtual void Serialize(FArchive& Ar) override;
+	public:
 
-#if WITH_EDITOR
+		UPROPERTY()
+		TArray<FTransform> CurvePoints;
 
-        virtual void PostEditUndo() override;
+		UPROPERTY()
+		TArray<FVector> DisplayPoints;
 
-#endif // WITH_EDITOR
+		UPROPERTY()
+		TArray<int32> DisplayPointIndexDivider;
 
-    public:
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Houdini Spline Properties")
+		FString HoudiniSplineName;
 
-        /** Construct spline from given information. Resets any existing state. **/
-        bool Construct(
-            const FHoudiniGeoPartObject & InHoudiniGeoPartObject,
-            const TArray< FTransform > & InCurvePoints,
-            const TArray< FVector > & InCurveDisplayPoints,
-            EHoudiniSplineComponentType::Enum InCurveType,
-            EHoudiniSplineComponentMethod::Enum InCurveMethod,
-            bool bInClosedCurve = false );
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Houdini Spline Properties")
+		bool bClosed;
 
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Houdini Spline Properties")
+		bool bReversed;
 
-        /** Construct spline from given information. Resets any existing state. **/
-        bool Construct(
-            const FHoudiniGeoPartObject & InHoudiniGeoPartObject,
-            const TArray< FVector > & InCurveDisplayPoints,
-            EHoudiniSplineComponentType::Enum InCurveType,
-            EHoudiniSplineComponentMethod::Enum InCurveMethod,
-            bool bInClosedCurve = false);
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Houdini Spline Properties")
+		bool bIsHoudiniSplineVisible;
 
-	void SetHoudiniGeoPartObject(const FHoudiniGeoPartObject& InHoudiniGeoPartObject);
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Houdini Spline Properties")
+		EHoudiniCurveType CurveType;
 
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Houdini Spline Properties")
+		EHoudiniCurveMethod CurveMethod;
 
-        /** Copies data from an another curve. Resets any existing state **/
-        bool CopyFrom( UHoudiniSplineComponent* InSplineComponent );
+		UPROPERTY()
+		bool bIsOutputCurve;
 
-        /** Return the type of this curve. **/
-        EHoudiniSplineComponentType::Enum GetCurveType() const;
+		UPROPERTY()
+		bool bCookOnCurveChanged;
 
-        /** Return method used by this curve. **/
-        EHoudiniSplineComponentMethod::Enum GetCurveMethod() const;
+#if WITH_EDITORONLY_DATA
+		UPROPERTY()
+		TArray<int32> EditedControlPointsIndexes;
 
-        /** Return true if this curve is closed. **/
-        bool IsClosedCurve() const;
+		UPROPERTY(NonTransactional)
+		bool bPostUndo;
+#endif
 
-        /** Return number of curve points. **/
-        int32 GetCurvePointCount() const;
+	protected:
+		/** Corresponding geo part object. **/
+		FHoudiniGeoPartObject HoudiniGeoPartObject;
+	
+	private:
+		UPROPERTY(Transient, DuplicateTransient)
+		bool bHasChanged;
 
-        /** Resets all points of this curve. **/
-        void ResetCurvePoints();
+		UPROPERTY(Transient, DuplicateTransient)
+		bool bNeedsToTriggerUpdate;
 
-        /** Reset display points of this curve. **/
-        void ResetCurveDisplayPoints();
+		// Whether this is a Houdini curve input
+		UPROPERTY()
+		bool bIsInputCurve;
 
-        /** Add a point to this curve. **/
-        void AddPoint( const FTransform & Point );
+		UPROPERTY()
+		bool bIsEditableOutputCurve;
 
-        /** Add points to this curve. **/
-        void AddPoints( const TArray< FTransform > & Points );
+		// UPROPERTY()
+		// UHoudiniInputObject * InputObject;
 
-        /** Add display points to this curve. **/
-        void AddDisplayPoints( const TArray< FVector > & Points );
+		// Corresponds to the Curve NodeId in Houdini
+		UPROPERTY(Transient, DuplicateTransient)
+		int32 NodeId;
 
-        /** Return true if this spline is a valid spline. **/
-        bool IsValidCurve() const;
+		UPROPERTY()
+		FString PartName;
+};
 
-        /** Update point at given index with new information. **/
-        void UpdatePoint( int32 PointIndex, const FTransform & Point );
+/** Used to store HoudiniAssetComponent data during BP reconstruction */
+USTRUCT()
+struct FHoudiniSplineComponentInstanceData : public FActorComponentInstanceData
+{
+	GENERATED_BODY()
+public:
 
-        /** Upload changed control points to HAPI. **/
-        void UploadControlPoints();
+	FHoudiniSplineComponentInstanceData();
+	FHoudiniSplineComponentInstanceData(const UHoudiniSplineComponent* SourceComponent);
+	
+	virtual ~FHoudiniSplineComponentInstanceData() = default;
 
-        /** Remove point at a given index. **/
-        void RemovePoint( int32 PointIndex );
+	virtual void ApplyToComponent(UActorComponent* Component, const ECacheApplyPhase CacheApplyPhase) override
+	{
+		Super::ApplyToComponent(Component, CacheApplyPhase);
+		CastChecked<UHoudiniSplineComponent>(Component)->ApplyComponentInstanceData(this, (CacheApplyPhase == ECacheApplyPhase::PostUserConstructionScript));
+	}
 
-        /** Add a point to this curve at given point index. **/
-        void AddPoint( int32 PointIndex, const FTransform & Point );
+	// Persist all the required properties for being able to recook the HoudiniAsset from its existing state.
+	/*UPROPERTY()
+	bool bHasChanged;
 
-        /** Return true if this is an input curve. **/
-        bool IsInputCurve() const;
+	UPROPERTY()
+	bool bNeedsToTriggerUpdate;*/
 
-        /** Returns true if this Spline component is Active **/
-        bool IsActive() const;
+	UPROPERTY()
+	TArray<FTransform> CurvePoints;
 
-        /** Assign input parameter to this spline, if it is an input curve. **/
-        void SetHoudiniAssetInput( class UHoudiniAssetInput * InHoudiniAssetInput );
+	UPROPERTY()
+	TArray<FVector> DisplayPoints;
 
-        /** Return curve points. **/
-        const TArray< FTransform > & GetCurvePoints() const;
+	UPROPERTY()
+	TArray<int32> DisplayPointIndexDivider;
 
-        /** Extract Positions from the Transform Array **/
-        void GetCurvePositions(TArray<FVector>& Positions) const;
-
-        /** Extract Rotations from the Transform Array **/
-        void GetCurveRotations(TArray<FQuat>& Roatations) const;
-
-        /** Extract Scales from the Transform Array **/
-        void GetCurveScales(TArray<FVector>& Scales) const;
-
-	/** Updates self and notify parent component **/
-	void UpdateHoudiniComponents();
-
-    protected:
-
-        /** Corresponding geo part object. **/
-        FHoudiniGeoPartObject HoudiniGeoPartObject;
-
-        /** List of points composing this curve. **/
-        TArray< FTransform > CurvePoints;
-
-        /** List of refined points used for drawing. **/
-        TArray< FVector > CurveDisplayPoints;
-
-        /** Corresponding asset input parameter if this is an input curve. **/
-        class UHoudiniAssetInput * HoudiniAssetInput;
-
-        /** Type of this curve. **/
-        EHoudiniSplineComponentType::Enum CurveType;
-
-        /** Method used for this curve. **/
-        EHoudiniSplineComponentMethod::Enum CurveMethod;
-
-        /** Whether this spline is closed. **/
-        bool bClosedCurve;
+#if WITH_EDITORONLY_DATA
+	UPROPERTY()
+	TArray<int32> EditedControlPointsIndexes;
+#endif
+	
 };

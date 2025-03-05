@@ -1,222 +1,79 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "HoudiniEngineEditor.h"
 
-#include "HoudiniApi.h"
 #include "HoudiniEngineEditorPrivatePCH.h"
-#include "HoudiniEngineUtils.h"
-#include "HoudiniAsset.h"
+
+#include "HoudiniEngineEditorUtils.h"
+#include "HoudiniEngineStyle.h"
+#include "HoudiniRuntimeSettings.h"
 #include "HoudiniEngine.h"
-#include "HoudiniAssetActor.h"
-#include "HoudiniAssetComponent.h"
-#include "HoudiniHandleComponentVisualizer.h"
-#include "HoudiniHandleComponent.h"
-#include "HoudiniSplineComponentVisualizer.h"
-#include "HoudiniSplineComponent.h"
-#include "HoudiniAssetComponentDetails.h"
-#include "HoudiniRuntimeSettingsDetails.h"
-#include "HoudiniAssetTypeActions.h"
+#include "HoudiniAsset.h"
 #include "HoudiniAssetBroker.h"
 #include "HoudiniAssetActorFactory.h"
-#include "HoudiniEngineBakeUtils.h"
+#include "HoudiniAssetActor.h"
+#include "HoudiniAssetComponent.h"
+#include "HoudiniAssetComponentDetails.h"
+#include "HoudiniInput.h"
+#include "HoudiniOutput.h"
+#include "HoudiniParameter.h"
+#include "HoudiniEngineUtils.h"
+#include "HoudiniEngineCommands.h"
+#include "HoudiniRuntimeSettingsDetails.h"
+#include "HoudiniSplineComponentVisualizer.h"
+#include "HoudiniHandleComponentVisualizer.h"
+#include "AssetTypeActions_HoudiniAsset.h"
+#include "HoudiniGeoPartObject.h"
+#include "HoudiniPDGAssetLink.h"
+#include "HoudiniPackageParams.h"
 
-#include "UnrealEdGlobals.h"
-#include "Editor/UnrealEdEngine.h"
-#include "Engine/ObjectLibrary.h"
-#include "EditorDirectories.h"
-#include "Styling/SlateStyleRegistry.h"
-#include "SHoudiniToolPalette.h"
-#include "IPlacementModeModule.h"
-#include "Framework/MultiBox/MultiBoxBuilder.h"
-#include "AssetRegistryModule.h"
-#include "Engine/Selection.h"
-#include "ContentBrowserModule.h"
-#include "IContentBrowserSingleton.h"
-#include "SlateOptMacros.h"
-#include "HAL/FileManager.h"
-#include "HAL/PlatformFilemanager.h"
-#include "Dom/JsonObject.h"
-#include "Misc/FileHelper.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
+#include "Modules/ModuleManager.h"
 #include "Interfaces/IPluginManager.h"
+#include "HAL/PlatformFilemanager.h"
+#include "Misc/MessageDialog.h"
+#include "Misc/Paths.h"
+#include "AssetRegistryModule.h"
+#include "PropertyEditorModule.h"
+#include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "LevelEditor.h"
+#include "Templates/SharedPointer.h"
+#include "Framework/Application/SlateApplication.h"
+#include "HAL/ConsoleManager.h"
+#include "Editor/UnrealEdEngine.h"
+#include "Editor.h"
+#include "UnrealEdGlobals.h"
+#include "Engine/Selection.h"
+#include "Widgets/Input/SCheckBox.h"
+#include "Logging/LogMacros.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
-#define IMAGE_BRUSH( RelativePath, ... ) FSlateImageBrush( StyleSet->RootToContentDir( RelativePath, TEXT(".png") ), __VA_ARGS__ )
-#define BOX_BRUSH( RelativePath, ... ) FSlateBoxBrush( StyleSet->RootToContentDir( RelativePath, TEXT(".png") ), __VA_ARGS__ )
-#define BORDER_BRUSH( RelativePath, ... ) FSlateBorderBrush( StyleSet->RootToContentDir( RelativePath, TEXT(".png") ), __VA_ARGS__ )
-#define TTF_FONT( RelativePath, ... ) FSlateFontInfo( StyleSet->RootToContentDir( RelativePath, TEXT(".ttf") ), __VA_ARGS__ )
-#define TTF_CORE_FONT( RelativePath, ... ) FSlateFontInfo( StyleSet->RootToCoreContentDir( RelativePath, TEXT(".ttf") ), __VA_ARGS__ )
-#define OTF_FONT( RelativePath, ... ) FSlateFontInfo( StyleSet->RootToContentDir( RelativePath, TEXT(".otf") ), __VA_ARGS__ )
-#define OTF_CORE_FONT( RelativePath, ... ) FSlateFontInfo( StyleSet->RootToCoreContentDir( RelativePath, TEXT(".otf") ), __VA_ARGS__ )
-
-TSharedPtr<FSlateStyleSet> FHoudiniEngineStyle::StyleSet = nullptr;
-
-TSharedPtr<class ISlateStyle>
-FHoudiniEngineStyle::Get()
-{
-    return StyleSet;
-}
-
-FName
-FHoudiniEngineStyle::GetStyleSetName()
-{
-    static FName HoudiniStyleName(TEXT("HoudiniEngineStyle"));
-    return HoudiniStyleName;
-}
-
-BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
-
-void
-FHoudiniEngineStyle::Initialize()
-{
-    // Only register the StyleSet once
-    if ( StyleSet.IsValid() )
-        return;
-
-    StyleSet = MakeShareable( new FSlateStyleSet( GetStyleSetName() ) );
-    StyleSet->SetContentRoot(FPaths::EngineContentDir() / TEXT("Editor/Slate"));
-    StyleSet->SetCoreContentRoot(FPaths::EngineContentDir() / TEXT("Slate"));
-    
-    // Note, these sizes are in Slate Units.
-    // Slate Units do NOT have to map to pixels.
-    const FVector2D Icon5x16(5.0f, 16.0f);
-    const FVector2D Icon8x4(8.0f, 4.0f);
-    const FVector2D Icon8x8(8.0f, 8.0f);
-    const FVector2D Icon10x10(10.0f, 10.0f);
-    const FVector2D Icon12x12(12.0f, 12.0f);
-    const FVector2D Icon12x16(12.0f, 16.0f);
-    const FVector2D Icon14x14(14.0f, 14.0f);
-    const FVector2D Icon16x16(16.0f, 16.0f);
-    const FVector2D Icon20x20(20.0f, 20.0f);
-    const FVector2D Icon22x22(22.0f, 22.0f);
-    const FVector2D Icon24x24(24.0f, 24.0f);
-    const FVector2D Icon25x25(25.0f, 25.0f);
-    const FVector2D Icon32x32(32.0f, 32.0f);
-    const FVector2D Icon40x40(40.0f, 40.0f);
-    const FVector2D Icon64x64(64.0f, 64.0f);
-    const FVector2D Icon36x24(36.0f, 24.0f);
-    const FVector2D Icon128x128(128.0f, 128.0f);
-
-    static FString IconsDir = FHoudiniEngineEditor::GetHoudiniEnginePluginDir() / TEXT("Content/Icons/");
-    StyleSet->Set(
-        "HoudiniEngine.HoudiniEngineLogo",
-        new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
-    StyleSet->Set(
-        "ClassIcon.HoudiniAssetActor",
-        new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
-    StyleSet->Set(
-        "HoudiniEngine.HoudiniEngineLogo40",
-        new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_40.png"), Icon40x40));
-
-    StyleSet->Set(
-        "ClassIcon.HoudiniAsset",
-        new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
-
-    StyleSet->Set(
-        "ClassThumbnail.HoudiniAsset",
-        new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_128.png"), Icon64x64));
-
-    //FSlateImageBrush* HoudiniLogo16 = new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16);
-    StyleSet->Set("HoudiniEngine.SaveHIPFile", new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
-    StyleSet->Set("HoudiniEngine.ReportBug", new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
-    StyleSet->Set("HoudiniEngine.OpenInHoudini", new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
-    StyleSet->Set("HoudiniEngine.CleanUpTempFolder", new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
-    StyleSet->Set("HoudiniEngine.BakeAllAssets", new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
-    StyleSet->Set("HoudiniEngine.PauseAssetCooking", new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
-    StyleSet->Set("HoudiniEngine.RestartSession", new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
-
-    // We need some colors from Editor Style & this is the only way to do this at the moment
-    const FSlateColor DefaultForeground = FEditorStyle::GetSlateColor("DefaultForeground");
-    const FSlateColor InvertedForeground = FEditorStyle::GetSlateColor("InvertedForeground");
-    const FSlateColor SelectorColor = FEditorStyle::GetSlateColor("SelectorColor");
-    const FSlateColor SelectionColor = FEditorStyle::GetSlateColor("SelectionColor");
-    const FSlateColor SelectionColor_Inactive = FEditorStyle::GetSlateColor("SelectionColor_Inactive");
-
-    const FTableRowStyle &NormalTableRowStyle = FEditorStyle::Get().GetWidgetStyle<FTableRowStyle>("TableView.Row");
-    StyleSet->Set(
-        "HoudiniEngine.TableRow", FTableRowStyle( NormalTableRowStyle)
-        .SetEvenRowBackgroundBrush( FSlateNoResource() )
-        .SetEvenRowBackgroundHoveredBrush( IMAGE_BRUSH( "Common/Selection", Icon8x8, FLinearColor( 1.0f, 1.0f, 1.0f, 0.1f ) ) )
-        .SetOddRowBackgroundBrush( FSlateNoResource() )
-        .SetOddRowBackgroundHoveredBrush( IMAGE_BRUSH( "Common/Selection", Icon8x8, FLinearColor( 1.0f, 1.0f, 1.0f, 0.1f ) ) )
-        .SetSelectorFocusedBrush( BORDER_BRUSH( "Common/Selector", FMargin( 4.f / 16.f ), SelectorColor ) )
-        .SetActiveBrush( IMAGE_BRUSH( "Common/Selection", Icon8x8, SelectionColor ) )
-        .SetActiveHoveredBrush( IMAGE_BRUSH( "Common/Selection", Icon8x8, SelectionColor ) )
-        .SetInactiveBrush( IMAGE_BRUSH( "Common/Selection", Icon8x8, SelectionColor_Inactive ) )
-        .SetInactiveHoveredBrush( IMAGE_BRUSH( "Common/Selection", Icon8x8, SelectionColor_Inactive ) )
-        .SetTextColor( DefaultForeground )
-        .SetSelectedTextColor( InvertedForeground )
-    );
-
-    // Normal Text
-    const FTextBlockStyle& NormalText = FEditorStyle::Get().GetWidgetStyle<FTextBlockStyle>("NormalText");
-    StyleSet->Set(
-        "HoudiniEngine.ThumbnailText", FTextBlockStyle(NormalText)
-        .SetFont(TTF_CORE_FONT("Fonts/Roboto-Regular", 9))
-        .SetColorAndOpacity(FSlateColor::UseForeground())
-        .SetShadowOffset(FVector2D::ZeroVector)
-        .SetShadowColorAndOpacity(FLinearColor::Black)
-        .SetHighlightColor(FLinearColor(0.02f, 0.3f, 0.0f))
-        .SetHighlightShape(BOX_BRUSH("Common/TextBlockHighlightShape", FMargin(3.f / 8.f)))
-    );
-
-    StyleSet->Set("HoudiniEngine.ThumbnailShadow", new BOX_BRUSH("ContentBrowser/ThumbnailShadow", FMargin(4.0f / 64.0f)));
-    StyleSet->Set("HoudiniEngine.ThumbnailBackground", new IMAGE_BRUSH("Common/ClassBackground_64x", FVector2D(64.f, 64.f), FLinearColor(0.75f, 0.75f, 0.75f, 1.0f)));    
-
-    // Register Slate style.
-    FSlateStyleRegistry::RegisterSlateStyle(*StyleSet.Get());
-};
-
-END_SLATE_FUNCTION_BUILD_OPTIMIZATION
-
-#undef IMAGE_BRUSH
-#undef BOX_BRUSH
-#undef BORDER_BRUSH
-#undef TTF_FONT
-#undef TTF_CORE_FONT
-#undef OTF_FONT
-#undef OTF_CORE_FONT
-
-void
-FHoudiniEngineStyle::Shutdown()
-{
-    if (StyleSet.IsValid())
-    {
-        FSlateStyleRegistry::UnRegisterSlateStyle(*StyleSet.Get());
-        ensure(StyleSet.IsUnique());
-        StyleSet.Reset();
-    }
-}
-
-
-const FName
-FHoudiniEngineEditor::HoudiniEngineEditorAppIdentifier = FName( TEXT( "HoudiniEngineEditorApp" ) );
-
-IMPLEMENT_MODULE( FHoudiniEngineEditor, HoudiniEngineEditor );
-DEFINE_LOG_CATEGORY( LogHoudiniEngineEditor );
+IMPLEMENT_MODULE(FHoudiniEngineEditor, HoudiniEngineEditor);
+DEFINE_LOG_CATEGORY(LogHoudiniEngineEditor);
 
 FHoudiniEngineEditor *
 FHoudiniEngineEditor::HoudiniEngineEditorInstance = nullptr;
@@ -224,1911 +81,1463 @@ FHoudiniEngineEditor::HoudiniEngineEditorInstance = nullptr;
 FHoudiniEngineEditor &
 FHoudiniEngineEditor::Get()
 {
-    return *HoudiniEngineEditorInstance;
+	return *HoudiniEngineEditorInstance;
 }
 
 bool
 FHoudiniEngineEditor::IsInitialized()
 {
-    return FHoudiniEngineEditor::HoudiniEngineEditorInstance != nullptr;
+	return FHoudiniEngineEditor::HoudiniEngineEditorInstance != nullptr;
 }
 
 FHoudiniEngineEditor::FHoudiniEngineEditor()
-    : CurrentHoudiniToolDirIndex(-1),
-    LastHoudiniAssetComponentUndoObject( nullptr )
-{}
-
-void
-FHoudiniEngineEditor::StartupModule()
 {
-    HOUDINI_LOG_MESSAGE( TEXT( "Starting the Houdini Engine Editor module." ) );
-    
-    // Create style set.
-    FHoudiniEngineStyle::Initialize();
-
-    // Register asset type actions.
-    RegisterAssetTypeActions();
-
-    // Register asset brokers.
-    RegisterAssetBrokers();
-
-    // Register component visualizers.
-    RegisterComponentVisualizers();
-
-    // Register detail presenters.
-    RegisterDetails();
-
-    // Register actor factories.
-    RegisterActorFactories();
-
-    // Extends the file menu.
-    ExtendMenu();
-
-    // Extend the World Outliner Menu
-    AddLevelViewportMenuExtender();
-
-    // Adds the custom console commands
-    RegisterConsoleCommands();
-
-    // Register global undo / redo callbacks.
-    RegisterForUndo();
-
-#ifdef HOUDINI_MODE
-    // Register editor modes
-    RegisterModes();
-#endif 
-
-    RegisterPlacementModeExtensions();
-
-    // Store the instance.
-    FHoudiniEngineEditor::HoudiniEngineEditorInstance = this;
-
-    HOUDINI_LOG_MESSAGE( TEXT("Houdini Engine Editor module startup complete." ) );
 }
 
-void
-FHoudiniEngineEditor::ShutdownModule()
+void FHoudiniEngineEditor::StartupModule()
 {
-    HOUDINI_LOG_MESSAGE( TEXT( "Shutting down the Houdini Engine Editor module." ) );
+	HOUDINI_LOG_MESSAGE(TEXT("Starting the Houdini Engine Editor module."));
 
-    // Remove the level viewport Menu extender%
-    RemoveLevelViewportMenuExtender();
+	// Create style set.
+	FHoudiniEngineStyle::Initialize();
 
-    // Unregister asset type actions.
-    UnregisterAssetTypeActions();
+	// Initilizes various resources used by our editor UI widgets
+	InitializeWidgetResource();
 
-    // Unregister asset brokers.
-    UnregisterAssetBrokers();
+	// Register asset type actions.
+	RegisterAssetTypeActions();
 
-    // Unregister detail presenters.
-    UnregisterDetails();
+	// Register asset brokers.
+	RegisterAssetBrokers();
 
-    // Unregister our component visualizers.
-    UnregisterComponentVisualizers();
+	// Register component visualizers.
+	RegisterComponentVisualizers();
 
-    // Unregister global undo / redo callbacks.
-    UnregisterForUndo();
+	// Register detail presenters.
+	RegisterDetails();
 
-#ifdef HOUDINI_MODE
-    UnregisterModes();
-#endif
+	// Register actor factories.
+	RegisterActorFactories();
 
-    UnregisterPlacementModeExtensions();
+	// Extends the file menu.
+	ExtendMenu();
 
-    // Unregister the styleset
-    FHoudiniEngineStyle::Shutdown();
+	// Extend the World Outliner Menu
+	AddLevelViewportMenuExtender();
 
-    HOUDINI_LOG_MESSAGE( TEXT("Houdini Engine Editor module shutdown complete." ) );
+	// Adds the custom console commands
+	RegisterConsoleCommands();
+
+	// Register global undo / redo callbacks.
+	//RegisterForUndo();
+
+	//RegisterPlacementModeExtensions();
+
+	// Register for any FEditorDelegates that we are interested in, such as
+	// PreSaveWorld and PreBeginPIE, for HoudiniStaticMesh -> UStaticMesh builds
+	RegisterEditorDelegates();
+
+	// Store the instance.
+	FHoudiniEngineEditor::HoudiniEngineEditorInstance = this;
+
+	HOUDINI_LOG_MESSAGE(TEXT("Houdini Engine Editor module startup complete."));
 }
 
-void
-FHoudiniEngineEditor::RegisterComponentVisualizers()
+void FHoudiniEngineEditor::ShutdownModule()
 {
-    if ( GUnrealEd )
-    {
-        if ( !SplineComponentVisualizer.IsValid() )
-        {
-            SplineComponentVisualizer = MakeShareable( new FHoudiniSplineComponentVisualizer );
+	HOUDINI_LOG_MESSAGE(TEXT("Shutting down the Houdini Engine Editor module."));
 
-            GUnrealEd->RegisterComponentVisualizer(
-                UHoudiniSplineComponent::StaticClass()->GetFName(),
-                SplineComponentVisualizer
-            );
+	// Deregister editor delegates
+	UnregisterEditorDelegates();
 
-            SplineComponentVisualizer->OnRegister();
-        }
+	// Deregister console commands
+	UnregisterConsoleCommands();
 
-        if ( !HandleComponentVisualizer.IsValid() )
-        {
-            HandleComponentVisualizer = MakeShareable( new FHoudiniHandleComponentVisualizer );
+	// Remove the level viewport Menu extender
+	RemoveLevelViewportMenuExtender();
 
-            GUnrealEd->RegisterComponentVisualizer(
-                UHoudiniHandleComponent::StaticClass()->GetFName(),
-                HandleComponentVisualizer
-            );
+	// Unregister asset type actions.
+	UnregisterAssetTypeActions();
 
-            HandleComponentVisualizer->OnRegister();
-        }
-    }
-}
+	// Unregister asset brokers.
+	//UnregisterAssetBrokers();
 
-void
-FHoudiniEngineEditor::UnregisterComponentVisualizers()
-{
-    if ( GUnrealEd )
-    {
-        if ( SplineComponentVisualizer.IsValid() )
-            GUnrealEd->UnregisterComponentVisualizer( UHoudiniSplineComponent::StaticClass()->GetFName() );
+	// Unregister detail presenters.
+	UnregisterDetails();
 
-        if ( HandleComponentVisualizer.IsValid() )
-            GUnrealEd->UnregisterComponentVisualizer( UHoudiniHandleComponent::StaticClass()->GetFName() );
-    }
-}
+	// Unregister our component visualizers.
+	//UnregisterComponentVisualizers();
 
-void
-FHoudiniEngineEditor::RegisterDetails()
-{
-    FPropertyEditorModule & PropertyModule = FModuleManager::LoadModuleChecked< FPropertyEditorModule >( "PropertyEditor" );
+	// Unregister global undo / redo callbacks.
+	//UnregisterForUndo();
 
-    // Register details presenter for our component type and runtime settings.
-    PropertyModule.RegisterCustomClassLayout(
-        TEXT( "HoudiniAssetComponent" ),
-        FOnGetDetailCustomizationInstance::CreateStatic( &FHoudiniAssetComponentDetails::MakeInstance ) );
-    PropertyModule.RegisterCustomClassLayout(
-        TEXT( "HoudiniRuntimeSettings" ),
-        FOnGetDetailCustomizationInstance::CreateStatic( &FHoudiniRuntimeSettingsDetails::MakeInstance ) );
-}
+	//UnregisterPlacementModeExtensions();
 
-void
-FHoudiniEngineEditor::UnregisterDetails()
-{
-    if ( FModuleManager::Get().IsModuleLoaded( "PropertyEditor" ) )
-    {
-        FPropertyEditorModule & PropertyModule =
-            FModuleManager::LoadModuleChecked<FPropertyEditorModule>( "PropertyEditor" );
+	// Unregister the styleset
+	FHoudiniEngineStyle::Shutdown();
 
-        PropertyModule.UnregisterCustomClassLayout( TEXT( "HoudiniAssetComponent" ) );
-        PropertyModule.UnregisterCustomClassLayout( TEXT( "HoudiniRuntimeSettings" ) );
-    }
-}
-
-void
-FHoudiniEngineEditor::RegisterAssetTypeActions()
-{
-    // Create and register asset type actions for Houdini asset.
-    IAssetTools& AssetTools = FModuleManager::LoadModuleChecked< FAssetToolsModule >( "AssetTools" ).Get();
-    RegisterAssetTypeAction( AssetTools, MakeShareable( new FHoudiniAssetTypeActions() ) );
-}
-
-void
-FHoudiniEngineEditor::UnregisterAssetTypeActions()
-{
-    // Unregister asset type actions we have previously registered.
-    if ( FModuleManager::Get().IsModuleLoaded( "AssetTools" ) )
-    {
-        IAssetTools & AssetTools = FModuleManager::GetModuleChecked< FAssetToolsModule >( "AssetTools" ).Get();
-
-        for ( int32 Index = 0; Index < AssetTypeActions.Num(); ++Index )
-            AssetTools.UnregisterAssetTypeActions( AssetTypeActions[ Index ].ToSharedRef() );
-
-        AssetTypeActions.Empty();
-    }
-}
-
-void
-FHoudiniEngineEditor::RegisterAssetTypeAction( IAssetTools & AssetTools, TSharedRef< IAssetTypeActions > Action )
-{
-    AssetTools.RegisterAssetTypeActions( Action );
-    AssetTypeActions.Add( Action );
-}
-
-void
-FHoudiniEngineEditor::RegisterAssetBrokers()
-{
-    // Create and register broker for Houdini asset.
-    HoudiniAssetBroker = MakeShareable( new FHoudiniAssetBroker() );
-    FComponentAssetBrokerage::RegisterBroker( HoudiniAssetBroker, UHoudiniAssetComponent::StaticClass(), true, true );
-}
-
-void
-FHoudiniEngineEditor::UnregisterAssetBrokers()
-{
-    if ( UObjectInitialized() )
-    {
-        // Unregister broker.
-        FComponentAssetBrokerage::UnregisterBroker( HoudiniAssetBroker );
-    }
-}
-
-void
-FHoudiniEngineEditor::RegisterActorFactories()
-{
-    if ( GEditor )
-    {
-        UHoudiniAssetActorFactory * HoudiniAssetActorFactory =
-            NewObject< UHoudiniAssetActorFactory >( GetTransientPackage(), UHoudiniAssetActorFactory::StaticClass() );
-
-        GEditor->ActorFactories.Add( HoudiniAssetActorFactory );
-    }
-}
-
-void
-FHoudiniEngineEditor::ExtendMenu()
-{
-    if ( !IsRunningCommandlet() )
-    {
-        // We need to add/bind the UI Commands to their functions first
-        BindMenuCommands();
-
-        // Extend main menu, we will add Houdini section.
-        MainMenuExtender = MakeShareable( new FExtender );
-        MainMenuExtender->AddMenuExtension(
-            "FileLoadAndSave", EExtensionHook::After, HEngineCommands,
-            FMenuExtensionDelegate::CreateRaw( this, &FHoudiniEngineEditor::AddHoudiniMenuExtension ) );
-        FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked< FLevelEditorModule >( "LevelEditor" );
-        LevelEditorModule.GetMenuExtensibilityManager()->AddExtender( MainMenuExtender );
-    }
-}
-
-void
-FHoudiniEngineEditor::AddHoudiniMenuExtension( FMenuBuilder & MenuBuilder )
-{
-    MenuBuilder.BeginSection( "Houdini", LOCTEXT( "HoudiniLabel", "Houdini Engine" ) );
-
-    MenuBuilder.AddMenuEntry( FHoudiniEngineCommands::Get().OpenInHoudini );
-    MenuBuilder.AddMenuEntry( FHoudiniEngineCommands::Get().SaveHIPFile );
-    MenuBuilder.AddMenuEntry( FHoudiniEngineCommands::Get().ReportBug );
-    MenuBuilder.AddMenuEntry( FHoudiniEngineCommands::Get().CleanUpTempFolder );
-    MenuBuilder.AddMenuEntry( FHoudiniEngineCommands::Get().BakeAllAssets );
-    MenuBuilder.AddMenuEntry( FHoudiniEngineCommands::Get().PauseAssetCooking );
-    MenuBuilder.AddMenuEntry( FHoudiniEngineCommands::Get().RestartSession);
-
-    MenuBuilder.EndSection();
-}
-
-void
-FHoudiniEngineEditor::BindMenuCommands()
-{
-    HEngineCommands = MakeShareable( new FUICommandList );
-
-    FHoudiniEngineCommands::Register();
-    const FHoudiniEngineCommands& Commands = FHoudiniEngineCommands::Get();
-
-    HEngineCommands->MapAction(
-        Commands.OpenInHoudini,
-        FExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::OpenInHoudini ),
-        FCanExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::CanOpenInHoudini ) );
-
-    HEngineCommands->MapAction(
-        Commands.SaveHIPFile,
-        FExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::SaveHIPFile ),
-        FCanExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::CanSaveHIPFile ) );
-
-    HEngineCommands->MapAction(
-        Commands.ReportBug,
-        FExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::ReportBug ),
-        FCanExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::CanReportBug ) );
-
-    HEngineCommands->MapAction(
-        Commands.CleanUpTempFolder,
-        FExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::CleanUpTempFolder ),
-        FCanExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::CanCleanUpTempFolder ) );
-
-    HEngineCommands->MapAction(
-        Commands.BakeAllAssets,
-        FExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::BakeAllAssets ),
-        FCanExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::CanBakeAllAssets ) );
-
-    HEngineCommands->MapAction(
-        Commands.PauseAssetCooking,
-        FExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::PauseAssetCooking ),
-        FCanExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::CanPauseAssetCooking ),
-        FIsActionChecked::CreateRaw( this, &FHoudiniEngineEditor::IsAssetCookingPaused ) );
-
-    HEngineCommands->MapAction(
-        Commands.RestartSession,
-        FExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::RestartSession),
-        FCanExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::CanRestartSession ) );
-
-    // Non menu command (used for shortcuts only)
-    HEngineCommands->MapAction(
-        Commands.CookSelec,
-        FExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::RecookSelection ),
-        FCanExecuteAction() );
-
-    HEngineCommands->MapAction(
-        Commands.RebuildSelec,
-        FExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::RebuildSelection ),
-        FCanExecuteAction() );
-
-    HEngineCommands->MapAction(
-        Commands.BakeSelec,
-        FExecuteAction::CreateRaw( this, &FHoudiniEngineEditor::BakeSelection ),
-        FCanExecuteAction() );
-
-    // Append the command to the editor module
-    FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked< FLevelEditorModule >("LevelEditor");
-    LevelEditorModule.GetGlobalLevelEditorActions()->Append(HEngineCommands.ToSharedRef());
-}
-
-void
-FHoudiniEngineEditor::RegisterConsoleCommands()
-{
-    // Register corresponding console commands
-    static FAutoConsoleCommand CCmdOpen = FAutoConsoleCommand(
-        TEXT("Houdini.Open"),
-        TEXT("Open the scene in Houdini."),
-        FConsoleCommandDelegate::CreateRaw( this, &FHoudiniEngineEditor::OpenInHoudini ) );
-
-    static FAutoConsoleCommand CCmdSave = FAutoConsoleCommand(
-        TEXT("Houdini.Save"),
-        TEXT("Save the current Houdini scene to a hip file."),
-        FConsoleCommandDelegate::CreateRaw(this, &FHoudiniEngineEditor::SaveHIPFile ) );
-
-    static FAutoConsoleCommand CCmdBake = FAutoConsoleCommand(
-        TEXT("Houdini.BakeAll"),
-        TEXT("Bakes and replaces with blueprints all Houdini Asset Actors in the current level."),
-        FConsoleCommandDelegate::CreateRaw(this, &FHoudiniEngineEditor::BakeAllAssets ) );
-
-    static FAutoConsoleCommand CCmdClean = FAutoConsoleCommand(
-        TEXT("Houdini.Clean"),
-        TEXT("Cleans up unused/unreferenced Houdini Engine temporary files."),
-        FConsoleCommandDelegate::CreateRaw(this, &FHoudiniEngineEditor::CleanUpTempFolder ) );
-
-    static FAutoConsoleCommand CCmdPause = FAutoConsoleCommand(
-        TEXT( "Houdini.Pause"),
-        TEXT( "Pauses Houdini Engine Asset cooking." ),
-        FConsoleCommandDelegate::CreateRaw( this, &FHoudiniEngineEditor::PauseAssetCooking ) );
-
-    // Additional console only commands
-    static FAutoConsoleCommand CCmdCookAll = FAutoConsoleCommand(
-        TEXT("Houdini.CookAll"),
-        TEXT("Re-cooks all Houdini Engine Asset Actors in the current level."),
-        FConsoleCommandDelegate::CreateRaw( this, &FHoudiniEngineEditor::RecookAllAssets ) );
-
-    static FAutoConsoleCommand CCmdRebuildAll = FAutoConsoleCommand(
-        TEXT("Houdini.RebuildAll"),
-        TEXT("Rebuilds all Houdini Engine Asset Actors in the current level."),
-        FConsoleCommandDelegate::CreateRaw( this, &FHoudiniEngineEditor::RebuildAllAssets ) );
-
-    static FAutoConsoleCommand CCmdCookSelec = FAutoConsoleCommand(
-        TEXT("Houdini.Cook"),
-        TEXT("Re-cooks selected Houdini Asset Actors in the current level."),
-        FConsoleCommandDelegate::CreateRaw( this, &FHoudiniEngineEditor::RecookSelection ) );
-
-    static FAutoConsoleCommand CCmdRebuildSelec = FAutoConsoleCommand(
-        TEXT("Houdini.Rebuild"),
-        TEXT("Rebuilds selected Houdini Asset Actors in the current level."),
-        FConsoleCommandDelegate::CreateRaw( this, &FHoudiniEngineEditor::RebuildSelection ) );
-
-    static FAutoConsoleCommand CCmdBakeSelec = FAutoConsoleCommand(
-        TEXT("Houdini.Bake"),
-        TEXT("Bakes and replaces with blueprints selected Houdini Asset Actors in the current level."),
-        FConsoleCommandDelegate::CreateRaw( this, &FHoudiniEngineEditor::BakeSelection ) );
-
-    static FAutoConsoleCommand CCmdRestartSession = FAutoConsoleCommand(
-        TEXT("Houdini.RestartSession"),
-        TEXT("Restart the current Houdini Session."),
-        FConsoleCommandDelegate::CreateRaw(this, &FHoudiniEngineEditor::RestartSession ) );
-}
-
-bool
-FHoudiniEngineEditor::CanSaveHIPFile() const
-{
-    return FHoudiniEngine::IsInitialized();
-}
-
-void
-FHoudiniEngineEditor::SaveHIPFile()
-{
-    IDesktopPlatform * DesktopPlatform = FDesktopPlatformModule::Get();
-    if ( DesktopPlatform && FHoudiniEngineUtils::IsInitialized() )
-    {
-        TArray< FString > SaveFilenames;
-        bool bSaved = false;
-        void * ParentWindowWindowHandle = NULL;
-
-        IMainFrameModule & MainFrameModule = FModuleManager::LoadModuleChecked< IMainFrameModule >( TEXT( "MainFrame" ) );
-        const TSharedPtr< SWindow > & MainFrameParentWindow = MainFrameModule.GetParentWindow();
-        if ( MainFrameParentWindow.IsValid() && MainFrameParentWindow->GetNativeWindow().IsValid() )
-            ParentWindowWindowHandle = MainFrameParentWindow->GetNativeWindow()->GetOSWindowHandle();
-
-        bSaved = DesktopPlatform->SaveFileDialog(
-            ParentWindowWindowHandle,
-            NSLOCTEXT( "SaveHIPFile", "SaveHIPFile", "Saves a .hip file of the current Houdini scene." ).ToString(),
-            *( FEditorDirectories::Get().GetLastDirectory( ELastDirectory::GENERIC_EXPORT ) ),
-            TEXT( "" ),
-            TEXT( "Houdini HIP file|*.hip" ),
-            EFileDialogFlags::None,
-            SaveFilenames );
-
-        if ( bSaved && SaveFilenames.Num() )
-        {
-            // Add a slate notification
-            FString Notification = TEXT("Saving internal Houdini scene...");
-            FHoudiniEngineUtils::CreateSlateNotification(Notification);
-
-            // ... and a log message
-            HOUDINI_LOG_MESSAGE(TEXT("Saved Houdini scene to %s"), *SaveFilenames[ 0 ] );
-
-            // Get first path.
-            std::string HIPPathConverted( TCHAR_TO_UTF8(*SaveFilenames[0]) );
-
-            // Save HIP file through Engine.
-            FHoudiniApi::SaveHIPFile( FHoudiniEngine::Get().GetSession(), HIPPathConverted.c_str(), false );
-        }
-    }
-}
-
-bool
-FHoudiniEngineEditor::CanOpenInHoudini() const
-{
-    return FHoudiniEngine::IsInitialized();
-}
-
-void
-FHoudiniEngineEditor::OpenInHoudini()
-{
-    if ( !FHoudiniEngine::IsInitialized() )
-        return;
-
-    // First, saves the current scene as a hip file
-    // Creates a proper temporary file name
-    FString UserTempPath = FPaths::CreateTempFilename(
-        FPlatformProcess::UserTempDir(), 
-        TEXT( "HoudiniEngine" ), TEXT( ".hip" ) );
-        
-    // Save HIP file through Engine.
-    std::string TempPathConverted( TCHAR_TO_UTF8( *UserTempPath ) );
-    FHoudiniApi::SaveHIPFile(
-        FHoudiniEngine::Get().GetSession(), 
-        TempPathConverted.c_str(), false);
-
-    if ( !FPaths::FileExists( UserTempPath ) )
-        return;
-    
-    // Add a slate notification
-    FString Notification = TEXT( "Opening scene in Houdini..." );
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // ... and a log message
-    HOUDINI_LOG_MESSAGE( TEXT("Opened scene in Houdini.") );
-
-        // Add quotes to the path to avoid issues with spaces
-        UserTempPath = TEXT("\"") + UserTempPath + TEXT("\"");
-    // Then open the hip file in Houdini
-    FString LibHAPILocation = FHoudiniEngine::Get().GetLibHAPILocation();
-    FString HoudiniLocation = LibHAPILocation + TEXT("//houdini");
-    FPlatformProcess::CreateProc( 
-        *HoudiniLocation, 
-        *UserTempPath, 
-        true, false, false, 
-        nullptr, 0,
-        FPlatformProcess::UserTempDir(),
-        nullptr, nullptr );
-
-    // Unfortunately, LaunchFileInDefaultExternalApplication doesn't seem to be working properly
-    //FPlatformProcess::LaunchFileInDefaultExternalApplication( UserTempPath.GetCharArray().GetData(), nullptr, ELaunchVerb::Open );
-}
-
-void
-FHoudiniEngineEditor::ReportBug()
-{
-    FPlatformProcess::LaunchURL( HAPI_UNREAL_BUG_REPORT_URL, nullptr, nullptr );
-}
-
-bool
-FHoudiniEngineEditor::CanReportBug() const
-{
-    return FHoudiniEngine::IsInitialized();
-}
-
-void
-FHoudiniEngineEditor::RegisterForUndo()
-{
-    if ( GUnrealEd )
-        GUnrealEd->RegisterForUndo( this );
-}
-
-void
-FHoudiniEngineEditor::UnregisterForUndo()
-{
-    if ( GUnrealEd )
-        GUnrealEd->UnregisterForUndo( this );
-}
-
-/** Registers placement mode extensions. */
-void 
-FHoudiniEngineEditor::RegisterPlacementModeExtensions()
-{
-    // Load custom houdini tools 
-    const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
-    check( HoudiniRuntimeSettings );
-
-    if ( HoudiniRuntimeSettings->bHidePlacementModeHoudiniTools )
-        return;
-
-    FPlacementCategoryInfo Info(
-        LOCTEXT( "HoudiniCategoryName", "Houdini Engine" ),
-        "HoudiniEngine",
-        TEXT( "PMHoudiniEngine" ),
-        25
-    );
-    Info.CustomGenerator = []() -> TSharedRef<SWidget> { return SNew( SHoudiniToolPalette ); };
-
-    IPlacementModeModule::Get().RegisterPlacementCategory( Info );
-}
-
-FString
-FHoudiniEngineEditor::GetDefaultHoudiniToolIcon()
-{
-    return FHoudiniEngineEditor::GetHoudiniEnginePluginDir() / TEXT("Content/Icons/icon_houdini_logo_40.png");
+	HOUDINI_LOG_MESSAGE(TEXT("Houdini Engine Editor module shutdown complete."));
 }
 
 FString
 FHoudiniEngineEditor::GetHoudiniEnginePluginDir()
 {
-    FString EnginePluginDir = FPaths::EnginePluginsDir() / TEXT("Runtime/HoudiniEngine");    
-    if ( FPaths::DirectoryExists(EnginePluginDir) )
-        return EnginePluginDir;
+	FString EnginePluginDir = FPaths::EnginePluginsDir() / TEXT("Runtime/HoudiniEngine");
+	if (FPaths::DirectoryExists(EnginePluginDir))
+		return EnginePluginDir;
 
-    FString ProjectPluginDir = FPaths::ProjectPluginsDir() / TEXT("Runtime/HoudiniEngine");
-    if ( FPaths::DirectoryExists(ProjectPluginDir) )
-        return ProjectPluginDir;
+	FString ProjectPluginDir = FPaths::ProjectPluginsDir() / TEXT("Runtime/HoudiniEngine");
+	if (FPaths::DirectoryExists(ProjectPluginDir))
+		return ProjectPluginDir;
 
-    TSharedPtr<IPlugin> HoudiniPlugin = IPluginManager::Get().FindPlugin(TEXT("HoudiniEngine"));
-    FString PluginBaseDir = HoudiniPlugin.IsValid() ? HoudiniPlugin->GetBaseDir() : EnginePluginDir;
-    if ( FPaths::DirectoryExists(PluginBaseDir) )
-        return PluginBaseDir;
+	TSharedPtr<IPlugin> HoudiniPlugin = IPluginManager::Get().FindPlugin(TEXT("HoudiniEngine"));
+	FString PluginBaseDir = HoudiniPlugin.IsValid() ? HoudiniPlugin->GetBaseDir() : EnginePluginDir;
+	if (FPaths::DirectoryExists(PluginBaseDir))
+		return PluginBaseDir;
 
-    HOUDINI_LOG_WARNING(TEXT("Could not find the Houdini Engine plugin's directory"));
+	HOUDINI_LOG_WARNING(TEXT("Could not find the Houdini Engine plugin's directory"));
 
-    return EnginePluginDir;
+	return EnginePluginDir;
+}
+
+void
+FHoudiniEngineEditor::RegisterDetails()
+{
+	FPropertyEditorModule & PropertyModule = FModuleManager::LoadModuleChecked< FPropertyEditorModule >("PropertyEditor");
+
+	// Register details presenter for our component type and runtime settings.
+	PropertyModule.RegisterCustomClassLayout(
+		TEXT("HoudiniAssetComponent"),
+		FOnGetDetailCustomizationInstance::CreateStatic(&FHoudiniAssetComponentDetails::MakeInstance));
+
+	PropertyModule.RegisterCustomClassLayout(
+		TEXT("HoudiniRuntimeSettings"),
+		FOnGetDetailCustomizationInstance::CreateStatic(&FHoudiniRuntimeSettingsDetails::MakeInstance));
+}
+
+void
+FHoudiniEngineEditor::UnregisterDetails()
+{
+	if (FModuleManager::Get().IsModuleLoaded("PropertyEditor"))
+	{
+		FPropertyEditorModule & PropertyModule =
+			FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+		PropertyModule.UnregisterCustomClassLayout(TEXT("HoudiniAssetComponent"));
+		PropertyModule.UnregisterCustomClassLayout(TEXT("HoudiniRuntimeSettings"));
+	}
+}
+
+void
+FHoudiniEngineEditor::RegisterComponentVisualizers()
+{
+	if (GUnrealEd) 
+	{
+		// Register Houdini spline visualizer
+		SplineComponentVisualizer = MakeShareable<FComponentVisualizer>(new FHoudiniSplineComponentVisualizer);
+		if (SplineComponentVisualizer.IsValid()) 
+		{
+			GUnrealEd->RegisterComponentVisualizer(UHoudiniSplineComponent::StaticClass()->GetFName(), SplineComponentVisualizer);
+			SplineComponentVisualizer->OnRegister();
+		}
+
+		// Register Houdini handle visualizer
+		HandleComponentVisualizer = MakeShareable<FComponentVisualizer>(new FHoudiniHandleComponentVisualizer);
+		if (HandleComponentVisualizer.IsValid())
+		{
+			GUnrealEd->RegisterComponentVisualizer(UHoudiniHandleComponent::StaticClass()->GetFName(), HandleComponentVisualizer);
+			HandleComponentVisualizer->OnRegister();
+		}
+	}
+}
+
+void
+FHoudiniEngineEditor::UnregisterComponentVisualizers()
+{
+	if (GUnrealEd) 
+	{
+		// Unregister Houdini spline visualizer
+		if(SplineComponentVisualizer.IsValid())
+			GUnrealEd->UnregisterComponentVisualizer(UHoudiniSplineComponent::StaticClass()->GetFName());
+
+		// Unregister Houdini handle visualizer
+		if (HandleComponentVisualizer.IsValid())
+			GUnrealEd->UnregisterComponentVisualizer(UHoudiniHandleComponent::StaticClass()->GetFName());
+	}
+}
+
+void
+FHoudiniEngineEditor::RegisterAssetTypeAction(IAssetTools & AssetTools, TSharedRef< IAssetTypeActions > Action)
+{
+	AssetTools.RegisterAssetTypeActions(Action);
+	AssetTypeActions.Add(Action);
+}
+
+void
+FHoudiniEngineEditor::RegisterAssetTypeActions()
+{
+	// Create and register asset type actions for Houdini asset.
+	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked< FAssetToolsModule >("AssetTools").Get();
+	RegisterAssetTypeAction(AssetTools, MakeShareable(new FAssetTypeActions_HoudiniAsset()));
+}
+
+void
+FHoudiniEngineEditor::UnregisterAssetTypeActions()
+{
+	// Unregister asset type actions we have previously registered.
+	if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
+	{
+		IAssetTools & AssetTools = FModuleManager::GetModuleChecked< FAssetToolsModule >("AssetTools").Get();
+
+		for (int32 Index = 0; Index < AssetTypeActions.Num(); ++Index)
+			AssetTools.UnregisterAssetTypeActions(AssetTypeActions[Index].ToSharedRef());
+
+		AssetTypeActions.Empty();
+	}
+}
+
+void
+FHoudiniEngineEditor::RegisterAssetBrokers()
+{
+	// Create and register broker for Houdini asset.
+	HoudiniAssetBroker = MakeShareable(new FHoudiniAssetBroker());
+	FComponentAssetBrokerage::RegisterBroker( HoudiniAssetBroker, UHoudiniAssetComponent::StaticClass(), true, true );
+}
+
+void
+FHoudiniEngineEditor::UnregisterAssetBrokers()
+{
+	if (UObjectInitialized())
+	{
+		// Unregister broker.
+		FComponentAssetBrokerage::UnregisterBroker( HoudiniAssetBroker );
+	}
+}
+
+void
+FHoudiniEngineEditor::RegisterActorFactories()
+{
+	if (GEditor)
+	{
+		UHoudiniAssetActorFactory * HoudiniAssetActorFactory =
+			NewObject< UHoudiniAssetActorFactory >(GetTransientPackage(), UHoudiniAssetActorFactory::StaticClass());
+
+		GEditor->ActorFactories.Add(HoudiniAssetActorFactory);
+	}
+}
+
+void
+FHoudiniEngineEditor::BindMenuCommands()
+{
+	HEngineCommands = MakeShareable(new FUICommandList);
+
+	FHoudiniEngineCommands::Register();
+	const FHoudiniEngineCommands& Commands = FHoudiniEngineCommands::Get();
+	
+	// Session 
+
+	HEngineCommands->MapAction(
+		Commands._CreateSession,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::CreateSession(); }),
+		FCanExecuteAction::CreateLambda([]() { return !FHoudiniEngineCommands::IsSessionValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._ConnectSession,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::ConnectSession(); }),
+		FCanExecuteAction::CreateLambda([]() { return !FHoudiniEngineCommands::IsSessionValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._StopSession,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::StopSession(); }),
+		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::IsSessionValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._RestartSession,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RestartSession(); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }));
+	
+	HEngineCommands->MapAction(
+		Commands._OpenSessionSync,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::OpenSessionSync(); }),
+		FCanExecuteAction::CreateLambda([]() { return !FHoudiniEngineCommands::IsSessionSyncProcessValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._CloseSessionSync,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::CloseSessionSync(); }),
+		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::IsSessionSyncProcessValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._ViewportSyncNone,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::SetViewportSync(0); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }),
+		FIsActionChecked::CreateLambda([]() { return (FHoudiniEngineCommands::GetViewportSync() == 0); })
+	);
+
+	HEngineCommands->MapAction(
+		Commands._ViewportSyncHoudini,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::SetViewportSync(1); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }),
+		FIsActionChecked::CreateLambda([]() { return (FHoudiniEngineCommands::GetViewportSync() == 1); })
+	);
+
+	HEngineCommands->MapAction(
+		Commands._ViewportSyncUnreal,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::SetViewportSync(2); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }),
+		FIsActionChecked::CreateLambda([]() { return (FHoudiniEngineCommands::GetViewportSync() == 2); })
+	);
+
+	HEngineCommands->MapAction(
+		Commands._ViewportSyncBoth,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::SetViewportSync(3); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }),
+		FIsActionChecked::CreateLambda([]() { return (FHoudiniEngineCommands::GetViewportSync() == 3); })
+	);
+
+	// PDG commandlet
+	HEngineCommands->MapAction(
+		Commands._IsPDGCommandletEnabled,
+		FExecuteAction::CreateLambda([]() { FHoudiniEngineCommands::SetPDGCommandletEnabled(!FHoudiniEngineCommands::IsPDGCommandletEnabled()); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }),
+		FIsActionChecked::CreateLambda([]() { return FHoudiniEngineCommands::IsPDGCommandletEnabled(); })
+	);
+
+	HEngineCommands->MapAction(
+		Commands._StartPDGCommandlet,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::StartPDGCommandlet(); }),
+		FCanExecuteAction::CreateLambda([]()
+		{
+			return FHoudiniEngineCommands::IsPDGCommandletEnabled() && !FHoudiniEngineCommands::IsPDGCommandletRunningOrConnected();
+		})
+	);
+
+	HEngineCommands->MapAction(
+		Commands._StopPDGCommandlet,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::StopPDGCommandlet(); }),
+		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::IsPDGCommandletRunningOrConnected(); }));
+
+	// Plugin
+
+	HEngineCommands->MapAction(
+		Commands._InstallInfo,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::ShowInstallInfo(); }),
+		FCanExecuteAction::CreateLambda([]() { return false; }));
+
+	HEngineCommands->MapAction(
+		Commands._PluginSettings,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::ShowPluginSettings(); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }));
+
+	// Files
+
+	HEngineCommands->MapAction(
+		Commands._OpenInHoudini,
+		FExecuteAction::CreateLambda([](){ return FHoudiniEngineCommands::OpenInHoudini(); }),
+		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::IsSessionValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._SaveHIPFile,
+		FExecuteAction::CreateLambda([](){ return FHoudiniEngineCommands::SaveHIPFile(); }),
+		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::IsSessionValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._CleanUpTempFolder,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::CleanUpTempFolder(); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }));
+
+	// Help and support
+
+	HEngineCommands->MapAction(
+		Commands._ReportBug,
+		FExecuteAction::CreateLambda([](){ return FHoudiniEngineCommands::ReportBug(); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }));
+
+	HEngineCommands->MapAction(
+		Commands._OnlineDoc,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::OnlineDocumentation(); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }));
+
+	HEngineCommands->MapAction(
+		Commands._OnlineForum,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::OnlineForum(); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }));
+
+	// Actions
+
+	HEngineCommands->MapAction(
+		Commands._CookAll,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RecookAllAssets(); }),
+		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::IsSessionValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._CookSelected,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RecookSelection(); }),
+		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::IsSessionValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._RebuildAll,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RebuildAllAssets(); }),
+		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::IsSessionValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._RebuildSelected,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RebuildSelection(); }),
+		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::IsSessionValid(); }));
+
+	HEngineCommands->MapAction(
+		Commands._BakeAll,
+		FExecuteAction::CreateLambda([](){ return FHoudiniEngineCommands::BakeAllAssets(); }),
+		FCanExecuteAction::CreateLambda([](){ return true; }));
+
+	HEngineCommands->MapAction(
+		Commands._BakeSelected,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::BakeSelection(); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }));
+
+	HEngineCommands->MapAction(
+		Commands._RefineAll,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshes(false); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }));
+
+	HEngineCommands->MapAction(
+		Commands._RefineSelected,
+		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshes(true); }),
+		FCanExecuteAction::CreateLambda([]() { return true; }));
+
+	HEngineCommands->MapAction(
+		Commands._PauseAssetCooking,
+		FExecuteAction::CreateLambda([](){ return FHoudiniEngineCommands::PauseAssetCooking(); }),
+		FCanExecuteAction::CreateLambda([](){ return FHoudiniEngineCommands::IsSessionValid(); }),
+		FIsActionChecked::CreateLambda([](){ return FHoudiniEngineCommands::IsAssetCookingPaused(); }));
+
+	// Non menu command (used for shortcuts only)
+
+	// Append the command to the editor module
+	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked< FLevelEditorModule >("LevelEditor");
+	LevelEditorModule.GetGlobalLevelEditorActions()->Append(HEngineCommands.ToSharedRef());
+}
+
+void
+FHoudiniEngineEditor::ExtendMenu()
+{
+	if (IsRunningCommandlet())
+		return;
+
+	// We need to add/bind the UI Commands to their functions first
+	BindMenuCommands();
+
+	MainMenuExtender = MakeShareable(new FExtender);
+
+	// Extend File menu, we will add Houdini section.
+	MainMenuExtender->AddMenuExtension(
+		"FileLoadAndSave", 
+		EExtensionHook::After,
+		HEngineCommands,
+		FMenuExtensionDelegate::CreateRaw(this, &FHoudiniEngineEditor::AddHoudiniFileMenuExtension));
+		
+	MainMenuExtender->AddMenuBarExtension(
+		"Edit",
+		EExtensionHook::After,
+		HEngineCommands,
+		FMenuBarExtensionDelegate::CreateRaw(this, &FHoudiniEngineEditor::AddHoudiniEditorMenu));
+
+	// Add our menu extender
+	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+	LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MainMenuExtender);
+}
+
+void
+FHoudiniEngineEditor::AddHoudiniFileMenuExtension(FMenuBuilder & MenuBuilder)
+{
+	MenuBuilder.BeginSection("Houdini", LOCTEXT("HoudiniLabel", "Houdini Engine"));
+
+	// Icons used by the commands are defined in the HoudiniEngineStyle
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OpenInHoudini);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._SaveHIPFile);
+	//MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ReportBug);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._CleanUpTempFolder);
+	//MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._BakeAll);
+	//MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._PauseAssetCooking);
+	//MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RestartSession);
+	//MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RefineAll);
+
+	MenuBuilder.EndSection();
+}
+
+void
+FHoudiniEngineEditor::AddHoudiniEditorMenu(FMenuBarBuilder& MenuBarBuilder)
+{
+	// View
+	MenuBarBuilder.AddPullDownMenu(
+		LOCTEXT("HoudiniLabel", "Houdini Engine"),
+		LOCTEXT("HoudiniMenu_ToolTip", "Open the Houdini Engine menu"),
+		FNewMenuDelegate::CreateRaw(this, &FHoudiniEngineEditor::AddHoudiniMainMenuExtension),
+		"View");
+}
+
+void
+FHoudiniEngineEditor::AddHoudiniMainMenuExtension(FMenuBuilder & MenuBuilder)
+{
+	/*
+	MenuBuilder.BeginSection("Houdini", LOCTEXT("HoudiniLabel", "Houdini Engine"));
+	// Icons used by the commands are defined in the HoudiniEngineStyle
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OpenInHoudini);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._SaveHIPFile);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ReportBug);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._CleanUpTempFolder);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._BakeAll);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._PauseAssetCooking);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RestartSession);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RefineAll);
+	MenuBuilder.EndSection();
+	*/
+
+	MenuBuilder.BeginSection("Session", LOCTEXT("SessionLabel", "Session"));
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._CreateSession);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ConnectSession);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._StopSession);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RestartSession);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OpenSessionSync);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._CloseSessionSync);
+
+	// Viewport sync menu
+	struct FLocalMenuBuilder
+	{
+		static void FillViewportSyncMenu(FMenuBuilder& InSubMenuBuilder)
+		{
+			InSubMenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ViewportSyncNone);
+			InSubMenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ViewportSyncHoudini); 
+			InSubMenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ViewportSyncUnreal);
+			InSubMenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ViewportSyncBoth);	
+		}
+	};
+
+	MenuBuilder.AddSubMenu(
+		LOCTEXT("SyncViewport", "Sync Viewport"),
+		LOCTEXT("SyncViewport_ToolTip", "Sync Viewport"),
+		FNewMenuDelegate::CreateStatic(&FLocalMenuBuilder::FillViewportSyncMenu),
+		false,
+		FSlateIcon(FHoudiniEngineStyle::GetStyleSetName(), "HoudiniEngine._SyncViewport"));
+	
+	MenuBuilder.EndSection();
+
+	MenuBuilder.BeginSection("PDG", LOCTEXT("PDGLabel", "PDG"));
+	struct FLocalPDGMenuBuilder
+	{
+		static void FillPDGMenu(FMenuBuilder& InSubMenuBuilder)
+		{
+			InSubMenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._IsPDGCommandletEnabled);
+			InSubMenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._StartPDGCommandlet);
+			InSubMenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._StopPDGCommandlet);
+		}
+	};	
+	MenuBuilder.AddSubMenu(
+		LOCTEXT("PDGSubMenu", "Work Item Import Settings"),
+		LOCTEXT("PDGSubmenu_ToolTip", "PDG Work Item Import Settings"),
+		FNewMenuDelegate::CreateStatic(&FLocalPDGMenuBuilder::FillPDGMenu),
+		false,
+		FSlateIcon(FHoudiniEngineStyle::GetStyleSetName(), "HoudiniEngine.PDGLink"));
+	MenuBuilder.EndSection();
+
+	MenuBuilder.BeginSection("Plugin", LOCTEXT("PluginLabel", "Plugin"));
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._InstallInfo);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._PluginSettings);
+	MenuBuilder.EndSection();
+
+	MenuBuilder.BeginSection("File", LOCTEXT("FileLabel", "File"));
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OpenInHoudini);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._SaveHIPFile);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._CleanUpTempFolder);
+	MenuBuilder.EndSection();
+
+	MenuBuilder.BeginSection("Help", LOCTEXT("HelpLabel", "Help And Support"));
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OnlineDoc);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OnlineForum);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._ReportBug);
+	MenuBuilder.EndSection();
+
+	MenuBuilder.BeginSection("Actions", LOCTEXT("ActionsLabel", "Actions"));
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._CookAll);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._CookSelected);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RebuildAll);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RebuildSelected);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._BakeAll);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._BakeSelected);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RefineAll);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._RefineSelected);
+	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._PauseAssetCooking);
+
+	
+	MenuBuilder.EndSection();
+}
+
+void
+FHoudiniEngineEditor::RegisterForUndo()
+{
+	/*
+	if (GUnrealEd)
+		GUnrealEd->RegisterForUndo(this);
+	*/
+}
+
+void
+FHoudiniEngineEditor::UnregisterForUndo()
+{
+	/*
+	if (GUnrealEd)
+		GUnrealEd->UnregisterForUndo(this);
+	*/
+}
+
+void
+FHoudiniEngineEditor::RegisterPlacementModeExtensions()
+{
+	// Load custom houdini tools
+	/*
+	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	check(HoudiniRuntimeSettings);
+
+	if (HoudiniRuntimeSettings->bHidePlacementModeHoudiniTools)
+		return;
+
+	FPlacementCategoryInfo Info(
+		LOCTEXT("HoudiniCategoryName", "Houdini Engine"),
+		"HoudiniEngine",
+		TEXT("PMHoudiniEngine"),
+		25
+	);
+	Info.CustomGenerator = []() -> TSharedRef<SWidget> { return SNew(SHoudiniToolPalette); };
+
+	IPlacementModeModule::Get().RegisterPlacementCategory(Info);
+	*/
+}
+
+void
+FHoudiniEngineEditor::UnregisterPlacementModeExtensions()
+{
+	/*
+	if (IPlacementModeModule::IsAvailable())
+	{
+		IPlacementModeModule::Get().UnregisterPlacementCategory("HoudiniEngine");
+	}
+
+	HoudiniTools.Empty();
+	*/
 }
 
 void 
-FHoudiniEngineEditor::UnregisterPlacementModeExtensions()
+FHoudiniEngineEditor::InitializeWidgetResource()
 {
-    if ( IPlacementModeModule::IsAvailable() )
-    {
-        IPlacementModeModule::Get().UnregisterPlacementCategory( "HoudiniEngine" );
-    }
-
-    HoudiniTools.Empty();
-}
-
-
-
-bool 
-FHoudiniEngineEditor::MatchesContext(const FTransactionContext& InContext, const TArray<TPair<UObject*, FTransactionObjectEvent>>& TransactionObjects) const
-{
-    if (InContext.Context == TEXT(HOUDINI_MODULE_EDITOR) || InContext.Context == TEXT(HOUDINI_MODULE_RUNTIME))
-    {
-        // Check if we care about the undo/redo
-        for (const TPair<UObject*, FTransactionObjectEvent>& TransactionObjectPair : TransactionObjects)
-        {
-            LastHoudiniAssetComponentUndoObject = Cast< UHoudiniAssetComponent >(TransactionObjectPair.Key);
-            if ( LastHoudiniAssetComponentUndoObject )
-                return true;
-        }
-    }
-
-    LastHoudiniAssetComponentUndoObject = nullptr;
-    return false;
-}
-
-void
-FHoudiniEngineEditor::PostUndo( bool bSuccess )
-{
-    if ( LastHoudiniAssetComponentUndoObject && bSuccess )
-    {
-        LastHoudiniAssetComponentUndoObject->UpdateEditorProperties( false );
-        LastHoudiniAssetComponentUndoObject = nullptr;
-    }
-}
-
-void
-FHoudiniEngineEditor::PostRedo( bool bSuccess )
-{
-    if ( LastHoudiniAssetComponentUndoObject && bSuccess )
-    {
-        LastHoudiniAssetComponentUndoObject->UpdateEditorProperties( false );
-        LastHoudiniAssetComponentUndoObject = nullptr;
-    }
-}
-
-void
-FHoudiniEngineEditor::CleanUpTempFolder()
-{
-    // Add a slate notification
-    FString Notification = TEXT("Cleaning up Houdini Engine temporary folder");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // Get Runtime settings to get the Temp Cook Folder
-    const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
-    if (!HoudiniRuntimeSettings)
-        return;
-    
-    FString TempCookFolder = HoudiniRuntimeSettings->TemporaryCookFolder.ToString();
-
-    // The Asset registry will help us finding if the content of the asset is referenced
-    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-
-    int32 DeletedCount = 0;
-    bool bDidDeleteAsset = true;
-    while ( bDidDeleteAsset )
-    {
-        // To correctly clean the temp folder, we need to iterate multiple times, because some of the temp assets
-        // might be referenced by other temp assets.. (ie Textures are referenced by Materials)
-        // We'll stop looking for assets to delete when no deletion occured.
-        bDidDeleteAsset = false;
-
-        // The Object library will list all UObjects found in the TempFolder
-        auto ObjectLibrary = UObjectLibrary::CreateLibrary( UObject::StaticClass(), false, true );
-        ObjectLibrary->LoadAssetDataFromPath( TempCookFolder );
-
-        // Get all the assets found in the TEMP folder
-        TArray<FAssetData> AssetDataList;
-        ObjectLibrary->GetAssetDataList( AssetDataList );
-
-        // All the assets we're going to delete
-        TArray<FAssetData> AssetDataToDelete;
-
-        for ( FAssetData Data : AssetDataList )
-        {
-            UPackage* CurrentPackage = Data.GetPackage();
-            if ( !CurrentPackage || CurrentPackage->IsPendingKill() )
-                continue;
-
-            // Do not  try to delete the package if it's referenced anywhere
-            TArray<FName> ReferenceNames;
-            AssetRegistryModule.Get().GetReferencers(CurrentPackage->GetFName(), ReferenceNames, UE::AssetRegistry::EDependencyCategory::All );
-            if (ReferenceNames.Num() > 0)
-                continue;
-
-            bool bAssetDataSafeToDelete = true;
-            TArray<FAssetData> AssetsInPackage;
-            AssetRegistryModule.Get().GetAssetsByPackageName( CurrentPackage->GetFName(), AssetsInPackage );
-            for ( const auto& AssetInfo : AssetsInPackage )
-            {
-                // Check if the objects contained in the package are referenced by something that won't be garbage collected (*including* the undo buffer)                    
-                UObject* AssetInPackage = AssetInfo.GetAsset();
-                if (!AssetInPackage || AssetInPackage->IsPendingKill())
-                    continue;
-
-                FReferencerInformationList ReferencesIncludingUndo;
-                bool bReferencedInMemoryOrUndoStack = IsReferenced( AssetInPackage, GARBAGE_COLLECTION_KEEPFLAGS, EInternalObjectFlags::GarbageCollectionKeepFlags, true, &ReferencesIncludingUndo );
-                if ( !bReferencedInMemoryOrUndoStack )
-                    continue;
-
-                // We do have external references, check if the external references are in our ObjectToDelete list
-                // If they are, we can delete the asset because its references are going to be deleted as well.
-                for ( auto ExtRef : ReferencesIncludingUndo.ExternalReferences )
-                {
-                    UObject* Outer = ExtRef.Referencer->GetOuter();
-                    if (!Outer || Outer->IsPendingKill())
-                        continue;
-
-                    bool bOuterFound = false;
-                    for ( auto DataToDelete : AssetDataToDelete )
-                    {
-                        if ( DataToDelete.GetPackage() == Outer )
-                        {
-                            bOuterFound = true;
-                            break;
-                        }
-                        else if ( DataToDelete.GetAsset() == Outer )
-                        {
-                            bOuterFound = true;
-                            break;
-                        }
-                    }
-
-                    // We have at least one reference that's not going to be deleted, we have to keep the asset
-                    if ( !bOuterFound )
-                    {
-                        bAssetDataSafeToDelete = false;
-                        break;
-                    }
-                }
-            }
-            
-            if ( bAssetDataSafeToDelete )
-                AssetDataToDelete.Add( Data );
-        }
-
-        // Nothing to delete
-        if ( AssetDataToDelete.Num() <= 0 )
-            break;
-
-        int32 CurrentDeleted = ObjectTools::DeleteAssets( AssetDataToDelete, false );
-        /*
-        // DO NOT FORCE DELETE!!
-        // This will actually cause more problems than it solves
-        if ( CurrentDeleted <= 0 )
-        {
-            // Normal deletion failed...  Try to force delete the objects?
-            TArray<UObject*> ObjectsToDelete;
-            for (int i = 0; i < AssetDataToDelete.Num(); i++)
-            {
-                const FAssetData& AssetData = AssetDataToDelete[i];
-                UObject *ObjectToDelete = AssetData.GetAsset();
-                // Assets can be loaded even when their underlying type/class no longer exists...
-                if ( ObjectToDelete && !ObjectToDelete->IsPendingKill() )
-                {
-                    ObjectsToDelete.Add(ObjectToDelete);
-                }
-            }
-
-            CurrentDeleted = ObjectTools::ForceDeleteObjects(ObjectsToDelete, false);
-        }
-        */
-
-        if ( CurrentDeleted > 0 )
-        {
-            DeletedCount += CurrentDeleted;
-            bDidDeleteAsset = true;
-        }
-    }
-
-    // Add a slate notification
-    Notification = TEXT("Deleted ") + FString::FromInt( DeletedCount ) + TEXT(" temporary files.");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // ... and a log message
-    HOUDINI_LOG_MESSAGE( TEXT("Deleted %d temporary files."), DeletedCount );
-}
-
-bool
-FHoudiniEngineEditor::CanCleanUpTempFolder() const
-{
-    return FHoudiniEngine::IsInitialized();
-}
-
-void
-FHoudiniEngineEditor::BakeAllAssets()
-{
-    // Add a slate notification
-    FString Notification = TEXT("Baking all assets in the current level...");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // Bakes and replaces with blueprints all Houdini Assets in the current level
-    int32 BakedCount = 0;
-    for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
-    {
-        UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
-        if ( !HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill() )
-        {
-            HOUDINI_LOG_ERROR( TEXT( "Failed to bake a Houdini Asset in the scene! - Invalid Houdini Asset Component" ) );
-            continue;
-        }
-
-        if ( !HoudiniAssetComponent->IsComponentValid() )
-        {
-            FString AssetName = HoudiniAssetComponent->GetOuter() ? HoudiniAssetComponent->GetOuter()->GetName() : HoudiniAssetComponent->GetName();
-            if ( AssetName != "Default__HoudiniAssetActor" )
-                HOUDINI_LOG_ERROR( TEXT( "Failed to bake a Houdini Asset in the scene! -  %s is invalid" ), *AssetName );
-            continue;
-        }
-
-        // If component is not cooking or instancing, we can bake blueprint.
-        if ( HoudiniAssetComponent->IsInstantiatingOrCooking() )
-        {
-            FString AssetName = HoudiniAssetComponent->GetOuter() ? HoudiniAssetComponent->GetOuter()->GetName() : HoudiniAssetComponent->GetName();
-            HOUDINI_LOG_ERROR(TEXT("Failed to bake a Houdini Asset in the scene! -  %s is actively instantiating or cooking"), *AssetName);
-            continue;
-        }
-
-        bool bSuccess = false;
-        bool BakeToBlueprints = true;
-        if (BakeToBlueprints)
-        {
-            if (FHoudiniEngineBakeUtils::ReplaceHoudiniActorWithBlueprint(HoudiniAssetComponent))
-                bSuccess = true;
-        }
-        else
-        {
-            if (FHoudiniEngineBakeUtils::ReplaceHoudiniActorWithActors(HoudiniAssetComponent, false))
-                bSuccess = true;
-        }
-
-        if ( bSuccess )
-            BakedCount++;
-    }
-
-    // Add a slate notification
-    Notification = TEXT("Baked ") + FString::FromInt( BakedCount ) + TEXT(" Houdini assets.");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // ... and a log message
-    HOUDINI_LOG_MESSAGE( TEXT("Baked all %d Houdini assets in the current level."), BakedCount );
-}
-
-bool
-FHoudiniEngineEditor::CanBakeAllAssets() const
-{
-    if ( !FHoudiniEngine::IsInitialized() )
-        return false;
-    
-    return true;
-}
-
-void
-FHoudiniEngineEditor::PauseAssetCooking()
-{
-    // Revert the global flag
-    bool CurrentEnableCookingGlobal = !FHoudiniEngine::Get().GetEnableCookingGlobal();
-    FHoudiniEngine::Get().SetEnableCookingGlobal( CurrentEnableCookingGlobal );
-
-    // Add a slate notification
-    FString Notification = TEXT("Houdini Engine cooking paused");
-    if ( CurrentEnableCookingGlobal )
-        Notification = TEXT("Houdini Engine cooking resumed");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // ... and a log message
-    if ( CurrentEnableCookingGlobal )
-        HOUDINI_LOG_MESSAGE( TEXT("Houdini Engine cooking resumed.") );
-    else
-        HOUDINI_LOG_MESSAGE( TEXT("Houdini Engine cooking paused.") );
-
-    if ( !CurrentEnableCookingGlobal )
-        return;
-
-    // If we are unpausing, tick each asset component to "update" them
-    for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
-    {
-        UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
-        if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill() || !HoudiniAssetComponent->IsValidLowLevel())
-        {
-            HOUDINI_LOG_ERROR( TEXT("Failed to cook a Houdini Asset in the scene!") );
-            continue;
-        }
-
-        HoudiniAssetComponent->StartHoudiniTicking();
-    }
-}
-
-bool
-FHoudiniEngineEditor::CanPauseAssetCooking()
-{
-    if ( !FHoudiniEngine::IsInitialized() )
-        return false;
-
-    return true;
-}
-
-bool
-FHoudiniEngineEditor::IsAssetCookingPaused()
-{
-    return !FHoudiniEngine::Get().GetEnableCookingGlobal();
-}
-
-void
-FHoudiniEngineEditor::RecookSelection()
-{
-    // Get current world selection
-    TArray<UObject*> WorldSelection;
-    int32 SelectedHoudiniAssets = FHoudiniEngineEditor::GetWorldSelection( WorldSelection, true );
-    if ( SelectedHoudiniAssets <= 0 )
-    {
-        HOUDINI_LOG_MESSAGE( TEXT( "No Houdini Assets selected in the world outliner" ) );
-        return;
-    }
-
-    // Add a slate notification
-    FString Notification = TEXT("Cooking selected Houdini Assets...");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // Iterates over the selection and cook the assets if they're in a valid state
-    int32 CookedCount = 0;
-    for ( int32 Idx = 0; Idx < SelectedHoudiniAssets; Idx++ )
-    {
-        AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>( WorldSelection[ Idx ] );
-        if ( !HoudiniAssetActor || HoudiniAssetActor->IsPendingKill() )
-            continue;
-
-        UHoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
-        if ( !HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill() || !HoudiniAssetComponent->IsComponentValid() )
-            continue;
-
-        HoudiniAssetComponent->StartTaskAssetCookingManual();
-        CookedCount++;
-    }
-
-    // Add a slate notification
-    Notification = TEXT("Re-cooked ") + FString::FromInt( CookedCount ) + TEXT(" Houdini assets.");
-    FHoudiniEngineUtils::CreateSlateNotification(Notification);
-
-    // ... and a log message
-    HOUDINI_LOG_MESSAGE( TEXT("Re-cooked %d selected Houdini assets."), CookedCount );
-}
-
-void
-FHoudiniEngineEditor::RecookAllAssets()
-{
-    // Add a slate notification
-    FString Notification = TEXT("Cooking all assets in the current level...");
-    FHoudiniEngineUtils::CreateSlateNotification(Notification);
-
-    // Bakes and replaces with blueprints all Houdini Assets in the current level
-    int32 CookedCount = 0;
-    for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
-    {
-        UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
-        if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill() ||  !HoudiniAssetComponent->IsComponentValid())
-            continue;
-
-        HoudiniAssetComponent->StartTaskAssetCookingManual();
-        CookedCount++;
-    }
-
-    // Add a slate notification
-    Notification = TEXT("Re-cooked ") + FString::FromInt( CookedCount ) + TEXT(" Houdini assets.");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // ... and a log message
-    HOUDINI_LOG_MESSAGE(TEXT("Re-cooked %d Houdini assets in the current level."), CookedCount );
-}
-
-void
-FHoudiniEngineEditor::RebuildAllAssets()
-{
-    // Add a slate notification
-    FString Notification = TEXT("Re-building all assets in the current level...");
-    FHoudiniEngineUtils::CreateSlateNotification(Notification);
-
-    // Bakes and replaces with blueprints all Houdini Assets in the current level
-    int32 RebuiltCount = 0;
-    for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
-    {
-        UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
-        if ( !HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill() || !HoudiniAssetComponent->IsComponentValid() )
-            continue;
-
-        HoudiniAssetComponent->StartTaskAssetRebuildManual();
-        RebuiltCount++;
-    }
-
-    // Add a slate notification
-    Notification = TEXT("Rebuilt ") + FString::FromInt( RebuiltCount ) + TEXT(" Houdini assets.");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // ... and a log message
-    HOUDINI_LOG_MESSAGE(TEXT("Rebuilt %d Houdini assets in the current level."), RebuiltCount );
-}
-
-void
-FHoudiniEngineEditor::RebuildSelection()
-{
-    // Get current world selection
-    TArray<UObject*> WorldSelection;
-    int32 SelectedHoudiniAssets = FHoudiniEngineEditor::GetWorldSelection( WorldSelection, true );
-    if ( SelectedHoudiniAssets <= 0 )
-    {
-        HOUDINI_LOG_MESSAGE(TEXT("No Houdini Assets selected in the world outliner"));
-        return;
-    }
-
-    // Add a slate notification
-    FString Notification = TEXT("Rebuilding selected Houdini Assets...");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // Iterates over the selection and rebuilds the assets if they're in a valid state
-    int32 RebuiltCount = 0;
-    for ( int32 Idx = 0; Idx < SelectedHoudiniAssets; Idx++ )
-    {
-        AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>( WorldSelection[ Idx ] );
-        if ( !HoudiniAssetActor || HoudiniAssetActor->IsPendingKill() )
-            continue;
-
-        UHoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
-        if ( !HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill() || !HoudiniAssetComponent->IsComponentValid() )
-            continue;
-
-        HoudiniAssetComponent->StartTaskAssetRebuildManual();
-        RebuiltCount++;
-    }
-
-    // Add a slate notification
-    Notification = TEXT("Rebuilt ") + FString::FromInt( RebuiltCount ) + TEXT(" Houdini assets.");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // ... and a log message
-    HOUDINI_LOG_MESSAGE( TEXT("Rebuilt %d selected Houdini assets."), RebuiltCount );
-}
-
-void
-FHoudiniEngineEditor::BakeSelection()
-{
-    // Get current world selection
-    TArray<UObject*> WorldSelection;
-    int32 SelectedHoudiniAssets = FHoudiniEngineEditor::GetWorldSelection( WorldSelection, true );
-    if ( SelectedHoudiniAssets <= 0 )
-    {
-        HOUDINI_LOG_MESSAGE( TEXT("No Houdini Assets selected in the world outliner") );
-        return;
-    }
-
-    // Add a slate notification
-    FString Notification = TEXT("Baking selected Houdini Asset Actors in the current level...");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // Iterates over the selection and rebuilds the assets if they're in a valid state
-    int32 BakedCount = 0;
-    for ( int32 Idx = 0; Idx < SelectedHoudiniAssets; Idx++ )
-    {
-        AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>( WorldSelection[ Idx ] );
-        if ( !HoudiniAssetActor || HoudiniAssetActor->IsPendingKill() )
-            continue;
-
-        UHoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
-        if ( !HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill() )
-        {
-            HOUDINI_LOG_ERROR( TEXT("Failed to export a Houdini Asset in the scene!") );
-            continue;
-        }
-
-        if ( !HoudiniAssetComponent->IsComponentValid() )
-        {
-            FString AssetName = HoudiniAssetComponent->GetOuter() ? HoudiniAssetComponent->GetOuter()->GetName() : HoudiniAssetComponent->GetName();
-            HOUDINI_LOG_ERROR(TEXT("Failed to export Houdini Asset: %s in the scene!"), *AssetName);
-            continue;
-        }
-
-        // If component is not cooking or instancing, we can bake blueprint.
-        if ( !HoudiniAssetComponent->IsInstantiatingOrCooking() )
-        {
-            if ( FHoudiniEngineBakeUtils::ReplaceHoudiniActorWithBlueprint( HoudiniAssetComponent ) )
-                BakedCount++;
-        }
-    }
-
-    // Add a slate notification
-    Notification = TEXT("Baked ") + FString::FromInt(BakedCount) + TEXT(" Houdini assets.");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // ... and a log message
-    HOUDINI_LOG_MESSAGE(TEXT("Baked all %d Houdini assets in the current level."), BakedCount);
-}
-
-// Recentre HoudiniAsset actors' pivots to their input / cooked static-mesh average centre.
-void FHoudiniEngineEditor::RecentreSelection()
-{
-#if WITH_EDITOR
-    //Get current world selection
-    TArray<UObject*> WorldSelection;
-    int32 SelectedHoudiniAssets = FHoudiniEngineEditor::GetWorldSelection(WorldSelection, true);
-    if (SelectedHoudiniAssets <= 0)
-    {
-        HOUDINI_LOG_MESSAGE(TEXT("No Houdini Assets selected in the world outliner"));
-        return;
-    }
-
-    // Add a slate notification
-    FString Notification = TEXT("Recentering selected Houdini Assets...");
-    FHoudiniEngineUtils::CreateSlateNotification(Notification);
-
-    // Iterates over the selection and cook the assets if they're in a valid state
-    int32 RecentreCount = 0;
-    for (int32 Idx = 0; Idx < SelectedHoudiniAssets; Idx++)
-    {
-        AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>(WorldSelection[Idx]);
-        if (!HoudiniAssetActor || HoudiniAssetActor->IsPendingKill())
-            continue;
-
-        UHoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
-        if (!HoudiniAssetComponent || !HoudiniAssetComponent->IsComponentValid())
-            continue;
-
-        // Get the average centre of all the created Static Meshes
-        FVector AverageBoundsCentre = FVector::ZeroVector;
-        int32 NumBounds = 0;
-        const FVector CurrentLocation = HoudiniAssetComponent->GetComponentLocation();        
-        {
-            //Check Static Meshes
-            TArray<UStaticMesh*> StaticMeshes;
-            StaticMeshes.Reserve(16);
-            HoudiniAssetComponent->GetAllUsedStaticMeshes(StaticMeshes);
-
-            //Get average centre of all  the static meshes.
-            for (const UStaticMesh* pMesh : StaticMeshes)
-            {
-                if (!pMesh)
-                    continue;
-
-                //to world space
-                AverageBoundsCentre += (pMesh->GetBounds().Origin + CurrentLocation); 
-                NumBounds++;
-            }
-        }
-
-        //Check Inputs
-        if (0 == NumBounds)
-        {
-            const TArray< UHoudiniAssetInput* >& AssetInputs = HoudiniAssetComponent->GetInputs();
-            for (const UHoudiniAssetInput* pInput : AssetInputs)
-            {
-                if (!pInput || pInput->IsPendingKill())
-                    continue;
-
-                // to world space
-                FBox Bounds = pInput->GetInputBounds(CurrentLocation); 
-                if (Bounds.IsValid)
-                {
-                    AverageBoundsCentre += Bounds.GetCenter();
-                    NumBounds++;
-                }
-            }
-        }
-
-        //if we have more than one, get the average centre
-        if (NumBounds > 1)
-        {
-            AverageBoundsCentre /= (float)NumBounds;
-        }
-
-        //if we need to move...
-        float fDist = FVector::DistSquared(CurrentLocation, AverageBoundsCentre);
-        if (NumBounds && fDist > 1.0f)
-        {
-            // Move actor to average centre and recook
-            // This will refresh the static mesh under the HoudiniAssestComponent ( undoing the translation ).
-            HoudiniAssetActor->SetActorLocation(AverageBoundsCentre, false, nullptr, ETeleportType::TeleportPhysics);
-            
-            // Recook now the houdini-static-mesh has a new origin
-            HoudiniAssetComponent->StartTaskAssetCookingManual();
-            RecentreCount++;
-        }
-    }
-
-    if (RecentreCount)
-    {
-        // UE4 Editor doesn't refresh the translation-handles until they are re-selected, confusing the user, deselect the objects.
-        GEditor->SelectNone(true, false);
-    }
-
-    // Add a slate notification
-    Notification = TEXT("Re-centred ") + FString::FromInt(RecentreCount) + TEXT(" Houdini assets.");
-    FHoudiniEngineUtils::CreateSlateNotification(Notification);
-
-    // ... and a log message
-    HOUDINI_LOG_MESSAGE(TEXT("Re-centred %d selected Houdini assets."), RecentreCount);
-
-#endif //WITH_EDITOR
-}
-
-int32
-FHoudiniEngineEditor::GetContentBrowserSelection( TArray< UObject* >& ContentBrowserSelection )
-{
-    ContentBrowserSelection.Empty();
-
-    // Get the current Content browser selection
-    FContentBrowserModule& ContentBrowserModule = FModuleManager::Get().LoadModuleChecked< FContentBrowserModule >( "ContentBrowser" );
-    TArray<FAssetData> SelectedAssets;
-    ContentBrowserModule.Get().GetSelectedAssets( SelectedAssets );
-
-    for( int32 n = 0; n < SelectedAssets.Num(); n++ )
-    {
-        // Get the current object
-        UObject * Object = SelectedAssets[ n ].GetAsset();
-        if ( !Object || Object->IsPendingKill() )
-            continue;
-
-        // Only static meshes are supported
-        if ( Object->GetClass() != UStaticMesh::StaticClass() )
-            continue;
-
-        ContentBrowserSelection.Add( Object );
-    }
-
-    return ContentBrowserSelection.Num();
-}
-
-int32 
-FHoudiniEngineEditor::GetWorldSelection( TArray< UObject* >& WorldSelection, bool bHoudiniAssetActorsOnly )
-{
-    WorldSelection.Empty();
-
-    // Get the current editor selection
-    if ( GEditor )
-    {
-        USelection* SelectedActors = GEditor->GetSelectedActors();
-        if ( SelectedActors && !SelectedActors->IsPendingKill() )
-        {
-            for ( FSelectionIterator It( *SelectedActors ); It; ++It )
-            {
-                AActor * Actor = Cast< AActor >( *It );
-                if ( !Actor && Actor->IsPendingKill() )
-                    continue;
-
-                // Ignore the SkySphere?
-                FString ClassName = Actor->GetClass() ? Actor->GetClass()->GetName() : FString();
-                if ( ClassName == TEXT( "BP_Sky_Sphere_C" ) )
-                    continue;
-
-                // We're normally only selecting actors with StaticMeshComponents and SplineComponents
-                // Heightfields? Filter here or later? also allow HoudiniAssets?
-                WorldSelection.Add( Actor );
-            }
-        }
-
-    }
-
-    // If we only want Houdini Actors...
-    if ( bHoudiniAssetActorsOnly )
-    {
-        // ... remove all but them
-        for ( int32 Idx = WorldSelection.Num() - 1; Idx >= 0; Idx-- )
-        {
-            AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>( WorldSelection[ Idx ] );
-            if ( !HoudiniAssetActor || HoudiniAssetActor->IsPendingKill() )
-                WorldSelection.RemoveAt( Idx );
-        }
-    }
-
-    return WorldSelection.Num();
-}
-
-bool
-FHoudiniEngineEditor::CanRestartSession() const
-{
-    return true;
-}
-
-void
-FHoudiniEngineEditor::RestartSession()
-{
-    // Add a slate notification
-    FString Notification = TEXT("Restarting Current Houdini Session");
-    FHoudiniEngineUtils::CreateSlateNotification( Notification );
-
-    // Restart the current Houdini Engine Session
-    bool bSuccess = FHoudiniEngine::Get().RestartSession();
-
-    // Notify all the HoudiniAssetComponent that they need to reinstantiate themselves in the new session.
-    for ( TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr )
-    {
-        UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
-        if ( !HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill() )
-            continue;
-
-        HoudiniAssetComponent->NotifyAssetNeedsToBeReinstantiated();
-    }
-
-    // Add a slate notification
-    if ( bSuccess )
-        Notification = TEXT("Houdini Session successfully restarted.");
-    else
-        Notification = TEXT("Failed to restart the current Houdini Session.");
-    FHoudiniEngineUtils::CreateSlateNotification(Notification);
-
-    // ... and a log message
-    //HOUDINI_LOG_MESSAGE( *Notification );
+	// Choice labels for all the input types
+	//TArray<TSharedPtr<FString>> InputTypeChoiceLabels;
+	InputTypeChoiceLabels.Reset();
+	InputTypeChoiceLabels.Add(MakeShareable(new FString(UHoudiniInput::InputTypeToString(EHoudiniInputType::Geometry))));
+	InputTypeChoiceLabels.Add(MakeShareable(new FString(UHoudiniInput::InputTypeToString(EHoudiniInputType::Curve))));
+	InputTypeChoiceLabels.Add(MakeShareable(new FString(UHoudiniInput::InputTypeToString(EHoudiniInputType::Asset))));
+	InputTypeChoiceLabels.Add(MakeShareable(new FString(UHoudiniInput::InputTypeToString(EHoudiniInputType::Landscape))));
+	InputTypeChoiceLabels.Add(MakeShareable(new FString(UHoudiniInput::InputTypeToString(EHoudiniInputType::World))));
+	InputTypeChoiceLabels.Add(MakeShareable(new FString(UHoudiniInput::InputTypeToString(EHoudiniInputType::Skeletal))));
+
+	BlueprintInputTypeChoiceLabels.Reset();
+	BlueprintInputTypeChoiceLabels.Add(MakeShareable(new FString(UHoudiniInput::InputTypeToString(EHoudiniInputType::Geometry))));
+	BlueprintInputTypeChoiceLabels.Add(MakeShareable(new FString(UHoudiniInput::InputTypeToString(EHoudiniInputType::Curve))));
+
+	// Choice labels for all Houdini curve types
+	HoudiniCurveTypeChoiceLabels.Reset();
+	HoudiniCurveTypeChoiceLabels.Add(MakeShareable(new FString(FHoudiniEngineEditorUtils::HoudiniCurveTypeToString(EHoudiniCurveType::Polygon))));
+	HoudiniCurveTypeChoiceLabels.Add(MakeShareable(new FString(FHoudiniEngineEditorUtils::HoudiniCurveTypeToString(EHoudiniCurveType::Nurbs))));
+	HoudiniCurveTypeChoiceLabels.Add(MakeShareable(new FString(FHoudiniEngineEditorUtils::HoudiniCurveTypeToString(EHoudiniCurveType::Bezier))));
+	HoudiniCurveTypeChoiceLabels.Add(MakeShareable(new FString(FHoudiniEngineEditorUtils::HoudiniCurveTypeToString(EHoudiniCurveType::Points))));
+
+	// Choice labels for all Houdini curve methods
+	HoudiniCurveMethodChoiceLabels.Reset();
+	HoudiniCurveMethodChoiceLabels.Add(MakeShareable(new FString(FHoudiniEngineEditorUtils::HoudiniCurveMethodToString(EHoudiniCurveMethod::CVs))));
+	HoudiniCurveMethodChoiceLabels.Add(MakeShareable(new FString(FHoudiniEngineEditorUtils::HoudiniCurveMethodToString(EHoudiniCurveMethod::Breakpoints))));
+	HoudiniCurveMethodChoiceLabels.Add(MakeShareable(new FString(FHoudiniEngineEditorUtils::HoudiniCurveMethodToString(EHoudiniCurveMethod::Freehand))));
+
+	// Choice labels for all Houdini ramp parameter interpolation methods
+	HoudiniParameterRampInterpolationLabels.Reset();
+	HoudiniParameterRampInterpolationLabels.Add(MakeShareable(new FString(UHoudiniParameter::GetStringFromHoudiniInterpMethod(EHoudiniRampInterpolationType::CONSTANT))));
+	HoudiniParameterRampInterpolationLabels.Add(MakeShareable(new FString(UHoudiniParameter::GetStringFromHoudiniInterpMethod(EHoudiniRampInterpolationType::LINEAR))));
+	HoudiniParameterRampInterpolationLabels.Add(MakeShareable(new FString(UHoudiniParameter::GetStringFromHoudiniInterpMethod(EHoudiniRampInterpolationType::CATMULL_ROM))));
+	HoudiniParameterRampInterpolationLabels.Add(MakeShareable(new FString(UHoudiniParameter::GetStringFromHoudiniInterpMethod(EHoudiniRampInterpolationType::MONOTONE_CUBIC))));
+	HoudiniParameterRampInterpolationLabels.Add(MakeShareable(new FString(UHoudiniParameter::GetStringFromHoudiniInterpMethod(EHoudiniRampInterpolationType::BEZIER))));
+	HoudiniParameterRampInterpolationLabels.Add(MakeShareable(new FString(UHoudiniParameter::GetStringFromHoudiniInterpMethod(EHoudiniRampInterpolationType::BSPLINE))));
+	HoudiniParameterRampInterpolationLabels.Add(MakeShareable(new FString(UHoudiniParameter::GetStringFromHoudiniInterpMethod(EHoudiniRampInterpolationType::HERMITE))));
+
+	// Choice labels for all Houdini curve output export types
+	HoudiniCurveOutputExportTypeLabels.Reset();
+	HoudiniCurveOutputExportTypeLabels.Add(MakeShareable(new FString(TEXT("Unreal Spline"))));
+	HoudiniCurveOutputExportTypeLabels.Add(MakeShareable(new FString(TEXT("Houdini Spline"))));
+
+	// Choice labels for all Unreal curve output curve types 
+	//(for temporary, we need to figure out a way to access the output curve's info later)
+	UnrealCurveOutputCurveTypeLabels.Reset();
+	UnrealCurveOutputCurveTypeLabels.Add(MakeShareable(new FString(TEXT("Linear"))));
+	UnrealCurveOutputCurveTypeLabels.Add(MakeShareable(new FString(TEXT("Curve"))));
+
+	// Option labels for all landscape outputs bake options
+	HoudiniLandscapeOutputBakeOptionLabels.Reset();
+	HoudiniLandscapeOutputBakeOptionLabels.Add(MakeShareable(new FString(TEXT("To Current Level"))));
+	HoudiniLandscapeOutputBakeOptionLabels.Add(MakeShareable(new FString(TEXT("To Image"))));
+	HoudiniLandscapeOutputBakeOptionLabels.Add(MakeShareable(new FString(TEXT("To New World"))));
+
+	// Option labels for Houdini Engine PDG bake options
+	HoudiniEnginePDGBakeTypeOptionLabels.Reset();
+	HoudiniEnginePDGBakeTypeOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromHoudiniEngineBakeOption(EHoudiniEngineBakeOption::ToActor))));
+	HoudiniEnginePDGBakeTypeOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromHoudiniEngineBakeOption(EHoudiniEngineBakeOption::ToBlueprint))));
+
+	// Option labels for Houdini Engine bake options
+	HoudiniEngineBakeTypeOptionLabels.Reset();
+	HoudiniEngineBakeTypeOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromHoudiniEngineBakeOption(EHoudiniEngineBakeOption::ToActor))));
+	HoudiniEngineBakeTypeOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromHoudiniEngineBakeOption(EHoudiniEngineBakeOption::ToBlueprint))));
+	HoudiniEngineBakeTypeOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromHoudiniEngineBakeOption(EHoudiniEngineBakeOption::ToFoliage))));
+	HoudiniEngineBakeTypeOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromHoudiniEngineBakeOption(EHoudiniEngineBakeOption::ToWorldOutliner))));
+
+	// Option labels for Houdini Engine PDG bake options
+	HoudiniEnginePDGBakeSelectionOptionLabels.Reset();
+	HoudiniEnginePDGBakeSelectionOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromPDGBakeTargetOption(EPDGBakeSelectionOption::All))));
+	HoudiniEnginePDGBakeSelectionOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromPDGBakeTargetOption(EPDGBakeSelectionOption::SelectedNetwork))));
+	HoudiniEnginePDGBakeSelectionOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromPDGBakeTargetOption(EPDGBakeSelectionOption::SelectedNode))));
+
+	HoudiniEnginePDGBakePackageReplaceModeOptionLabels.Reset();
+	HoudiniEnginePDGBakePackageReplaceModeOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromPDGBakePackageReplaceModeOption(EPDGBakePackageReplaceModeOption::ReplaceExistingAssets))));
+	HoudiniEnginePDGBakePackageReplaceModeOptionLabels.Add(MakeShareable(new FString(FHoudiniEngineEditor::GetStringFromPDGBakePackageReplaceModeOption(EPDGBakePackageReplaceModeOption::CreateNewAssets))));
+	
+
+	static FString IconsDir = FHoudiniEngineUtils::GetHoudiniEnginePluginDir() / TEXT("Resources/Icons/");
+
+	// Houdini Logo Brush
+	FString Icon128FilePath = IconsDir + TEXT("icon_houdini_logo_128");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*Icon128FilePath))
+	{
+		const FName BrushName(*Icon128FilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniLogoBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// Houdini Engine Logo Brush
+	FString HEIcon128FilePath = IconsDir + TEXT("icon_hengine_logo_128");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*HEIcon128FilePath))
+	{
+		const FName BrushName(*HEIcon128FilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineLogoBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// Houdini Engine Banner
+	FString HoudiniEngineUIIconFilePath = GetHoudiniEnginePluginDir() / TEXT("Resources/hengine_banner_d.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*HoudiniEngineUIIconFilePath))
+	{
+		const FName BrushName(*HoudiniEngineUIIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// Rebuild Icon Brush
+	FString HoudiniEngineUIRebuildIconFilePath = IconsDir + TEXT("rebuild_all16x16.png");
+	//FString HoudiniEngineUIRebuildIconFilePath = GetHoudiniEnginePluginDir() / TEXT("Resources/hengine_reload_icon.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*HoudiniEngineUIRebuildIconFilePath))
+	{
+		const FName BrushName(*HoudiniEngineUIRebuildIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIRebuildIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// Recook Icon Brush
+	//FString HoudiniEngineUIRecookIconFilePath = GetHoudiniEnginePluginDir() / TEXT("Resources/hengine_recook_icon.png");
+	FString HoudiniEngineUIRecookIconFilePath = IconsDir + TEXT("cook_all16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*HoudiniEngineUIRecookIconFilePath))
+	{
+		const FName BrushName(*HoudiniEngineUIRecookIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIRecookIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// Reset Parameters Icon Brush
+	//FString HoudiniEngineUIResetParametersIconFilePath = GetHoudiniEnginePluginDir() / TEXT("Resources/hengine_resetparameters_icon.png");
+	FString HoudiniEngineUIResetParametersIconFilePath = IconsDir + TEXT("reset_parameters16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*HoudiniEngineUIResetParametersIconFilePath))
+	{
+		const FName BrushName(*HoudiniEngineUIResetParametersIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIResetParametersIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// Bake
+	FString BakeIconFilePath = IconsDir + TEXT("bake_all16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*BakeIconFilePath))
+	{
+		const FName BrushName(*BakeIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIBakeIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// CookLog
+	FString CookLogIconFilePath = IconsDir + TEXT("cook_log16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*CookLogIconFilePath))
+	{
+		const FName BrushName(*CookLogIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUICookLogIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// AssetHelp
+	FString AssetHelpIconFilePath = IconsDir + TEXT("asset_help16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*AssetHelpIconFilePath))
+	{
+		const FName BrushName(*AssetHelpIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIAssetHelpIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+
+	// PDG Asset Link
+	// PDG
+	FString PDGIconFilePath = IconsDir + TEXT("pdg_link16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*PDGIconFilePath))
+	{
+		const FName BrushName(*PDGIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIPDGIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// PDG Cancel
+	// PDGCancel
+	FString PDGCancelIconFilePath = IconsDir + TEXT("pdg_cancel16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*PDGCancelIconFilePath))
+	{
+		const FName BrushName(*PDGCancelIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIPDGCancelIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// PDG Dirty All
+	// PDGDirtyAll
+	FString PDGDirtyAllIconFilePath = IconsDir + TEXT("pdg_dirty_all16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*PDGDirtyAllIconFilePath))
+	{
+		const FName BrushName(*PDGDirtyAllIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIPDGDirtyAllIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// PDG Dirty Node
+	// PDGDirtyNode
+	FString PDGDirtyNodeIconFilePath = IconsDir + TEXT("pdg_dirty_node16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*PDGDirtyNodeIconFilePath))
+	{
+		const FName BrushName(*PDGDirtyNodeIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIPDGDirtyNodeIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// PDG Pause
+	// PDGReset
+	FString PDGPauseIconFilePath = IconsDir + TEXT("pdg_pause16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*PDGPauseIconFilePath))
+	{
+		const FName BrushName(*PDGPauseIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIPDGPauseIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// PDG Reset
+	// PDGReset
+	FString PDGResetIconFilePath = IconsDir + TEXT("pdg_reset16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*PDGResetIconFilePath))
+	{
+		const FName BrushName(*PDGResetIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIPDGResetIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
+
+	// PDG Refresh
+	// PDGRefresh
+	FString PDGRefreshIconFilePath = IconsDir + TEXT("pdg_refresh16x16.png");
+	if (FSlateApplication::IsInitialized() && FPlatformFileManager::Get().GetPlatformFile().FileExists(*PDGRefreshIconFilePath))
+	{
+		const FName BrushName(*PDGRefreshIconFilePath);
+		const FIntPoint Size = FSlateApplication::Get().GetRenderer()->GenerateDynamicImageResource(BrushName);
+		if (Size.X > 0 && Size.Y > 0)
+		{
+			static const int32 ProgressIconSize = 32;
+			HoudiniEngineUIPDGRefreshIconBrush = MakeShareable(new FSlateDynamicImageBrush(
+				BrushName, FVector2D(ProgressIconSize, ProgressIconSize)));
+		}
+	}
 }
 
 void
 FHoudiniEngineEditor::AddLevelViewportMenuExtender()
 {
-    FLevelEditorModule& LevelEditorModule = FModuleManager::Get().LoadModuleChecked<FLevelEditorModule>( "LevelEditor" );
-    auto& MenuExtenders = LevelEditorModule.GetAllLevelViewportContextMenuExtenders();
+	FLevelEditorModule& LevelEditorModule = FModuleManager::Get().LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+	auto& MenuExtenders = LevelEditorModule.GetAllLevelViewportContextMenuExtenders();
 
-    MenuExtenders.Add( FLevelEditorModule::FLevelViewportMenuExtender_SelectedActors::CreateRaw( this, &FHoudiniEngineEditor::GetLevelViewportContextMenuExtender ) );
-    LevelViewportExtenderHandle = MenuExtenders.Last().GetHandle();
+	MenuExtenders.Add(FLevelEditorModule::FLevelViewportMenuExtender_SelectedActors::CreateRaw(this, &FHoudiniEngineEditor::GetLevelViewportContextMenuExtender));
+	LevelViewportExtenderHandle = MenuExtenders.Last().GetHandle();
 }
 
 void
 FHoudiniEngineEditor::RemoveLevelViewportMenuExtender()
 {
-    if ( LevelViewportExtenderHandle.IsValid() )
-    {
-        FLevelEditorModule* LevelEditorModule = FModuleManager::Get().GetModulePtr<FLevelEditorModule>("LevelEditor");
-        if ( LevelEditorModule )
-        {
-            typedef FLevelEditorModule::FLevelViewportMenuExtender_SelectedActors DelegateType;
-            LevelEditorModule->GetAllLevelViewportContextMenuExtenders().RemoveAll(
-                [=]( const DelegateType& In ) { return In.GetHandle() == LevelViewportExtenderHandle; } );
-        }
-    }
+	if (LevelViewportExtenderHandle.IsValid())
+	{
+		FLevelEditorModule* LevelEditorModule = FModuleManager::Get().GetModulePtr<FLevelEditorModule>("LevelEditor");
+		if (LevelEditorModule)
+		{
+			typedef FLevelEditorModule::FLevelViewportMenuExtender_SelectedActors DelegateType;
+			LevelEditorModule->GetAllLevelViewportContextMenuExtenders().RemoveAll(
+				[=](const DelegateType& In) { return In.GetHandle() == LevelViewportExtenderHandle; });
+		}
+	}
 }
 
 TSharedRef<FExtender>
-FHoudiniEngineEditor::GetLevelViewportContextMenuExtender( const TSharedRef<FUICommandList> CommandList, const TArray<AActor*> InActors )
+FHoudiniEngineEditor::GetLevelViewportContextMenuExtender(const TSharedRef<FUICommandList> CommandList, const TArray<AActor*> InActors)
 {
-    TSharedRef<FExtender> Extender = MakeShareable(new FExtender);
+	TSharedRef<FExtender> Extender = MakeShareable(new FExtender);
 
-    // Build an array of the HoudiniAssets corresponding to the selected actors
-    TArray< TWeakObjectPtr< UHoudiniAsset > > HoudiniAssets;
-    TArray< TWeakObjectPtr< AHoudiniAssetActor > > HoudiniAssetActors;
-    for ( auto CurrentActor : InActors )
-    {
-        AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>( CurrentActor );
-        if ( !HoudiniAssetActor || HoudiniAssetActor->IsPendingKill() )
-            continue;
+	// Build an array of the HoudiniAssets corresponding to the selected actors
+	TArray< TWeakObjectPtr< UHoudiniAsset > > HoudiniAssets;
+	TArray< TWeakObjectPtr< AHoudiniAssetActor > > HoudiniAssetActors;
+	for (auto CurrentActor : InActors)
+	{
+		AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>(CurrentActor);
+		if (!HoudiniAssetActor || HoudiniAssetActor->IsPendingKill())
+			continue;
 
-        HoudiniAssetActors.Add( HoudiniAssetActor );
+		HoudiniAssetActors.Add(HoudiniAssetActor);
 
-        UHoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
-        if ( !HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill() )
-            continue;
+		UHoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
+			continue;
 
-        HoudiniAssets.AddUnique( HoudiniAssetComponent->GetHoudiniAsset() );
-    }
+		HoudiniAssets.AddUnique(HoudiniAssetComponent->GetHoudiniAsset());
+	}
 
-    if ( HoudiniAssets.Num() > 0 )
-    {
-        // Add the Asset menu extension
-        if ( AssetTypeActions.Num() > 0 )
-        {
-            // Add the menu extensions via our HoudiniAssetTypeActions
-            FHoudiniAssetTypeActions * HATA = static_cast<FHoudiniAssetTypeActions*>( AssetTypeActions[0].Get() );
-            if ( HATA )
-                Extender = HATA->AddLevelEditorMenuExtenders( HoudiniAssets );
-        }
-    }
+	if (HoudiniAssets.Num() > 0)
+	{
+		// Add the Asset menu extension
+		if (AssetTypeActions.Num() > 0)
+		{
+			// Add the menu extensions via our HoudiniAssetTypeActions
+			FAssetTypeActions_HoudiniAsset * HATA = static_cast<FAssetTypeActions_HoudiniAsset*>(AssetTypeActions[0].Get());
+			if (HATA)
+				Extender = HATA->AddLevelEditorMenuExtenders(HoudiniAssets);
+		}
+	}
 
-    if ( HoudiniAssetActors.Num() > 0 )
-    {
-        // Add some actor menu extensions
-        FLevelEditorModule& LevelEditor = FModuleManager::GetModuleChecked<FLevelEditorModule>( TEXT("LevelEditor") );
-        TSharedRef<FUICommandList> LevelEditorCommandBindings = LevelEditor.GetGlobalLevelEditorActions();
-        Extender->AddMenuExtension(
-            "ActorControl",
-            EExtensionHook::After,
-            LevelEditorCommandBindings,
-            FMenuExtensionDelegate::CreateLambda( [ this, HoudiniAssetActors ]( FMenuBuilder& MenuBuilder )
-            {
-				MenuBuilder.AddMenuEntry(
-					NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_Recentre", "Recentre selected"),
-					NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_RecentreTooltip", "Recentres the selected Houdini Asset Actors pivots to their input/cooked static mesh average centre."),
-					FSlateIcon(FHoudiniEngineStyle::GetStyleSetName(), "HoudiniEngine.HoudiniEngineLogo"),
-					FUIAction(
-						FExecuteAction::CreateRaw(this, &FHoudiniEngineEditor::RecentreSelection),
-						FCanExecuteAction::CreateLambda([=] { return (HoudiniAssetActors.Num() > 0); })
-					)
-				);
+	if (HoudiniAssetActors.Num() > 0)
+	{
+		// Add some actor menu extensions
+		FLevelEditorModule& LevelEditor = FModuleManager::GetModuleChecked<FLevelEditorModule>(TEXT("LevelEditor"));
+		TSharedRef<FUICommandList> LevelEditorCommandBindings = LevelEditor.GetGlobalLevelEditorActions();
+		Extender->AddMenuExtension(
+			"ActorControl",
+			EExtensionHook::After,
+			LevelEditorCommandBindings,
+			FMenuExtensionDelegate::CreateLambda([this, HoudiniAssetActors](FMenuBuilder& MenuBuilder)
+		{
+			MenuBuilder.AddMenuEntry(
+				NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_Recentre", "Recentre selected"),
+				NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_RecentreTooltip", "Recentres the selected Houdini Asset Actors pivots to their input/cooked static mesh average centre."),
+				FSlateIcon(FHoudiniEngineStyle::GetStyleSetName(), "HoudiniEngine.HoudiniEngineLogo"),
+				FUIAction(
+					FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RecentreSelection(); }),
+					FCanExecuteAction::CreateLambda([=] { return (HoudiniAssetActors.Num() > 0); })
+				)
+			);
 
-                MenuBuilder.AddMenuEntry(
-                    NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_Recook", "Recook selected"),
-                    NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_RecookTooltip", "Forces a recook on the selected Houdini Asset Actors."),
-                    FSlateIcon( FHoudiniEngineStyle::GetStyleSetName(), "HoudiniEngine.HoudiniEngineLogo"),
-                    FUIAction(
-                        FExecuteAction::CreateRaw(this, &FHoudiniEngineEditor::RecookSelection ),
-                        FCanExecuteAction::CreateLambda([=] { return ( HoudiniAssetActors.Num() > 0 ); })
-                    )
-                );
+			MenuBuilder.AddMenuEntry(
+				NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_Recook", "Recook selected"),
+				NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_RecookTooltip", "Forces a recook on the selected Houdini Asset Actors."),
+				FSlateIcon(FHoudiniEngineStyle::GetStyleSetName(), "HoudiniEngine._CookSelected"),
+				FUIAction(					
+					FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RecookSelection(); }),
+					FCanExecuteAction::CreateLambda([=] { return (HoudiniAssetActors.Num() > 0); })
+				)
+			);
 
-                MenuBuilder.AddMenuEntry(
-                    NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_Rebuild", "Rebuild selected"),
-                    NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_RebuildTooltip", "Rebuilds selected Houdini Asset Actors in the current level."),
-                    FSlateIcon( FHoudiniEngineStyle::GetStyleSetName(), "HoudiniEngine.HoudiniEngineLogo"),
-                    FUIAction(
-                        FExecuteAction::CreateRaw(this, &FHoudiniEngineEditor::RebuildSelection ),
-                        FCanExecuteAction::CreateLambda([=] { return ( HoudiniAssetActors.Num() > 0 ); })
-                    )
-                );
-            } )
-        );
-    }
+			MenuBuilder.AddMenuEntry(
+				NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_Rebuild", "Rebuild selected"),
+				NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_RebuildTooltip", "Rebuilds selected Houdini Asset Actors in the current level."),
+				FSlateIcon(FHoudiniEngineStyle::GetStyleSetName(), "HoudiniEngine._RebuildSelected"),
+				FUIAction(
+					FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RebuildSelection(); }),
+					FCanExecuteAction::CreateLambda([=] { return (HoudiniAssetActors.Num() > 0); })
+				)
+			);
 
-    return Extender;
+			MenuBuilder.AddMenuEntry(
+				NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_Refine_ProxyMeshes", "Refine Houdini Proxy Meshes"),
+				NSLOCTEXT("HoudiniAssetLevelViewportContextActions", "HoudiniActor_Refine_ProxyMeshesTooltip", "Build and replace Houdini Proxy Meshes with Static Meshes."),
+				FSlateIcon(FHoudiniEngineStyle::GetStyleSetName(), "HoudiniEngine._RefineSelected"),
+				FUIAction(
+					FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshes(true); }),
+					FCanExecuteAction::CreateLambda([=] { return (HoudiniAssetActors.Num() > 0); })
+				)
+			);
+		})
+		);
+	}
+
+	return Extender;
 }
 
 void
-FHoudiniEngineEditor::GetAllHoudiniToolDirectories( TArray<FHoudiniToolDirectory>& HoudiniToolsDirectoryArray ) const
+FHoudiniEngineEditor::RegisterConsoleCommands()
 {
-    HoudiniToolsDirectoryArray.Empty();
+	// Register corresponding console commands
+	static FAutoConsoleCommand CCmdOpen = FAutoConsoleCommand(
+		TEXT("Houdini.Open"),
+		TEXT("Open the scene in Houdini."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::OpenInHoudini));
 
-    // Read the default tools from the $HFS/engine/tool folder
-    FDirectoryPath DefaultToolPath;
-    FString HFSPath = FPaths::GetPath(FHoudiniEngine::Get().GetLibHAPILocation());
-    FString DefaultPath = FPaths::Combine(HFSPath, TEXT("engine"));
-    DefaultPath = FPaths::Combine(DefaultPath, TEXT("tools"));
+	static FAutoConsoleCommand CCmdSave = FAutoConsoleCommand(
+		TEXT("Houdini.Save"),
+		TEXT("Save the current Houdini scene to a hip file."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::SaveHIPFile));
 
-    FHoudiniToolDirectory ToolDir;
-    ToolDir.Name = TEXT("Default");
-    ToolDir.Path.Path = DefaultPath;
-    ToolDir.ContentDirID = TEXT("Default");
+	static FAutoConsoleCommand CCmdBake = FAutoConsoleCommand(
+		TEXT("Houdini.BakeAll"),
+		TEXT("Bakes and replaces with blueprints all Houdini Asset Actors in the current level."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::BakeAllAssets));
 
-    HoudiniToolsDirectoryArray.Add( ToolDir );
+	static FAutoConsoleCommand CCmdClean = FAutoConsoleCommand(
+		TEXT("Houdini.Clean"),
+		TEXT("Cleans up unused/unreferenced Houdini Engine temporary files."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::CleanUpTempFolder));
 
-    // Append all the custom tools directory from the runtime settings
-    UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetMutableDefault< UHoudiniRuntimeSettings >();
-    if ( !HoudiniRuntimeSettings )
-        return;
+	static FAutoConsoleCommand CCmdPause = FAutoConsoleCommand(
+		TEXT("Houdini.Pause"),
+		TEXT("Pauses Houdini Engine Asset cooking."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::PauseAssetCooking));
 
-    // We have to make sure all Custom tool dir have a ContentDirID
-    bool NeedToSave = false;
-    for (int32 n = 0; n < HoudiniRuntimeSettings->CustomHoudiniToolsLocation.Num(); n++ )
-    {
-        if (!HoudiniRuntimeSettings->CustomHoudiniToolsLocation[n].ContentDirID.IsEmpty())
-            continue;
+	// Additional console only commands
+	static FAutoConsoleCommand CCmdCookAll = FAutoConsoleCommand(
+		TEXT("Houdini.CookAll"),
+		TEXT("Re-cooks all Houdini Engine Asset Actors in the current level."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::RecookAllAssets));
 
-        // Generate a new Directory ID for that directory
-        HoudiniRuntimeSettings->CustomHoudiniToolsLocation[n].ContentDirID = ObjectTools::SanitizeObjectName(
-            HoudiniRuntimeSettings->CustomHoudiniToolsLocation[n].Name + TEXT(" ") + FGuid::NewGuid().ToString() );
+	static FAutoConsoleCommand CCmdRebuildAll = FAutoConsoleCommand(
+		TEXT("Houdini.RebuildAll"),
+		TEXT("Rebuilds all Houdini Engine Asset Actors in the current level."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::RebuildAllAssets));
 
-        NeedToSave = true;
-    }
+	static FAutoConsoleCommand CCmdCookSelec = FAutoConsoleCommand(
+		TEXT("Houdini.Cook"),
+		TEXT("Re-cooks selected Houdini Asset Actors in the current level."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::RecookSelection));
 
-    if ( NeedToSave )
-        HoudiniRuntimeSettings->SaveConfig();
+	static FAutoConsoleCommand CCmdRebuildSelec = FAutoConsoleCommand(
+		TEXT("Houdini.Rebuild"),
+		TEXT("Rebuilds selected Houdini Asset Actors in the current level."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::RebuildSelection));
 
-    // Add all the custom tool paths
-    HoudiniToolsDirectoryArray.Append( HoudiniRuntimeSettings->CustomHoudiniToolsLocation );
+	static FAutoConsoleCommand CCmdBakeSelec = FAutoConsoleCommand(
+		TEXT("Houdini.Bake"),
+		TEXT("Bakes and replaces with blueprints selected Houdini Asset Actors in the current level."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::BakeSelection));
+
+	static FAutoConsoleCommand CCmdRestartSession = FAutoConsoleCommand(
+		TEXT("Houdini.RestartSession"),
+		TEXT("Restart the current Houdini Session."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::RestartSession));
+
+	/*
+	IConsoleManager &ConsoleManager = IConsoleManager::Get();
+	const TCHAR *CommandName = TEXT("HoudiniEngine.RefineHoudiniProxyMeshesToStaticMeshes");
+	IConsoleCommand *Command = ConsoleManager.RegisterConsoleCommand(
+		CommandName,
+		TEXT("Builds and replaces all Houdini proxy meshes with UStaticMeshes."),
+		FConsoleCommandDelegate::CreateLambda([]() { FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshes(false); }));
+	if (Command)
+	{
+		ConsoleCommands.Add(Command);
+	}
+	else
+	{
+		HOUDINI_LOG_ERROR(TEXT("Failed to register the '%s' console command."), CommandName);
+	}
+	*/
+
+	static FAutoConsoleCommand CCmdRefine = FAutoConsoleCommand(
+		TEXT("Houdini.RefineAll"),
+		TEXT("Builds and replaces all Houdini proxy meshes with UStaticMeshes."),
+		FConsoleCommandDelegate::CreateLambda([]() { FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshes(false); }));
+
+	static FAutoConsoleCommand CCmdOpenSessionSync = FAutoConsoleCommand(
+		TEXT("Houdini.OpenSessionSync"),
+		TEXT("Stops the current session, opens Houdini and automnatically start and connect a Session Sync."),
+		FConsoleCommandDelegate::CreateStatic(&FHoudiniEngineCommands::OpenSessionSync));
 }
 
 void
-FHoudiniEngineEditor::GetHoudiniToolDirectories(const int32& SelectedDirIndex, TArray<FHoudiniToolDirectory>& HoudiniToolsDirectoryArray) const
+FHoudiniEngineEditor::UnregisterConsoleCommands()
 {
-    HoudiniToolsDirectoryArray.Empty();
-
-    // Get All the houdini tool directories
-    GetAllHoudiniToolDirectories(HoudiniToolsDirectoryArray);
-
-    // Only keep the selected one
-    // -1 indicates we want all directories
-    if ( SelectedDirIndex >= 0 )
-    {
-        for (int32 n = HoudiniToolsDirectoryArray.Num() - 1; n >= 0; n--)
-        {
-            if (n != CurrentHoudiniToolDirIndex)
-                HoudiniToolsDirectoryArray.RemoveAt(n);
-        }
-    }
+	IConsoleManager &ConsoleManager = IConsoleManager::Get();
+	for (IConsoleCommand *Command : ConsoleCommands)
+	{
+		if (Command)
+		{
+			ConsoleManager.UnregisterConsoleObject(Command);
+		}
+	}
+	ConsoleCommands.Empty();
 }
 
 void
-FHoudiniEngineEditor::UpdateHoudiniToolList(const int32 SelectedDir/*=-1*/)
+FHoudiniEngineEditor::RegisterEditorDelegates()
 {
-    CurrentHoudiniToolDirIndex = SelectedDir;
+	PreSaveWorldEditorDelegateHandle = FEditorDelegates::PreSaveWorld.AddLambda([](uint32 SaveFlags, UWorld* World)
+	{
+		// Skip if this is a game world or an autosave, only refine meshes when the user manually saves
+		if (!World->IsGameWorld() && (SaveFlags & ESaveFlags::SAVE_FromAutosave) == 0)
+		{
+			const bool bSelectedOnly = false;
+			const bool bSilent = false;
+			const bool bRefineAll = false;
+			const bool bOnPreSaveWorld = true;
+			UWorld * const OnPreSaveWorld = World;
+			const bool bOnPreBeginPIE = false;
+			FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshes(bSelectedOnly, bSilent, bRefineAll, bOnPreSaveWorld, OnPreSaveWorld, bOnPreBeginPIE);
+		}
 
-    // Clean up the existing tool list
-    HoudiniTools.Empty();
+		if (!World->IsGameWorld())
+		{
+			UWorld * const OnPreSaveWorld = World;
 
-    // Get All the houdini tool directories
-    TArray<FHoudiniToolDirectory> HoudiniToolsDirectoryArray;
-    GetHoudiniToolDirectories( SelectedDir, HoudiniToolsDirectoryArray );
+			FDelegateHandle& OnPostSaveWorldHandle = FHoudiniEngineEditor::Get().GetOnPostSaveWorldOnceHandle();
+			if (OnPostSaveWorldHandle.IsValid())
+			{
+				if (FEditorDelegates::PostSaveWorld.Remove(OnPostSaveWorldHandle))
+					OnPostSaveWorldHandle.Reset();
+			}
 
-    // Add the tools for all the directories
-    for ( int32 n = 0; n < HoudiniToolsDirectoryArray.Num(); n++ )
-    {
-        FHoudiniToolDirectory CurrentDir = HoudiniToolsDirectoryArray[n];
-        bool isDefault = ( (n == 0) && (CurrentHoudiniToolDirIndex <= 0) );
-        UpdateHoudiniToolList( CurrentDir, isDefault );
-    }
+			// Save all dirty temporary cook package OnPostSaveWorld
+			OnPostSaveWorldHandle = FEditorDelegates::PostSaveWorld.AddLambda([OnPreSaveWorld](uint32 InSaveFlags, UWorld* InWorld, bool bInSuccess) 
+			{
+				if (OnPreSaveWorld && OnPreSaveWorld != InWorld)
+					return;
+
+				FHoudiniEngineEditorUtils::SaveAllHoudiniTemporaryCookData(InWorld);
+
+				FDelegateHandle& OnPostSaveWorldHandle = FHoudiniEngineEditor::Get().GetOnPostSaveWorldOnceHandle();
+				if (OnPostSaveWorldHandle.IsValid())
+				{
+					if (FEditorDelegates::PostSaveWorld.Remove(OnPostSaveWorldHandle))
+						OnPostSaveWorldHandle.Reset();
+				}
+			});
+		}
+	});
+
+	PreBeginPIEEditorDelegateHandle = FEditorDelegates::PreBeginPIE.AddLambda([](const bool bIsSimulating)
+	{
+		const bool bSelectedOnly = false;
+		const bool bSilent = false;
+		const bool bRefineAll = false;
+		const bool bOnPreSaveWorld = false;
+		UWorld * const OnPreSaveWorld = nullptr;
+		const bool bOnPreBeginPIE = true;
+		FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshes(bSelectedOnly, bSilent, bRefineAll, bOnPreSaveWorld, OnPreSaveWorld, bOnPreBeginPIE);
+	});
+
+	OnDeleteActorsBegin = FEditorDelegates::OnDeleteActorsBegin.AddLambda([this](){ this->HandleOnDeleteActorsBegin(); });
+	OnDeleteActorsEnd = FEditorDelegates::OnDeleteActorsEnd.AddLambda([this](){ this-> HandleOnDeleteActorsEnd(); });
 }
 
 void
-FHoudiniEngineEditor::UpdateHoudiniToolList(const FHoudiniToolDirectory& HoudiniToolsDirectory, const bool& isDefault)
+FHoudiniEngineEditor::UnregisterEditorDelegates()
 {
-    FString ToolDirPath = HoudiniToolsDirectory.Path.Path;
-    if ( ToolDirPath.IsEmpty() )
-        return;
+	if (PreSaveWorldEditorDelegateHandle.IsValid())
+		FEditorDelegates::PreSaveWorld.Remove(PreSaveWorldEditorDelegateHandle);
 
-    // We need to either load or create a new HoudiniAsset from the tool's HDA
-    FString ToolPath = TEXT("/Game/HoudiniEngine/Tools/");
-    ToolPath = FPaths::Combine(ToolPath, HoudiniToolsDirectory.ContentDirID );
-    ToolPath = ObjectTools::SanitizeObjectPath(ToolPath);
+	if (PreBeginPIEEditorDelegateHandle.IsValid())
+		FEditorDelegates::PreSaveWorld.Remove(PreBeginPIEEditorDelegateHandle);
 
-    // List all the json files in the current directory
-    TArray<FString> JSONFiles;
-    IFileManager::Get().FindFiles(JSONFiles, *ToolDirPath, TEXT(".json"));
-    for ( const FString& CurrentJsonFile : JSONFiles )
-    {
-        FString CurrentToolName;
-        EHoudiniToolType CurrentToolType;
-        EHoudiniToolSelectionType CurrentToolSelectionType;
-        FString CurrentToolToolTip;
-        FFilePath CurrentToolIconPath;
-        FFilePath CurrentToolAssetPath;
-        FString CurrentToolHelpURL;
+	if (OnDeleteActorsBegin.IsValid())
+		FEditorDelegates::OnDeleteActorsBegin.Remove(OnDeleteActorsBegin);
 
-        // Extract the Tool info from the JSON file
-        FString CurrentJsonFilePath = ToolDirPath / CurrentJsonFile;
-        if ( !GetHoudiniToolDescriptionFromJSON(
-            CurrentJsonFilePath, CurrentToolName, CurrentToolType, CurrentToolSelectionType,
-            CurrentToolToolTip, CurrentToolIconPath, CurrentToolAssetPath, CurrentToolHelpURL))
-            continue;
-
-        FText ToolName = FText::FromString(CurrentToolName);
-        FText ToolTip = FText::FromString(CurrentToolToolTip);
-
-        FString IconPath = FPaths::ConvertRelativePathToFull(CurrentToolIconPath.FilePath);
-        const FSlateBrush* CustomIconBrush = nullptr;
-        if (FPaths::FileExists(IconPath))
-        {
-            FName BrushName = *IconPath;
-            CustomIconBrush = new FSlateDynamicImageBrush(BrushName, FVector2D(40.f, 40.f));
-        }
-        else
-        {
-            CustomIconBrush = FHoudiniEngineStyle::Get()->GetBrush(TEXT("HoudiniEngine.HoudiniEngineLogo40"));
-        }
-
-        // Construct the asset's ref
-        FString BaseToolName = ObjectTools::SanitizeObjectName( FPaths::GetBaseFilename( CurrentToolAssetPath.FilePath ) );
-        FString ToolAssetRef = TEXT("HoudiniAsset'") + FPaths::Combine(ToolPath, BaseToolName) + TEXT(".") + BaseToolName + TEXT("'");
-        TSoftObjectPtr<UHoudiniAsset> HoudiniAsset(ToolAssetRef);
-
-        // See if the HDA needs to be imported in Unreal, or just loaded
-        bool NeedsImport = false;
-        if ( !HoudiniAsset.IsValid() )
-        {
-            NeedsImport = true;
-
-            // Try to load the asset
-            UHoudiniAsset* LoadedAsset = HoudiniAsset.LoadSynchronous();
-            if ( LoadedAsset && !LoadedAsset->IsPendingKill() )
-                NeedsImport = !HoudiniAsset.IsValid();
-        }
-
-        if ( NeedsImport )
-        {
-            // Automatically import the HDA and create a uasset for it
-            FAssetToolsModule& AssetToolsModule = FModuleManager::Get().LoadModuleChecked<FAssetToolsModule>("AssetTools");
-            TArray<FString> FileNames;
-            FileNames.Add(CurrentToolAssetPath.FilePath);
-
-            UAutomatedAssetImportData* ImportData = NewObject<UAutomatedAssetImportData>();
-            ImportData->bReplaceExisting = true;
-            ImportData->bSkipReadOnly = true;
-            ImportData->Filenames = FileNames;
-            ImportData->DestinationPath = ToolPath;
-            TArray<UObject*> AssetArray = AssetToolsModule.Get().ImportAssetsAutomated(ImportData);
-            if ( AssetArray.Num() <=  0 )
-                continue;
-
-            HoudiniAsset = Cast< UHoudiniAsset >(AssetArray[0]);
-            if (!HoudiniAsset || HoudiniAsset->IsPendingKill() )
-                continue;
-
-            // Try to save the newly created package
-            UPackage* Pckg = Cast<UPackage>( HoudiniAsset->GetOuter() );
-            if (Pckg && !Pckg->IsPendingKill() && Pckg->IsDirty() )
-            {
-                Pckg->FullyLoad();
-                UPackage::SavePackage(
-                    Pckg, nullptr, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone,
-                    *FPackageName::LongPackageNameToFilename( Pckg->GetName(), FPackageName::GetAssetPackageExtension() ) );
-            }
-        }
-
-        // Add the tool to the tool list
-        HoudiniTools.Add( MakeShareable( new FHoudiniTool(
-            HoudiniAsset, ToolName, CurrentToolType, CurrentToolSelectionType, ToolTip, CustomIconBrush, CurrentToolHelpURL, isDefault, CurrentToolAssetPath, HoudiniToolsDirectory, CurrentJsonFile ) ) );
-    }
+	if (OnDeleteActorsEnd.IsValid())
+		FEditorDelegates::OnDeleteActorsEnd.Remove(OnDeleteActorsEnd);
 }
 
-bool
-FHoudiniEngineEditor::GetHoudiniToolDescriptionFromJSON(const FString& JsonFilePath,
-    FString& OutName, EHoudiniToolType& OutType, EHoudiniToolSelectionType& OutSelectionType,
-    FString& OutToolTip, FFilePath& OutIconPath, FFilePath& OutAssetPath, FString& OutHelpURL )
+FString 
+FHoudiniEngineEditor::GetStringFromHoudiniEngineBakeOption(const EHoudiniEngineBakeOption & BakeOption) 
 {
-    if ( JsonFilePath.IsEmpty() )
-        return false;
+	FString Str;
+	switch (BakeOption) 
+	{
+	case EHoudiniEngineBakeOption::ToActor:
+		Str = "Actor";
+		break;
 
-    // Read the file as a string
-    FString FileContents;
-    if ( !FFileHelper::LoadFileToString( FileContents, *JsonFilePath ) )
-    {
-        HOUDINI_LOG_ERROR( TEXT("Failed to import Houdini Tool .json file: %s"), *JsonFilePath);
-        return false;
-    }
+	case EHoudiniEngineBakeOption::ToBlueprint:
+		Str = "Blueprint";
+		break;
 
-    // Parse it as JSON
-    TSharedPtr<FJsonObject> JSONObject;
-    TSharedRef< TJsonReader<> > Reader = TJsonReaderFactory<>::Create( FileContents );
-    if (!FJsonSerializer::Deserialize(Reader, JSONObject) || !JSONObject.IsValid())
-    {
-        HOUDINI_LOG_ERROR( TEXT("Invalid json in Houdini Tool .json file: %s"), *JsonFilePath);
-        return false;
-    }
+	case EHoudiniEngineBakeOption::ToFoliage:
+		Str = "Foliage";
+		break;
 
-    // First, check that the tool is compatible with UE4
-    bool IsCompatible = true;
-    if (JSONObject->HasField(TEXT("target")))
-    {
-        IsCompatible = false;
-        TArray<TSharedPtr<FJsonValue> >TargetArray = JSONObject->GetArrayField("target");
-        for (TSharedPtr<FJsonValue> TargetValue : TargetArray)
-        {
-            if ( !TargetValue.IsValid() )
-                continue;
+	case EHoudiniEngineBakeOption::ToWorldOutliner:
+		Str = "World Outliner";
+		break;
+	}
 
-            // Check the target array field contains either "all" or "unreal"
-            FString TargetString = TargetValue->AsString();                        
-            if ( TargetString.Equals( TEXT("all"), ESearchCase::IgnoreCase )
-                    || TargetString.Equals(TEXT("unreal"), ESearchCase::IgnoreCase) )
-            {
-                IsCompatible = true;
-                break;
-            }
-        }
-    }
-
-    if ( !IsCompatible )
-    {
-        // The tool is not compatible with unreal, skip it
-        HOUDINI_LOG_MESSAGE( TEXT("Skipped Houdini Tool due to invalid target in JSON file: %s"), *JsonFilePath );
-        return false;
-    }
-
-    // Then, we need to make sure the json file has a correponding hda
-    // Start by looking at the assetPath field
-    FString HDAFilePath = FString();
-    if ( JSONObject->HasField( TEXT("assetPath") ) )
-    {
-        // If the json has the assetPath field, read it from there
-        HDAFilePath = JSONObject->GetStringField(TEXT("assetPath"));
-        if (!FPaths::FileExists(HDAFilePath))
-            HDAFilePath = FString();
-    }
-
-    if (HDAFilePath.IsEmpty())
-    {
-        // Look for an hda file with the same name as the json file
-        HDAFilePath = JsonFilePath.Replace(TEXT(".json"), TEXT(".hda"));
-        if (!FPaths::FileExists(HDAFilePath))
-        {
-            // Try .hdalc
-            HDAFilePath = JsonFilePath.Replace(TEXT(".json"), TEXT(".hdalc"));
-            if (!FPaths::FileExists(HDAFilePath))
-            {
-                // Try .hdanc
-                HDAFilePath = JsonFilePath.Replace(TEXT(".json"), TEXT(".hdanc"));
-                if (!FPaths::FileExists(HDAFilePath))
-                    HDAFilePath = FString();
-            }
-        }
-    }
-
-    if ( HDAFilePath.IsEmpty() )
-    {
-        HOUDINI_LOG_ERROR(TEXT("Could not find the hda for the Houdini Tool .json file: %s"), *JsonFilePath);
-        return false;
-    }
-
-    // Create a new asset.
-    OutAssetPath = FFilePath{ HDAFilePath };
-
-    // Read the tool name
-    OutName = FPaths::GetBaseFilename(JsonFilePath);
-    if ( JSONObject->HasField(TEXT("name") ) )
-        OutName = JSONObject->GetStringField(TEXT("name"));
-
-    // Read the tool type
-    OutType = EHoudiniToolType::HTOOLTYPE_OPERATOR_SINGLE;
-    if ( JSONObject->HasField( TEXT("toolType") ) )
-    {
-        FString ToolType = JSONObject->GetStringField(TEXT("toolType"));
-        if ( ToolType.Equals( TEXT("GENERATOR"), ESearchCase::IgnoreCase ) )
-            OutType = EHoudiniToolType::HTOOLTYPE_GENERATOR;
-        else if (ToolType.Equals( TEXT("OPERATOR_SINGLE"), ESearchCase::IgnoreCase ) )
-            OutType = EHoudiniToolType::HTOOLTYPE_OPERATOR_SINGLE;
-        else if (ToolType.Equals(TEXT("OPERATOR_MULTI"), ESearchCase::IgnoreCase))
-            OutType = EHoudiniToolType::HTOOLTYPE_OPERATOR_MULTI;
-        else if (ToolType.Equals(TEXT("BATCH"), ESearchCase::IgnoreCase))
-            OutType = EHoudiniToolType::HTOOLTYPE_OPERATOR_BATCH;
-    }
-
-    // Read the tooltip
-    OutToolTip = FString();
-    if ( JSONObject->HasField( TEXT("toolTip") ) )
-    {
-        OutToolTip = JSONObject->GetStringField(TEXT("toolTip"));
-    }
-
-    // Read the help url
-    OutHelpURL = FString();
-    if (JSONObject->HasField(TEXT("helpURL")))
-    {
-        OutHelpURL = JSONObject->GetStringField(TEXT("helpURL"));
-    }
-
-    // Read the icon path
-    FString IconPath = FString();
-    if (JSONObject->HasField(TEXT("iconPath")))
-    {
-        // If the json has the iconPath field, read it from there
-        IconPath = JSONObject->GetStringField(TEXT("iconPath"));
-        if (!FPaths::FileExists(IconPath))
-            IconPath = FString();
-    }
-
-    if (IconPath.IsEmpty())
-    {
-        // Look for a png file with the same name as the json file
-        IconPath = JsonFilePath.Replace(TEXT(".json"), TEXT(".png"));
-        if (!FPaths::FileExists(IconPath))
-        {
-            IconPath = GetDefaultHoudiniToolIcon();
-        }
-    }
-
-    OutIconPath = FFilePath{ IconPath };
-
-    // Read the selection types
-    FString SelectionType = TEXT("All");
-    if ( JSONObject->HasField(TEXT("UE_SelectionType")) )
-        SelectionType = JSONObject->GetStringField( TEXT("UE_SelectionType") );
-
-    if ( SelectionType.Equals( TEXT("CB"), ESearchCase::IgnoreCase ) )
-        OutSelectionType = EHoudiniToolSelectionType::HTOOL_SELECTION_CB_ONLY;
-    else if ( SelectionType.Equals( TEXT("World"), ESearchCase::IgnoreCase ) )
-        OutSelectionType = EHoudiniToolSelectionType::HTOOL_SELECTION_WORLD_ONLY;
-    else
-        OutSelectionType = EHoudiniToolSelectionType::HTOOL_SELECTION_ALL;
-
-    // TODO: Handle Tags in the JSON?
-
-    return true;
+	return Str;
 }
 
-bool
-FHoudiniEngineEditor::WriteJSONFromHoudiniTool(const FHoudiniTool& Tool)
+FString 
+FHoudiniEngineEditor::GetStringFromPDGBakeTargetOption(const EPDGBakeSelectionOption& BakeOption) 
 {
-    // Start by building a JSON object from the tool
-    TSharedPtr<FJsonObject> JSONObject = MakeShareable(new FJsonObject);
+	FString Str;
+	switch (BakeOption) 
+	{
+	case EPDGBakeSelectionOption::All:
+		Str = "All Outputs";
+		break;
 
-    // Mark the target as unreal only
-    TArray< TSharedPtr<FJsonValue> > TargetValue;
-    TargetValue.Add(MakeShareable(new FJsonValueString(TEXT("unreal"))));
-    JSONObject->SetArrayField(TEXT("target"), TargetValue );
+	case EPDGBakeSelectionOption::SelectedNetwork:
+		Str = "Selected Network (All Outputs)";
+		break;
 
-    // Write the asset Path
-    if (!Tool.SourceAssetPath.FilePath.IsEmpty())
-    {
-        // Only write the assetPath if it's different from the default one (same path as JSON)
-        if (FPaths::GetBaseFilename(Tool.SourceAssetPath.FilePath) != (FPaths::GetBaseFilename(Tool.JSONFile))
-            && (FPaths::GetPath(Tool.SourceAssetPath.FilePath) != Tool.ToolDirectory.Path.Path))
-        {
-            JSONObject->SetStringField(TEXT("assetPath"), FPaths::ConvertRelativePathToFull(Tool.SourceAssetPath.FilePath));
-        }
-    }
+	case EPDGBakeSelectionOption::SelectedNode:
+		Str = "Selected Node (All Outputs)";
+		break;
+	}
 
-    // The Tool Name
-    if ( !Tool.Name.IsEmpty() )
-        JSONObject->SetStringField(TEXT("name"), Tool.Name.ToString());
-
-    // Tooltype
-    FString ToolType = TEXT("GENERATOR");
-    if ( Tool.Type == EHoudiniToolType::HTOOLTYPE_OPERATOR_SINGLE)
-        ToolType = TEXT("OPERATOR_SINGLE");
-    else if (Tool.Type == EHoudiniToolType::HTOOLTYPE_OPERATOR_MULTI)
-        ToolType = TEXT("OPERATOR_MULTI");
-    else if ( Tool.Type == EHoudiniToolType::HTOOLTYPE_OPERATOR_BATCH)
-        ToolType = TEXT("BATCH");
-
-    JSONObject->SetStringField(TEXT("toolType"), ToolType);
-
-    // Tooltip
-    if ( !Tool.ToolTipText.IsEmpty() )
-        JSONObject->SetStringField(TEXT("toolTip"), Tool.ToolTipText.ToString());
-
-    // Help URL
-    if ( !Tool.HelpURL.IsEmpty() )
-        JSONObject->SetStringField(TEXT("helpURL"), Tool.HelpURL);
-
-    // IconPath
-    if ( Tool.Icon )
-    {
-        FString IconPath = Tool.Icon->GetResourceName().ToString();
-        JSONObject->SetStringField(TEXT("iconPath"), IconPath);
-    }
-
-    // Selection Type
-    FString SelectionType = TEXT("All");
-    if (Tool.SelectionType == EHoudiniToolSelectionType::HTOOL_SELECTION_CB_ONLY)
-        SelectionType = TEXT("CB");
-    else if (Tool.SelectionType == EHoudiniToolSelectionType::HTOOL_SELECTION_WORLD_ONLY)
-        SelectionType = TEXT("World");
-    JSONObject->SetStringField(TEXT("UE_SelectionType"), SelectionType);
-
-    FString ToolJSONFilePath = Tool.ToolDirectory.Path.Path / Tool.JSONFile;
-
-    // Output the JSON to a String
-    FString OutputString;
-    TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&OutputString);
-    FJsonSerializer::Serialize(JSONObject.ToSharedRef(), Writer);
-
-    // Then write the output string to the json file itself
-    FString SaveDirectory = Tool.ToolDirectory.Path.Path;
-    FString FileName = Tool.JSONFile;
-
-    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-    // Returns true if the directory existed or has been created
-    if ( PlatformFile.CreateDirectoryTree(*SaveDirectory) )
-    {        
-        FString AbsoluteFilePath = SaveDirectory / FileName;
-        return FFileHelper::SaveStringToFile(OutputString, *AbsoluteFilePath);
-    }
-
-    return false;
+	return Str;
 }
 
-bool
-FHoudiniEngineEditor::FindHoudiniTool( const FHoudiniTool& Tool, int32& FoundIndex, bool& IsDefault )
+FString
+FHoudiniEngineEditor::GetStringFromPDGBakePackageReplaceModeOption(const EPDGBakePackageReplaceModeOption & InOption)
 {
-    // Return -1 if we cant find the Tool
-    FoundIndex = -1;
-
-    for ( int32 Idx = 0; Idx < HoudiniTools.Num(); Idx++ )
-    {
-        TSharedPtr<FHoudiniTool> Current = HoudiniTools[ Idx ];
-        if ( !Current.IsValid() )
-            continue;
-
-        if ( Current->HoudiniAsset != Tool.HoudiniAsset )
-            continue;
-
-        if ( Current->Type != Tool.Type )
-            continue;
-
-        if ( Current->JSONFile != Tool.JSONFile )
-            continue;
-
-        if (Current->ToolDirectory != Tool.ToolDirectory)
-            continue;
-
-        // We found the Houdini Tool
-        IsDefault = Current->DefaultTool;
-        FoundIndex = Idx;
-
-        return true;
-    }
-
-    return false;
+	FString Str;
+	switch (InOption)
+	{
+		case EPDGBakePackageReplaceModeOption::CreateNewAssets:
+			Str = "Create New Assets";
+			break;
+		case EPDGBakePackageReplaceModeOption::ReplaceExistingAssets:
+			Str = "Replace Existing Assets";
+			break;
+	}
+	
+	return Str;
 }
 
-bool
-FHoudiniEngineEditor::FindHoudiniToolInHoudiniSettings( const FHoudiniTool& Tool, int32& FoundIndex )
+const EHoudiniEngineBakeOption 
+FHoudiniEngineEditor::StringToHoudiniEngineBakeOption(const FString & InString) 
 {
-    // Return -1 if we cant find the Tool
-    FoundIndex = -1;
+	if (InString == "Actor")
+		return EHoudiniEngineBakeOption::ToActor;
 
-    // Remove the tool from the runtime settings
-    const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
-    if ( !HoudiniRuntimeSettings )
-        return false;
+	if (InString == "Blueprint")
+		return EHoudiniEngineBakeOption::ToBlueprint;
 
-    // TODO: FIX ME!
-    /*
-    for ( int32 Idx = 0; Idx < HoudiniRuntimeSettings->CustomHoudiniTools.Num(); Idx++ )
-    {
-        FHoudiniToolDescription CurrentDesc = HoudiniRuntimeSettings->CustomHoudiniTools[ Idx ];
+	if (InString == "Foliage")
+		return EHoudiniEngineBakeOption::ToFoliage;
 
-        if ( CurrentDesc.HoudiniAsset != Tool.HoudiniAsset )
-            continue;
+	if (InString == "World Outliner")
+		return EHoudiniEngineBakeOption::ToWorldOutliner;
 
-        if ( CurrentDesc.Type != Tool.Type )
-            continue;
-
-        FoundIndex = Idx;
-        return true;
-    }
-    */
-
-    return false;
+	return EHoudiniEngineBakeOption::ToActor;
 }
 
-void 
-FHoudiniEngineCommands::RegisterCommands()
-{  
-    UI_COMMAND( OpenInHoudini, "Open scene in Houdini", "Opens the current Houdini scene in Houdini.", EUserInterfaceActionType::Button, FInputChord( EKeys::O, EModifierKey::Control | EModifierKey::Alt) );
+const EPDGBakeSelectionOption 
+FHoudiniEngineEditor::StringToPDGBakeSelectionOption(const FString& InString) 
+{
+	if (InString == "All Outputs")
+		return EPDGBakeSelectionOption::All;
 
-    UI_COMMAND( SaveHIPFile, "Save Houdini scene (HIP)", "Saves a .hip file of the current Houdini scene.", EUserInterfaceActionType::Button, FInputChord() );
-    UI_COMMAND( ReportBug, "Report a plugin bug", "Report a bug for Houdini Engine plugin.", EUserInterfaceActionType::Button, FInputChord() );
-   
-    UI_COMMAND( CleanUpTempFolder, "Clean Houdini Engine Temp Folder", "Deletes the unused temporary files in the Temporary Cook Folder.", EUserInterfaceActionType::Button, FInputChord() );
-    UI_COMMAND( BakeAllAssets, "Bake And Replace All Houdini Assets", "Bakes and replaces with blueprints all Houdini Assets in the scene.", EUserInterfaceActionType::Button, FInputChord() );
-    UI_COMMAND( PauseAssetCooking, "Pause Houdini Engine Cooking", "When activated, prevents Houdini Engine from cooking assets until unpaused.", EUserInterfaceActionType::Check, FInputChord( EKeys::P, EModifierKey::Control | EModifierKey::Alt ) );
+	if (InString == "Selected Network (All Outputs)")
+		return EPDGBakeSelectionOption::SelectedNetwork;
 
-    UI_COMMAND( CookSelec, "Recook Selection", "Recooks selected Houdini Asset Actors in the current level.", EUserInterfaceActionType::Button, FInputChord( EKeys::C, EModifierKey::Control | EModifierKey::Alt ) );
-    UI_COMMAND( RebuildSelec, "Rebuild Selection", "Rebuilds selected Houdini Asset Actors in the current level.", EUserInterfaceActionType::Button, FInputChord( EKeys::R, EModifierKey::Control | EModifierKey::Alt ) );
-    UI_COMMAND( BakeSelec, "Bake Selection", "Bakes and replaces with blueprints selected Houdini Asset Actors in the current level.", EUserInterfaceActionType::Button, FInputChord( EKeys::B, EModifierKey::Control | EModifierKey::Alt ) );
+	if (InString == "Selected Node (All Outputs)")
+		return EPDGBakeSelectionOption::SelectedNode;
 
-    UI_COMMAND( RestartSession, "Restart the Houdini Engine Session", "Restarts the current Houdini Engine session.", EUserInterfaceActionType::Button, FInputChord());
+	return EPDGBakeSelectionOption::All;
+}
+
+const EPDGBakePackageReplaceModeOption
+FHoudiniEngineEditor::StringToPDGBakePackageReplaceModeOption(const FString & InString)
+{
+	if (InString == "Create New Assets")
+		return EPDGBakePackageReplaceModeOption::CreateNewAssets;
+
+	if (InString == "Replace Existing Assets")
+		return EPDGBakePackageReplaceModeOption::ReplaceExistingAssets;
+
+	return EPDGBakePackageReplaceModeOption::ReplaceExistingAssets;
+}
+
+const EPackageReplaceMode
+FHoudiniEngineEditor::PDGBakePackageReplaceModeToPackageReplaceMode(const EPDGBakePackageReplaceModeOption& InReplaceMode)
+{
+	EPackageReplaceMode Mode;
+	switch (InReplaceMode)
+	{
+		case EPDGBakePackageReplaceModeOption::CreateNewAssets:
+			Mode = EPackageReplaceMode::CreateNewAssets;
+			break;
+		case EPDGBakePackageReplaceModeOption::ReplaceExistingAssets:
+			Mode = EPackageReplaceMode::ReplaceExistingAssets;
+			break;
+		default:
+		{
+			Mode = FHoudiniPackageParams::GetDefaultReplaceMode();
+			HOUDINI_LOG_WARNING(TEXT("Unsupported value for EPDGBakePackageReplaceModeOption %d, using "
+				"FHoudiniPackageParams::GetDefaultReplaceMode() for resulting EPackageReplaceMode %d"),
+				InReplaceMode, Mode);
+		}
+	}
+
+	return Mode;
+}
+
+void
+FHoudiniEngineEditor::HandleOnDeleteActorsBegin()
+{
+	if (!GEditor)
+		return;
+	
+	TArray<AHoudiniAssetActor*> AssetActorsWithTempPDGOutput;
+	// Iterate over all selected actors
+	for(FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
+	{
+		AActor* SelectedActor = Cast<AActor>(*It);
+		if (IsValid(SelectedActor))
+		{
+			// If the class is a AHoudiniAssetActor check if it has temporary PDG outputs
+			AHoudiniAssetActor* AssetActor = Cast<AHoudiniAssetActor>(SelectedActor);
+			if (IsValid(AssetActor))
+			{
+				UHoudiniPDGAssetLink* AssetLink = AssetActor->GetPDGAssetLink();
+				if (IsValid(AssetLink) && AssetLink->HasTemporaryOutputs())
+				{
+					AssetActorsWithTempPDGOutput.Add(AssetActor);						
+				}
+			}
+		}
+	}
+
+	if (AssetActorsWithTempPDGOutput.Num() > 0)
+	{
+		const FText DialogTitle = LOCTEXT(
+			"PDGAssetLink_DeleteWithTemporaryOutputs_Title",
+			"Warning: PDG Asset Link(s) With Temporary Outputs");
+		const EAppReturnType::Type Choice = FMessageDialog::Open(
+			EAppMsgType::YesNo,
+			EAppReturnType::No,
+			LOCTEXT(
+				"PDGAssetLink_DeleteWithTemporaryOutputs",
+				"One or more PDG Asset Links in the selection still have temporary outputs. Are you sure you want to "
+				"delete these PDG Asset Links and their actors?"),
+			&DialogTitle);
+
+		const bool bKeepAssetLinkActors = (Choice == EAppReturnType::No);
+		for (AHoudiniAssetActor* AssetActor : AssetActorsWithTempPDGOutput)
+		{
+			if (bKeepAssetLinkActors)
+			{
+				GEditor->SelectActor(AssetActor, false, false);
+				ActorsToReselectOnDeleteActorsEnd.Add(AssetActor);
+			}
+		}
+	}
+}
+
+void
+FHoudiniEngineEditor::HandleOnDeleteActorsEnd()
+{
+	if (!GEditor)
+		return;
+
+	for (AActor* Actor : ActorsToReselectOnDeleteActorsEnd)
+	{
+		if (IsValid(Actor))
+			GEditor->SelectActor(Actor, true, false);
+	}
+	GEditor->NoteSelectionChange();
+	ActorsToReselectOnDeleteActorsEnd.Empty();
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -1,786 +1,1033 @@
 /*
-* Copyright (c) <2017> Side Effects Software Inc.
+* Copyright (c) <2021> Side Effects Software Inc.
+* All rights reserved.
 *
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
 *
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
+* 1. Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
 *
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
+* 2. The name of Side Effects Software may not be used to endorse or
+*    promote products derived from this software without specific prior
+*    written permission.
 *
-* Produced by:
-*      Mykola Konyk
-*      Side Effects Software Inc
-*      123 Front Street West, Suite 1401
-*      Toronto, Ontario
-*      Canada   M5J 2M2
-*      416-504-9876
-*
+* THIS SOFTWARE IS PROVIDED BY SIDE EFFECTS SOFTWARE "AS IS" AND ANY EXPRESS
+* OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+* NO EVENT SHALL SIDE EFFECTS SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+* OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "HoudiniSplineComponentVisualizer.h"
 
-#include "HoudiniApi.h"
-#include "HoudiniEngineEditorPrivatePCH.h"
-#include "HoudiniAssetComponent.h"
+#include "ActorEditorUtils.h"
 #include "HoudiniEngineEditor.h"
-#include "EditorViewportClient.h"
-#include "Framework/MultiBox/MultiBoxBuilder.h"
-#include "Framework/Application/SlateApplication.h"
-#include "EditorStyleSet.h"
+#include "HoudiniEngineEditorPrivatePCH.h"
+#include "HoudiniApi.h"
+#include "HoudiniAssetComponent.h"
+#include "HoudiniSplineComponent.h"
+#include "HoudiniInputObject.h"
+#include "HoudiniInput.h"
+#include "HoudiniEngineStyle.h"
+#include "HoudiniEngineUtils.h"
 
-#include "HoudiniEngineRuntimePrivatePCH.h"
-#include "Internationalization/Internationalization.h"
+#include "Editor/UnrealEdEngine.h"
+#include "UnrealEdGlobals.h"
+#include "ComponentVisualizerManager.h"
+
+#include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "ScopedTransaction.h"
+#include "EditorViewportClient.h"
+#include "Engine/Selection.h"
+#include "HModel.h"
+
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
-IMPLEMENT_HIT_PROXY( HHoudiniSplineVisProxy, HComponentVisProxy );
-IMPLEMENT_HIT_PROXY( HHoudiniSplineControlPointVisProxy, HHoudiniSplineVisProxy );
+IMPLEMENT_HIT_PROXY(HHoudiniSplineVisProxy, HComponentVisProxy);
+IMPLEMENT_HIT_PROXY(HHoudiniSplineControlPointVisProxy, HHoudiniSplineVisProxy);
+IMPLEMENT_HIT_PROXY(HHoudiniSplineCurveSegmentVisProxy, HHoudiniSplineVisProxy);
 
-HHoudiniSplineVisProxy::HHoudiniSplineVisProxy( const UActorComponent * InComponent )
-    : HComponentVisProxy( InComponent, HPP_Wireframe )
+HHoudiniSplineVisProxy::HHoudiniSplineVisProxy(const UActorComponent * InComponent)
+	: HComponentVisProxy(InComponent, HPP_Wireframe)
 {}
 
 HHoudiniSplineControlPointVisProxy::HHoudiniSplineControlPointVisProxy(
-    const UActorComponent * InComponent, int32 InControlPointIndex )
-    : HHoudiniSplineVisProxy( InComponent )
-    , ControlPointIndex( InControlPointIndex )
+	const UActorComponent * InComponent, int32 InControlPointIndex)
+	: HHoudiniSplineVisProxy(InComponent)
+	, ControlPointIndex(InControlPointIndex)
+{}
+
+HHoudiniSplineCurveSegmentVisProxy::HHoudiniSplineCurveSegmentVisProxy(
+	const UActorComponent * InComponent, int32 InDisplayPointIndex)
+	: HHoudiniSplineVisProxy(InComponent)
+	, DisplayPointIndex(InDisplayPointIndex)
 {}
 
 FHoudiniSplineComponentVisualizerCommands::FHoudiniSplineComponentVisualizerCommands()
-    : TCommands< FHoudiniSplineComponentVisualizerCommands >(
-        "HoudiniSplineComponentVisualizer",
-        LOCTEXT( "HoudiniSplineComponentVisualizer", "Houdini Spline Component Visualizer" ),
-        NAME_None,
-        FEditorStyle::GetStyleSetName() )
+	: TCommands< FHoudiniSplineComponentVisualizerCommands >(
+		"HoudiniSplineComponentVisualizer",
+		LOCTEXT("HoudiniSplineComponentVisualizer", "Houdini Spline Component Visualizer"),
+		NAME_None,
+		FEditorStyle::GetStyleSetName())
 {}
 
-void
+void 
 FHoudiniSplineComponentVisualizerCommands::RegisterCommands()
 {
-    UI_COMMAND(
-        CommandAddControlPoint, "Add Control Point", "Add Control Point.",
-        EUserInterfaceActionType::Button, FInputChord() );
+	UI_COMMAND(
+		CommandAddControlPoint, "Add Control Point", "Add control points.",
+		EUserInterfaceActionType::Button, FInputChord());
 
-    UI_COMMAND(
-        CommandDuplicateControlPoint, "Duplicate Control Point", "Duplicate Control Point.",
-        EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(
+		CommandDuplicateControlPoint, "Duplicate Control Point", "Duplicate control points.",
+		EUserInterfaceActionType::Button, FInputChord());
 
-    UI_COMMAND(
-        CommandDeleteControlPoint, "Delete Control Point", "Delete Control Point.",
-        EUserInterfaceActionType::Button, FInputChord(EKeys::Delete) );
+	UI_COMMAND(
+		CommandDeleteControlPoint, "Delete Control Point", "delete control points.",
+		EUserInterfaceActionType::Button, FInputChord(EKeys::Delete));
+
+	UI_COMMAND(CommandDeselectAllControlPoints, "Deselect All", "Deselect all control points.",
+		EUserInterfaceActionType::Button, FInputChord());
+
+	UI_COMMAND(CommandInsertControlPoint, "Insert Control Point", "Insert a control point on curve.",
+		EUserInterfaceActionType::Button, FInputChord());
 }
+
 
 FHoudiniSplineComponentVisualizer::FHoudiniSplineComponentVisualizer()
-    : FComponentVisualizer()
-    , EditedHoudiniSplineComponent( nullptr )
-    , bCurveEditing( false )
-    , bAllowDuplication( true )
-    , CachedRotation( FQuat::Identity )
-    , bComponentNeedUpdate( false )
-    , bCookOnlyOnMouseRelease( false )
-    , bRecordTransactionOnMove( true )
+	:FComponentVisualizer()
+	,bAllowDuplication(false)
+	,EditedCurveSegmentIndex(-1)
+	,CachedRotation(FQuat::Identity)
+	,CachedScale3D(FVector::OneVector)
+	,bMovingPoints(false)
+	,bInsertingOnCurveControlPoints(false)
+	,bRecordingMovingPoints(false)
 {
-    FHoudiniSplineComponentVisualizerCommands::Register();
-    VisualizerActions = MakeShareable( new FUICommandList );
+	FHoudiniSplineComponentVisualizerCommands::Register();
+	VisualizerActions = MakeShareable(new FUICommandList);
 }
 
-FHoudiniSplineComponentVisualizer::~FHoudiniSplineComponentVisualizer()
-{
-    FHoudiniSplineComponentVisualizerCommands::Unregister();
-}
-
-void
+void 
 FHoudiniSplineComponentVisualizer::OnRegister()
 {
-    const auto & Commands = FHoudiniSplineComponentVisualizerCommands::Get();
+	HOUDINI_LOG_MESSAGE(TEXT("Houdini Spline Component Visualizer Registered!"));
+	const auto & Commands = FHoudiniSplineComponentVisualizerCommands::Get();
 
-    VisualizerActions->MapAction(
-        Commands.CommandAddControlPoint,
-        FExecuteAction::CreateSP( this, &FHoudiniSplineComponentVisualizer::OnAddControlPoint ),
-        FCanExecuteAction::CreateSP( this, &FHoudiniSplineComponentVisualizer::IsAddControlPointValid ) );
+	VisualizerActions->MapAction(
+		Commands.CommandAddControlPoint,
+		FExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::OnAddControlPoint),
+		FCanExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::IsAddControlPointValid));
 
-    VisualizerActions->MapAction(
-        Commands.CommandDuplicateControlPoint,
-        FExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::OnDuplicateControlPoint),
-        FCanExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::IsDuplicateControlPointValid));
+	VisualizerActions->MapAction(
+		Commands.CommandDuplicateControlPoint,
+		FExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::OnDuplicateControlPoint),
+		FCanExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::IsDuplicateControlPointValid));
 
-    VisualizerActions->MapAction(
-        Commands.CommandDeleteControlPoint,
-        FExecuteAction::CreateSP( this, &FHoudiniSplineComponentVisualizer::OnDeleteControlPoint ),
-        FCanExecuteAction::CreateSP( this, &FHoudiniSplineComponentVisualizer::IsDeleteControlPointValid ) );
+	VisualizerActions->MapAction(
+		Commands.CommandDeleteControlPoint,
+		FExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::OnDeleteControlPoint),
+		FCanExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::IsDeleteControlPointValid));
+
+	VisualizerActions->MapAction(Commands.CommandDeselectAllControlPoints,
+		FExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::OnDeselectAllControlPoints),
+		FCanExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::IsDeselectAllControlPointsValid));
+
+	VisualizerActions->MapAction(Commands.CommandInsertControlPoint,
+		FExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::OnInsertControlPoint),
+		FCanExecuteAction::CreateSP(this, &FHoudiniSplineComponentVisualizer::IsInsertControlPointValid));
 }
 
-void
+
+void 
 FHoudiniSplineComponentVisualizer::DrawVisualization(
-    const UActorComponent * Component, const FSceneView * View,
-    FPrimitiveDrawInterface * PDI )
+	const UActorComponent * Component, 
+	const FSceneView * View,
+	FPrimitiveDrawInterface * PDI)
 {
-    const UHoudiniSplineComponent * HoudiniSplineComponent = Cast< const UHoudiniSplineComponent >( Component );
+	const UHoudiniSplineComponent * HoudiniSplineComponent = Cast< const UHoudiniSplineComponent >(Component);
 
-    if ( HoudiniSplineComponent && HoudiniSplineComponent->IsValidCurve() && HoudiniSplineComponent->IsActive() )
-    {   
-        static const FColor ColorNormal = FColor(255, 255, 255);
-        static const FColor ColorFirst(0, 192, 0);
-        static const FColor ColorSecond(255, 159, 0);
-        static const FColor ColorSelected(255, 0, 0);
+	if (!HoudiniSplineComponent
+		|| !PDI
+		|| HoudiniSplineComponent->IsPendingKill()
+		|| !HoudiniSplineComponent->IsVisible()
+		|| !HoudiniSplineComponent->IsHoudiniSplineVisible())
+		return;
 
-        static const FColor ColorNone = FColor(172, 172, 172);
-        static const FColor ColorNoneFirst = FColor(172, 255, 172);
-        static const FColor ColorNoneSecond = FColor(254, 216, 177);
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	
+	// Note: Undo a transaction clears the active visualizer in ComponnetVisMangaer, which is private to Visualizer manager.
+	//       HandleProxyForComponentVis() sets the active visualizer. So the selection will be lost after undo.
 
-        static const float GrabHandleSize = 12.0f;
-        static const float GrabHandleSizeNone = 12.0f;// 8.0f;
-        static const float GrabHandleSizeSelected = 13.0f;
+	// A Way to bypass this annoying UE4 implementation: 
+	// If the drawing spline is the one being edited and an undo just happened,
+	// force to trigger a 'bubble' hit proxy to re-activate the visualizer.
+	if (HoudiniSplineComponent == EditedHoudiniSplineComponent && EditedHoudiniSplineComponent->bPostUndo)
+	{
+		EditedHoudiniSplineComponent->bPostUndo = false;
 
-        // Get component transformation.
-        const FTransform & HoudiniSplineComponentTransform = HoudiniSplineComponent->GetComponentTransform();
+		FEditorViewportClient * FoundViewportClient = FindViewportClient(EditedHoudiniSplineComponent, View);
+		HComponentVisProxy * BubbleComponentHitProxy = new HComponentVisProxy(EditedHoudiniSplineComponent);
 
-        // Get curve points.
-        const TArray< FTransform > & CurvePoints = HoudiniSplineComponent->CurvePoints;
-        const TArray< FVector > & CurveDisplayPoints = HoudiniSplineComponent->CurveDisplayPoints;
+		if (FoundViewportClient && BubbleComponentHitProxy)
+		{
+			FViewportClick BubbleClick(View, FoundViewportClient, FKey(), EInputEvent::IE_Axis, 0, 0);
+			GUnrealEd->ComponentVisManager.HandleProxyForComponentVis(FoundViewportClient, BubbleComponentHitProxy, BubbleClick);
+		}
+	}
+	
+	static const FColor ColorNormal = FColor(255.f, 255.f, 255.f);
+	static const FColor ColorNormalHandleFirst(172.f, 255.f, 172.f);
+	static const FColor ColorNormalHandleSecond(254.f, 216.f, 177.f);
 
-        // Draw the curve.
-        FVector DisplayPointFirst;
-        FVector DisplayPointPrevious;
+	static const FColor ColorSelectedHandle(255.f, 0.f, 0.f);
+	static const FColor ColorSelectedHandleFirst(0.f, 192.f, 0.f);
+	static const FColor ColorSelectedHandleSecond(255.f, 159.f, 0.f);
 
-        // Dim the color if no points is selected
-        bool bNoPointSelected = EditedControlPointsIndexes.Num() <= 0;
-        float GrabHandleCurrentSize = bNoPointSelected ? GrabHandleSizeNone : GrabHandleSize;
+	static const float SizeGrabHandleSelected = 15.f;
+	static const float SizeGrabHandleNormalLarge = 18.f;
+	static const float SizeGrabHandleNormalSmall = 12.f;
+	
+	FVector PreviousPosition;
 
-        int32 NumDisplayPoints = CurveDisplayPoints.Num();
-        for ( int32 DisplayPointIdx = 0; DisplayPointIdx < NumDisplayPoints; ++DisplayPointIdx )
-        {
-            // Get point for this index.
-            const FVector & DisplayPoint =
-                HoudiniSplineComponentTransform.TransformPosition( CurveDisplayPoints[ DisplayPointIdx ] );
+	if (HoudiniSplineComponent) 
+	{
+		const FTransform & HoudiniSplineComponentTransform = HoudiniSplineComponent->GetComponentTransform();
 
-            if ( DisplayPointIdx > 0 )
-            {
-                // Draw line from previous point to current one.
-                PDI->DrawLine( DisplayPointPrevious, DisplayPoint, bNoPointSelected ? ColorNone : ColorNormal, SDPG_Foreground );
-            }
-            else
-            {
-                DisplayPointFirst = DisplayPoint;
-            }
+		const TArray< FVector > & DisplayPoints = HoudiniSplineComponent->DisplayPoints;  // not used yet
+		const TArray< FTransform > & CurvePoints = HoudiniSplineComponent->CurvePoints;
 
-            // If this is last point and curve is closed, draw link from last to first.
-            if ( HoudiniSplineComponent->IsClosedCurve() && NumDisplayPoints > 1 &&
-                DisplayPointIdx + 1 == NumDisplayPoints )
-            {
-                PDI->DrawLine( DisplayPointFirst, DisplayPoint, bNoPointSelected ? ColorNone : ColorNormal, SDPG_Foreground );
-            }
+		// Draw display points (simply linearly connect the control points for temporary)
+		for (int32 Index = 0; Index < DisplayPoints.Num(); ++Index) 
+		{
+			const FVector & CurrentPoint = DisplayPoints[Index];
+			FVector CurrentPosition = CurrentPoint + HoudiniSplineComponentTransform.GetLocation();
+			//CurrentPosition = CurrentPoint;
+			if (Index > 0) 
+			{
+				// Add a hitproxy for the line segment
+				PDI->SetHitProxy(new HHoudiniSplineCurveSegmentVisProxy(HoudiniSplineComponent, Index));
+			    // Draw a line connecting the previous point and the current point
+				PDI->DrawLine(PreviousPosition, CurrentPosition, ColorNormal, SDPG_Foreground);
+				PDI->SetHitProxy(nullptr);
+			}
 
-            DisplayPointPrevious = DisplayPoint;
-        }
+			PreviousPosition = CurrentPosition;
+		}
 
-        // Draw control points.
-        for ( int32 PointIdx = 0; PointIdx < CurvePoints.Num(); ++PointIdx )
-        {
-            // Get point at this index.
-            const FVector & DisplayPoint = HoudiniSplineComponentTransform.TransformPosition( CurvePoints[ PointIdx ].GetLocation() );
+		// Draw control points (do not draw control points if the curve is an output)
+		if (!HoudiniSplineComponent->bIsOutputCurve)
+		{
+			for (int32 Index = 0; Index < CurvePoints.Num(); ++Index)
+			{
+				const FVector & ControlPoint = HoudiniSplineComponentTransform.TransformPosition(CurvePoints[Index].GetLocation());
 
-            // Draw point and set hit box for it.
-            PDI->SetHitProxy(new HHoudiniSplineControlPointVisProxy(HoudiniSplineComponent, PointIdx));
-       
-            if ( ( bCurveEditing ) && ( EditedControlPointsIndexes.Contains(PointIdx)))
-            {
-                // If we are editing this control point, change its color
-                PDI->DrawPoint(DisplayPoint, ColorSelected, GrabHandleSizeSelected, SDPG_Foreground);
-            }
-            else
-            {
-                // Color the first two points differently to show the direction of the spline
-                if( PointIdx == 0 )
-                    PDI->DrawPoint(DisplayPoint, bNoPointSelected ? ColorNoneFirst : ColorFirst, GrabHandleCurrentSize, SDPG_Foreground);
-                else if (PointIdx == 1)
-                    PDI->DrawPoint(DisplayPoint, bNoPointSelected ? ColorNoneSecond : ColorSecond, GrabHandleCurrentSize, SDPG_Foreground);
-                else
-                    PDI->DrawPoint(DisplayPoint, bNoPointSelected ? ColorNone : ColorNormal, GrabHandleCurrentSize, SDPG_Foreground);
-            }
+				HHoudiniSplineControlPointVisProxy * HitProxy = new HHoudiniSplineControlPointVisProxy(HoudiniSplineComponent, Index);
+				PDI->SetHitProxy(HitProxy);
 
-            PDI->SetHitProxy(nullptr);
-        }
-    }
+				FColor DrawColor = ColorNormal;
+				float DrawSize = SizeGrabHandleNormalSmall;
+
+				if (Index == 0)
+				{
+					DrawColor = ColorNormalHandleFirst;
+					DrawSize = SizeGrabHandleNormalLarge;
+				}
+
+				if (Index == 1)
+					DrawColor = ColorNormalHandleSecond;
+				
+
+				// If this is an point that being editted
+				if (EditedHoudiniSplineComponent == HoudiniSplineComponent && EditedHoudiniSplineComponent->EditedControlPointsIndexes.Contains(Index))
+				{
+					if (Index == 0)
+					{
+						DrawColor = ColorSelectedHandleFirst;
+					}
+
+					else if (Index == 1)
+					{
+						DrawColor = ColorSelectedHandleSecond;
+						DrawSize = SizeGrabHandleSelected;
+					}
+
+					else
+					{
+						DrawColor = ColorSelectedHandle;
+						DrawSize = SizeGrabHandleSelected;
+
+					}
+				}
+
+				PDI->DrawPoint(ControlPoint, DrawColor, DrawSize, SDPG_Foreground);
+				PDI->SetHitProxy(nullptr);
+			}
+		
+		}
+	}
 }
 
-bool
+
+bool 
 FHoudiniSplineComponentVisualizer::VisProxyHandleClick(
-    FEditorViewportClient* InViewportClient, HComponentVisProxy* VisProxy, const FViewportClick& Click )
+	FEditorViewportClient* InViewportClient,
+	HComponentVisProxy* VisProxy,
+	const FViewportClick& Click)
 {
-    bCurveEditing = false;
-    if ( !VisProxy || !VisProxy->Component.IsValid() )
-        return bCurveEditing;
+	if (!InViewportClient || !VisProxy || !VisProxy->Component.IsValid())
+		return false;
 
-    const UHoudiniSplineComponent * HoudiniSplineComponent =
-        CastChecked< const UHoudiniSplineComponent >( VisProxy->Component.Get() );
+	const UHoudiniSplineComponent * HoudiniSplineComponent = CastChecked< const UHoudiniSplineComponent >(VisProxy->Component.Get());
 
-    EditedHoudiniSplineComponent = const_cast<UHoudiniSplineComponent *>(HoudiniSplineComponent);
+	AActor* OldSplineOwningActor = SplinePropertyPath.GetParentOwningActor();
+	SplinePropertyPath = FComponentPropertyPath(HoudiniSplineComponent);
+	AActor* NewSplineOwningActor = SplinePropertyPath.GetParentOwningActor();
+
+	if (!SplinePropertyPath.IsValid())
+	{
+		SplinePropertyPath.Reset();
+		return false;
+	}
+
+	if (OldSplineOwningActor != NewSplineOwningActor)
+	{
+		// Reset selection state if we are selecting a different actor to the one previously selected
+		EditedCurveSegmentIndex = INDEX_NONE;
+	}
+
+	// Note: This is for re-activating the component visualizer an undo.
+	// Return true if the hit proxy is a bubble (Neither HHoudiniSplineControlPointVisProxy nor HHoudiniSplineCurveSegmentVisProxy )
+	// 
+	if (!VisProxy->IsA(HHoudiniSplineControlPointVisProxy::StaticGetType()) && !VisProxy->IsA(HHoudiniSplineCurveSegmentVisProxy::StaticGetType()))
+		return true;
+
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+
+	EditedHoudiniSplineComponent = const_cast<UHoudiniSplineComponent *>(HoudiniSplineComponent);
+
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return false;
 
 
-    if ( !HoudiniSplineComponent )
-        return bCurveEditing;
+	TArray<int32> & EditedControlPointsIndexes = EditedHoudiniSplineComponent->EditedControlPointsIndexes;
 
-    if ( !VisProxy->IsA(HHoudiniSplineControlPointVisProxy::StaticGetType()) )
-        return bCurveEditing;
+	bool editingCurve = false;
 
-    HHoudiniSplineControlPointVisProxy * ControlPointProxy = (HHoudiniSplineControlPointVisProxy *) VisProxy;
-    if ( !ControlPointProxy )
-        return bCurveEditing;
+	// If VisProxy is a HHoudiniSplineControlPointVisProxy
+	if (VisProxy->IsA(HHoudiniSplineControlPointVisProxy::StaticGetType())) 
+	{
+		HHoudiniSplineControlPointVisProxy * ControlPointProxy = (HHoudiniSplineControlPointVisProxy*)VisProxy;
 
-    bCurveEditing = true;
+		if (!ControlPointProxy)
+			return editingCurve;
 
-    // If we are right-clicking, we dont want to select a new point unless the selection is empty/just one point...
-    bool bRightClick = Click.GetKey() == EKeys::RightMouseButton;
-    if (bRightClick && EditedControlPointsIndexes.Num() > 1)
-        return bCurveEditing;
-    
-    bool bIsMultiSelecting = false;
-    FModifierKeysState ModifierKeys = FSlateApplication::Get().GetModifierKeys();
-    if(ModifierKeys.IsControlDown())
-        bIsMultiSelecting = true;
+		editingCurve = true;
 
-    if ( bIsMultiSelecting )
-    {
-        // Add to multi-selection
-        if ( !EditedControlPointsIndexes.Contains(ControlPointProxy->ControlPointIndex) )
-            EditedControlPointsIndexes.Add(ControlPointProxy->ControlPointIndex);
-        else
-            EditedControlPointsIndexes.Remove(ControlPointProxy->ControlPointIndex);
-    }
-    else
-    {
-        // Single selection
-        EditedControlPointsIndexes.Empty();
-        EditedControlPointsIndexes.Add(ControlPointProxy->ControlPointIndex);
-    }
+		// Clear the edited curve segment if a control point is clicked.
+		EditedCurveSegmentIndex = -1;
 
-    CacheRotation();
+		if (Click.GetKey() != EKeys::LeftMouseButton)
+			return editingCurve;
 
-    return bCurveEditing;
+
+		if (InViewportClient->IsCtrlPressed())
+		{
+			if (EditedControlPointsIndexes.Contains(ControlPointProxy->ControlPointIndex))
+			{
+				EditedControlPointsIndexes.Remove(ControlPointProxy->ControlPointIndex);
+			}
+			else
+			{
+				EditedControlPointsIndexes.Add(ControlPointProxy->ControlPointIndex);
+			}
+		}
+		else
+		{
+			EditedControlPointsIndexes.Empty();
+			EditedControlPointsIndexes.Add(ControlPointProxy->ControlPointIndex);
+		}
+	}
+	// VisProxy is a HHoudiniSplineCurveSegmentProxy
+	else if (VisProxy->IsA(HHoudiniSplineCurveSegmentVisProxy::StaticGetType())) 
+	{
+		//HHoudiniSplineCurveSegmentVisProxy * CurveSegmentProxy = Cast<HHoudiniSplineCurveSegmentVisProxy>(VisProxy);
+
+		HHoudiniSplineCurveSegmentVisProxy * CurveSegmentProxy = (HHoudiniSplineCurveSegmentVisProxy*)(VisProxy);
+
+		if (!CurveSegmentProxy)
+			return false;
+
+		editingCurve = true;
+
+		if (Click.GetKey() == EKeys::LeftMouseButton && InViewportClient->IsAltPressed() && EditedHoudiniSplineComponent) 
+		{
+			// Continuesly (Alt) inserting on-curve control points is only valid with Breakpoints mode, otherwise it has to be on linear curve type.
+			if (EditedHoudiniSplineComponent->CurveType != EHoudiniCurveType::Polygon && EditedHoudiniSplineComponent->CurveMethod != EHoudiniCurveMethod::Breakpoints)
+				return editingCurve;
+
+			bInsertingOnCurveControlPoints = true;
+
+			editingCurve = true;
+			EditedControlPointsIndexes.Empty();
+
+			EditedCurveSegmentIndex = CurveSegmentProxy->DisplayPointIndex;
+			int32 InsertedIndex = OnInsertControlPointWithoutUpdate();
+
+			if (InsertedIndex < 0) return false;
+			EditedControlPointsIndexes.Add(InsertedIndex);
+
+			EditedCurveSegmentIndex = -1;
+			bInsertingOnCurveControlPoints = true;
+
+			RefreshViewport();
+		}
+		// Insert one on-curve control point.
+		else 
+		{
+			EditedCurveSegmentIndex = CurveSegmentProxy->DisplayPointIndex;
+			return editingCurve;
+		}
+	}
+
+	return editingCurve;
 }
 
-bool
-FHoudiniSplineComponentVisualizer::HandleInputKey(
-    FEditorViewportClient * ViewportClient, FViewport * Viewport, FKey Key, EInputEvent Event )
+bool 
+FHoudiniSplineComponentVisualizer::HandleInputKey(FEditorViewportClient * ViewportClient, FViewport * Viewport, FKey Key, EInputEvent Event) 
 {
-    bool bHandled = false;
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return false;
 
-    const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
-    bCookOnlyOnMouseRelease = HoudiniRuntimeSettings->bCookCurvesOnMouseRelease;
+	if (Key == EKeys::Enter) 
+	{
+		EditedHoudiniSplineComponent->MarkChanged(true);
 
-    if ( Key == EKeys::LeftMouseButton && Event == IE_Released )
-    {
-        // Updates the spline
-        if ( bComponentNeedUpdate )
-            UpdateHoudiniComponents();
+		return true;
+	}
 
-        // Reset duplication flag on LMB release.
-        bAllowDuplication = true;
+	bool bHandled = false;
 
-        // Reset the transaction flag
-        bRecordTransactionOnMove = true;
+	if (Key == EKeys::LeftMouseButton) 
+	{
+		if (Event == IE_Pressed) 
+		{
+			bMovingPoints = true;		// Started moving points when the left mouse button is pressed
+			bAllowDuplication = true;
+			bRecordingMovingPoints = false;
+		}
 
-        // Re-cache the rotation
-        CacheRotation();
-    }
+		if (Event == IE_Released)
+		{
+			bMovingPoints = false;		// Stopped moving points when the left mouse button is released
+			bAllowDuplication = false;
 
-    if ( Key == EKeys::Delete && Event == IE_Pressed ) 
-    {
-        if (IsDeleteControlPointValid())
-        {
-            OnDeleteControlPoint();
-            return true;
-        }    
-    }
+			if (bRecordingMovingPoints)
+			{
+				// Only mark the component as changed if a point was actually moved otherwise it will
+				// cook even if a point was selected.
+				if (IsCookOnCurveChanged(EditedHoudiniSplineComponent))
+					EditedHoudiniSplineComponent->MarkChanged(true);
+			}
 
-    if ( Event == IE_Pressed )
-        bHandled = VisualizerActions->ProcessCommandBindings( Key, FSlateApplication::Get().GetModifierKeys(), false );
+			bRecordingMovingPoints = false;  // allow recording pt moving again			
+		}
+	}
 
-    return bHandled;
+
+	if (Key == EKeys::Delete) 
+	{
+		if (Event == IE_Pressed) return true;
+
+		if (IsDeleteControlPointValid()) 
+		{
+			OnDeleteControlPoint();
+
+			if (IsCookOnCurveChanged(EditedHoudiniSplineComponent))
+				EditedHoudiniSplineComponent->MarkChanged(true);
+			return true;
+		}
+	}
+
+
+	if (Event == IE_Pressed && VisualizerActions) 
+	{
+		if (FSlateApplication::IsInitialized())
+			bHandled = VisualizerActions->ProcessCommandBindings(Key, FSlateApplication::Get().GetModifierKeys(), false);
+	}
+
+	RefreshViewport();
+
+	return bHandled;
 }
 
-void
-FHoudiniSplineComponentVisualizer::EndEditing()
+void 
+FHoudiniSplineComponentVisualizer::EndEditing() 
 {
-    EditedHoudiniSplineComponent = nullptr;
-    EditedControlPointsIndexes.Empty();
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return;
+
+	// Clear edited spline if the EndEditing() function is not called from postUndo
+	if (!EditedHoudiniSplineComponent->bPostUndo)
+	{
+		EditedHoudiniSplineComponent->EditedControlPointsIndexes.Empty();
+
+		EditedHoudiniSplineComponent = nullptr;
+		EditedCurveSegmentIndex = -1;
+	}
+
+	//RefreshViewport();
 }
 
-bool
+bool 
 FHoudiniSplineComponentVisualizer::GetWidgetLocation(
-    const FEditorViewportClient * ViewportClient,
-    FVector & OutLocation ) const
+	const FEditorViewportClient* ViewportClient,
+	FVector& OutLocation) const
 {
-    if ( !EditedHoudiniSplineComponent || EditedControlPointsIndexes.Num() <= 0 )
-        return false;
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return false;
+	
+	TArray<int32> & EditedControlPointsIndexes = EditedHoudiniSplineComponent->EditedControlPointsIndexes;
 
-    // Get curve points.
-    const TArray< FTransform > & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
+	if (EditedControlPointsIndexes.Num() <= 0)
+		return false;
 
-    int32 nCurrentCPIndex = -1;
-    FVector LocationSum = FVector::ZeroVector;
+	const TArray< FTransform > & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
 
-    for (int n = 0; n < EditedControlPointsIndexes.Num(); n++)
-    {
-        nCurrentCPIndex = EditedControlPointsIndexes[n];
-        if( nCurrentCPIndex < 0 || nCurrentCPIndex >= CurvePoints.Num() )
-            continue;
+	// Set the widget location to the center of mass of the selected control points
+	FVector CenterLocation = FVector::ZeroVector;
+	
+	for (int i = 0; i < EditedControlPointsIndexes.Num(); ++i) 
+	{
+		CenterLocation += CurvePoints[EditedControlPointsIndexes[i]].GetLocation();
+	}
 
-        LocationSum += CurvePoints[nCurrentCPIndex].GetLocation();
-    }
+	CenterLocation /= EditedControlPointsIndexes.Num();
+	OutLocation = EditedHoudiniSplineComponent->GetComponentTransform().TransformPosition(CenterLocation);
 
-    LocationSum /= EditedControlPointsIndexes.Num();
-    OutLocation = EditedHoudiniSplineComponent->GetComponentTransform().TransformPosition(LocationSum);
-
-    return true;
+	return true;
 }
 
 bool
-FHoudiniSplineComponentVisualizer::GetCustomInputCoordinateSystem(const FEditorViewportClient* ViewportClient, FMatrix& OutMatrix) const
+FHoudiniSplineComponentVisualizer::IsVisualizingArchetype() const
 {
-    // Change the system only for the rotation gizmo or if in LocalSpace
-    if (ViewportClient->GetWidgetCoordSystemSpace() != COORD_Local && ViewportClient->GetWidgetMode() != FWidget::WM_Rotate)
-        return false;
-
-    // We only orient the widget if we select one point
-    if (!EditedHoudiniSplineComponent || EditedControlPointsIndexes.Num() != 1)
-        return false;
-
-    // Get the selected curve point
-    /*
-    int32 nCurrentCPIndex = EditedControlPointsIndexes[0];
-    FTransform transf = EditedHoudiniSplineComponent->CurvePoints[nCurrentCPIndex];
-    transf.SetLocation(FVector::ZeroVector);
-    OutMatrix = transf.ToMatrixNoScale();
-    */
-
-    OutMatrix = FRotationMatrix::Make(CachedRotation);
-
-    return true;    
+	UHoudiniSplineComponent* SplineComp = GetEditedHoudiniSplineComponent();
+	return (SplineComp && SplineComp->GetOwner() && FActorEditorUtils::IsAPreviewOrInactiveActor(SplineComp->GetOwner()));
 }
 
 bool
 FHoudiniSplineComponentVisualizer::HandleInputDelta(
-    FEditorViewportClient * ViewportClient, FViewport * Viewport,
-    FVector & DeltaTranslate, FRotator & DeltaRotate, FVector & DeltaScale)
+	FEditorViewportClient* ViewportClient,
+	FViewport* Viewport,
+	FVector& DeltaTranslate,
+	FRotator& DeltaRotate,
+	FVector& DeltaScale) 
 {
-    if (!EditedHoudiniSplineComponent || EditedControlPointsIndexes.Num() <= 0)
-        return false;
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!ViewportClient || !EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return false;
 
-    if ( ViewportClient->IsAltPressed() && bAllowDuplication )
-    {
-        DuplicateControlPoint();
+	TArray<int32> & EditedControlPointsIndexes = EditedHoudiniSplineComponent->EditedControlPointsIndexes;
 
-        // Don't duplicate again until we release LMB
-        bAllowDuplication = false;
-    }
+	if (EditedControlPointsIndexes.Num() <= 0)
+		return false;
 
-    // Get curve points.
-    const TArray< FTransform > & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
+	if (ViewportClient->IsAltPressed() && bAllowDuplication) 
+	{
+		OnDuplicateControlPoint();
+		bAllowDuplication = false;
+	}
+	else
+	{
+		if (!bRecordingMovingPoints)
+		{
+			FScopedTransaction Transaction(
+				TEXT(HOUDINI_MODULE_RUNTIME),
+				LOCTEXT("HoudiniSplineComponentMovingPointsTransaction", "Houdini Spline Component: Moving curve points."),
+				EditedHoudiniSplineComponent->GetOuter(), true);
 
-    // Get component transformation.
-    const FTransform & HoudiniSplineComponentTransform = EditedHoudiniSplineComponent->GetComponentTransform();
-    
+			EditedHoudiniSplineComponent->Modify();
 
-    FTransform CurrentPoint = FTransform::Identity;
-    for ( int n = 0; n < EditedControlPointsIndexes.Num(); n++ )
-    {
-        // Get current point from the selected points
-        int32 nCurrentCPIndex = EditedControlPointsIndexes[n];
-        if (nCurrentCPIndex < 0 || nCurrentCPIndex >= CurvePoints.Num())
-            continue;
+			bRecordingMovingPoints = true;
+		}
+	}
 
-        CurrentPoint = CurvePoints[nCurrentCPIndex];
 
-        // Handle change in translation.
-        if ( !DeltaTranslate.IsZero() )
-        {
-            FVector PointTransformed = HoudiniSplineComponentTransform.TransformPosition(CurrentPoint.GetLocation());   // Get Position in world space
-            FVector PointTransformedDelta = PointTransformed + DeltaTranslate;                                          // apply delta in world space
-            PointTransformed = HoudiniSplineComponentTransform.InverseTransformPosition(PointTransformedDelta);         // convert back to local
-            CurrentPoint.SetLocation( PointTransformed );
-        }
+	TArray <FTransform> & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
 
-        // Handle change in rotation.
-        if ( !DeltaRotate.IsZero() )
-        {
-            FQuat NewRot = HoudiniSplineComponentTransform.GetRotation() * CurrentPoint.GetRotation();  // convert local-space rotation to world-space
-            NewRot = DeltaRotate.Quaternion() * NewRot;                                                 // apply world-space rotation
-            NewRot = HoudiniSplineComponentTransform.GetRotation().Inverse() * NewRot;                  // convert world-space rotation to local-space
-            CurrentPoint.SetRotation( NewRot );
-        }
-            
-        // Handle change in scale
-        if ( !DeltaScale.IsZero() )
-        {
-            FVector NewScale = CurrentPoint.GetScale3D() * ( FVector(1,1,1) + DeltaScale );
-            CurrentPoint.SetScale3D( NewScale );
-        }
+	const FTransform & HoudiniSplineComponentTransform = EditedHoudiniSplineComponent->GetComponentTransform();
 
-        NotifyComponentModified(nCurrentCPIndex, CurrentPoint);
-    }
-   
-    if ( ( bComponentNeedUpdate ) &&  ( !bCookOnlyOnMouseRelease ) )
-    {
-        // Update and cook the asset
-        UpdateHoudiniComponents();
-    }
+	for (int i = 0; i < EditedControlPointsIndexes.Num(); ++i ) 
+	{
 
-    return true;
+		FTransform  CurrentPoint = EditedHoudiniSplineComponent->CurvePoints[EditedControlPointsIndexes[i]];
+	
+		if (!DeltaTranslate.IsZero()) 
+		{
+			FVector OldWorldPosition = HoudiniSplineComponentTransform.TransformPosition(CurrentPoint.GetLocation());
+			FVector NewWorldPosition = OldWorldPosition + DeltaTranslate;
+			FVector NewLocalPosition = HoudiniSplineComponentTransform.InverseTransformPosition(NewWorldPosition);
+			CurrentPoint.SetLocation( NewLocalPosition );
+		}
+
+		if (!DeltaRotate.IsZero())
+		{
+			FQuat OldWorldRotation = HoudiniSplineComponentTransform.GetRotation() * CurrentPoint.GetRotation();
+			FQuat NewWorldRotation = DeltaRotate.Quaternion() * OldWorldRotation;
+			FQuat NewLocalRotation = HoudiniSplineComponentTransform.GetRotation().Inverse() * NewWorldRotation;
+			CurrentPoint.SetRotation(NewLocalRotation);
+		}
+
+		if (!DeltaScale.IsZero()) 
+		{
+			FVector NewScale = CurrentPoint.GetScale3D() * (FVector(1.f, 1.f, 1.f) + DeltaScale);
+			CurrentPoint.SetScale3D(NewScale);
+		}
+
+
+		EditedHoudiniSplineComponent->EditPointAtindex(CurrentPoint, EditedControlPointsIndexes[i]);
+	}
+
+	RefreshViewport();
+
+	return true;
 }
 
-TSharedPtr< SWidget >
+TSharedPtr<SWidget> 
 FHoudiniSplineComponentVisualizer::GenerateContextMenu() const
 {
-    FHoudiniEngineEditor& HoudiniEngineEditor = FHoudiniEngineEditor::Get();
-    FName StyleSetName = FHoudiniEngineStyle::GetStyleSetName();
+	FHoudiniEngineEditor& HoudiniEngineEditor = FHoudiniEngineEditor::Get();
+	FName StyleSetName = FHoudiniEngineStyle::GetStyleSetName();
+	
+	FMenuBuilder MenuBuilder(true, VisualizerActions);
+	MenuBuilder.BeginSection("Houdini Spline actions");
+	
+	// Create the context menu section
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (EditedHoudiniSplineComponent && !EditedHoudiniSplineComponent->IsPendingKill())
+	{
+		MenuBuilder.AddMenuEntry(
+			FHoudiniSplineComponentVisualizerCommands::Get().CommandAddControlPoint,
+			NAME_None, TAttribute<FText>(), TAttribute<FText>(),
+			FSlateIcon(StyleSetName, "HoudiniEngine.HoudiniEngineLogo"));
 
-    FMenuBuilder MenuBuilder( true, VisualizerActions );
-    {
-        MenuBuilder.BeginSection( "CurveKeyEdit" );
+		MenuBuilder.AddMenuEntry(
+			FHoudiniSplineComponentVisualizerCommands::Get().CommandDuplicateControlPoint,
+			NAME_None, TAttribute< FText >(), TAttribute< FText >(),
+			FSlateIcon(StyleSetName, "HoudiniEngine.HoudiniEngineLogo"));
 
-        {
-            if ( EditedControlPointsIndexes.Num() > 0 )
-            {
-                MenuBuilder.AddMenuEntry(
-                    FHoudiniSplineComponentVisualizerCommands::Get().CommandAddControlPoint,
-                    NAME_None, TAttribute< FText >(), TAttribute< FText >(),
-                    FSlateIcon( StyleSetName, "HoudiniEngine.HoudiniEngineLogo" ) );
+		MenuBuilder.AddMenuEntry(
+			FHoudiniSplineComponentVisualizerCommands::Get().CommandDeleteControlPoint,
+			NAME_None, TAttribute< FText >(), TAttribute< FText >(),
+			FSlateIcon(StyleSetName, "HoudiniEngine.HoudiniEngineLogo"));
 
-                MenuBuilder.AddMenuEntry(
-                    FHoudiniSplineComponentVisualizerCommands::Get().CommandDuplicateControlPoint,
-                    NAME_None, TAttribute< FText >(), TAttribute< FText >(),
-                    FSlateIcon( StyleSetName, "HoudiniEngine.HoudiniEngineLogo" ) );
+		MenuBuilder.AddMenuEntry(
+			FHoudiniSplineComponentVisualizerCommands::Get().CommandDeselectAllControlPoints,
+			NAME_None, TAttribute< FText >(), TAttribute< FText >(),
+			FSlateIcon(StyleSetName, "HoudiniEngine.HoudiniEngineLogo"));
 
-                MenuBuilder.AddMenuEntry(
-                    FHoudiniSplineComponentVisualizerCommands::Get().CommandDeleteControlPoint,
-                    NAME_None, TAttribute< FText >(), TAttribute< FText >(),
-                    FSlateIcon(StyleSetName, "HoudiniEngine.HoudiniEngineLogo" ) );
-            }
-        }
+		MenuBuilder.AddMenuEntry(
+			FHoudiniSplineComponentVisualizerCommands::Get().CommandInsertControlPoint,
+			NAME_None, TAttribute< FText >(), TAttribute< FText >(),
+			FSlateIcon(StyleSetName, "HoudiniEngine.HoudiniEngineLogo"));
+	}
 
-        MenuBuilder.EndSection();
-    }
-
-    TSharedPtr< SWidget > MenuWidget = MenuBuilder.MakeWidget();
-    return MenuWidget;
+	MenuBuilder.EndSection();
+	TSharedPtr<SWidget> MenuWidget = MenuBuilder.MakeWidget();
+	return MenuWidget;
 }
 
-void
-FHoudiniSplineComponentVisualizer::UpdateHoudiniComponents()
+// Used by alt-pressed on-curve control port insertion.
+// We don't want it to be cooked before finishing editing.
+// * Need to call WaitForHoudiniInputUpdate() after done.
+int32
+FHoudiniSplineComponentVisualizer::OnInsertControlPointWithoutUpdate() 
 {
-    if ( EditedHoudiniSplineComponent )
-        EditedHoudiniSplineComponent->UpdateHoudiniComponents();
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill()) 
+		return -1;
 
-    bComponentNeedUpdate = false;
+	TArray<FTransform> & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
+	TArray<FVector> & DisplayPoints = EditedHoudiniSplineComponent->DisplayPoints;
+
+	if (EditedCurveSegmentIndex >= DisplayPoints.Num())
+		return -1;
+
+	// ... //
+	int InsertAfterIndex = 0;
+
+	TArray<int32> & DisplayPointIndexDivider = EditedHoudiniSplineComponent->DisplayPointIndexDivider;
+	for (int itr = 0; itr < DisplayPointIndexDivider.Num(); ++itr)
+	{
+		if (DisplayPointIndexDivider[itr] >= EditedCurveSegmentIndex)
+		{
+			InsertAfterIndex = itr;
+			break;
+		}
+	}
+	// ... //
+	
+	if (InsertAfterIndex >= CurvePoints.Num()) return -1;
+
+	FTransform NewPoint = CurvePoints[InsertAfterIndex];
+	NewPoint.SetLocation(DisplayPoints[EditedCurveSegmentIndex]);
+	// To Do: Should interpolate the rotation and scale as well here.
+	// ...
+
+	// Insert new control point on curve, and add it to selected CP.
+	int32 NewPointIndex = AddControlPointAfter(NewPoint, InsertAfterIndex);
+
+	// Don't have to reconstruct the index divider each time.
+	//EditedHoudiniSplineComponent->Construct(EditedHoudiniSplineComponent->DisplayPoints);
+	EditedHoudiniSplineComponent->DisplayPointIndexDivider.Insert(EditedCurveSegmentIndex, InsertAfterIndex);
+
+	if (IsCookOnCurveChanged(EditedHoudiniSplineComponent))
+		EditedHoudiniSplineComponent->MarkChanged(true);
+
+	return NewPointIndex;
 }
 
-void
-FHoudiniSplineComponentVisualizer::NotifyComponentModified( int32 PointIndex, const FTransform & Point )
+void 
+FHoudiniSplineComponentVisualizer::OnInsertControlPoint() 
 {
-    if ( !EditedHoudiniSplineComponent )
-        return;
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return;
 
-    UHoudiniAssetComponent * HoudiniAssetComponent =
-        Cast< UHoudiniAssetComponent >( EditedHoudiniSplineComponent->GetAttachParent() );
+	int32 NewPointIndex = OnInsertControlPointWithoutUpdate();
 
-    if ( bRecordTransactionOnMove )
-    {
-        FScopedTransaction Transaction( TEXT(HOUDINI_MODULE_EDITOR),
-            LOCTEXT("HoudiniSplineComponentChange", "Houdini Spline Component: Moving a point"),
-            HoudiniAssetComponent );
-        EditedHoudiniSplineComponent->Modify();
+	if (NewPointIndex < 0) return;
 
-        // Do not record further transaction until the flag is reset
-        bRecordTransactionOnMove = false;
-    }
 
-    // Update given control point.
-    EditedHoudiniSplineComponent->UpdatePoint( PointIndex, Point );
+	EditedHoudiniSplineComponent->EditedControlPointsIndexes.Add(NewPointIndex);
 
-    bComponentNeedUpdate = true;
+	RefreshViewport();
+
+	if (IsCookOnCurveChanged(EditedHoudiniSplineComponent))
+		EditedHoudiniSplineComponent->MarkChanged(true);
 }
 
-void
+bool 
+FHoudiniSplineComponentVisualizer::IsInsertControlPointValid() const
+{
+	return EditedCurveSegmentIndex >= 0;
+}
+
+void 
 FHoudiniSplineComponentVisualizer::OnAddControlPoint()
 {
-    if ( !EditedHoudiniSplineComponent || EditedControlPointsIndexes.Num() < 0 )
-        return;    
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return;
+	
+	TArray<int32> & EditedControlPointsIndexes = EditedHoudiniSplineComponent->EditedControlPointsIndexes;
 
-    // Transaction for Undo/Redo
-    UHoudiniAssetComponent * HoudiniAssetComponent =
-        Cast< UHoudiniAssetComponent >(EditedHoudiniSplineComponent->GetAttachParent());
+	// Transaction for Undo/Redo
+	FScopedTransaction Transaction(
+		TEXT(HOUDINI_MODULE_RUNTIME),
+		LOCTEXT("HoudiniSplineComponentInsertingPointsTransaction", "Houdini Spline Component: Inserting curve points."),
+		EditedHoudiniSplineComponent->GetOuter(), true);
+	
+	EditedHoudiniSplineComponent->Modify();
 
-    if (!HoudiniAssetComponent)
-        return;
+	EditedControlPointsIndexes.Sort();
 
-    FScopedTransaction Transaction(
-        TEXT(HOUDINI_MODULE_EDITOR),
-        LOCTEXT("HoudiniSplineComponentChange", "Houdini Spline Component: Adding a control point"),
-	HoudiniAssetComponent);
+	const TArray<FTransform>  & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
 
-    EditedHoudiniSplineComponent->Modify();
+	TArray<int32> tNewSelectedPoints;
 
-    FTransform OtherPoint = FTransform::Identity;
-    FTransform CurrentPoint = FTransform::Identity;
-    int32 nCurrentCPIndex = -1;
+	if (EditedControlPointsIndexes.Num() == 1) 
+	{
+		FTransform Point = CurvePoints[EditedControlPointsIndexes[0]];
+		FTransform NewTransform = FTransform::Identity;
+		FVector Location = Point.GetLocation();
+		//FQuat Rotation = Point.GetRotation();
+		//FVector Scale = Point.GetScale3D();
 
-    // We need to sort the selection to insert the new nodes properly
-    EditedControlPointsIndexes.Sort();
+		NewTransform.SetLocation(Location + 1.f);
+		//NewTransform.SetRotation(Rotation);
+		//NewTransform.SetScale3D(Scale);
 
-    const TArray< FTransform > & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
+		
 
-    TArray<int32> tNewSelection;
-    for (int32 n = EditedControlPointsIndexes.Num() - 1; n >= 0 ; n--)
-    {
-        // Get current point from the selected points
-        nCurrentCPIndex = EditedControlPointsIndexes[n];
-        if (nCurrentCPIndex < 0 || nCurrentCPIndex >= CurvePoints.Num())
-            continue;
+		int32 NewPointIndex = AddControlPointAfter(NewTransform, EditedControlPointsIndexes[0]);
+		tNewSelectedPoints.Add(NewPointIndex);
+	}
+	else
+	{
+		int IndexIncrement = 0;
+		int CurrentPointIndex, LastPointIndex;
+		FTransform CurrentPoint, LastPoint;
 
-        CurrentPoint = CurvePoints[nCurrentCPIndex];
+		for (int32 n = 0; n < EditedControlPointsIndexes.Num(); ++n)
+		{
+			// Insert a new point between each adjacent pair of points
+			if (n > 0)
+			{
+				CurrentPointIndex = EditedControlPointsIndexes[n];
+				LastPointIndex = EditedControlPointsIndexes[n - 1];
+				CurrentPoint = CurvePoints[CurrentPointIndex + IndexIncrement];
+				LastPoint = CurvePoints[LastPointIndex + IndexIncrement];
 
-        // Select the other point
-        if (nCurrentCPIndex + 1 != CurvePoints.Num())
-        {
-            OtherPoint = CurvePoints[nCurrentCPIndex + 1];
-        }
-        else
-        {
-            if (EditedHoudiniSplineComponent->bClosedCurve)
-            {
-                OtherPoint = CurvePoints[0];
-            }
-            else
-            {
-                OtherPoint = CurvePoints[nCurrentCPIndex - 1];
-                nCurrentCPIndex--;
-            }
-        }
+				// Insert a point in the middle of LastPoint and CurrentPoint
+				FVector NewPointLocation = LastPoint.GetLocation() + (CurrentPoint.GetLocation() - LastPoint.GetLocation()) / 2.f;
+				FVector NewPointScale = LastPoint.GetScale3D() + (CurrentPoint.GetScale3D() - LastPoint.GetScale3D()) / 2.f;
+				FQuat NewPointRotation = FQuat::Slerp(LastPoint.GetRotation(), CurrentPoint.GetRotation(), .5f);
 
-        FVector NewPointLocation = CurrentPoint.GetLocation() + (OtherPoint.GetLocation() - CurrentPoint.GetLocation()) / 2.0f;
-        FVector NewPointScale = CurrentPoint.GetScale3D() + (OtherPoint.GetScale3D() - CurrentPoint.GetScale3D()) / 2.0f;
-        FQuat NewPointRotation = FQuat::Slerp(CurrentPoint.GetRotation(), OtherPoint.GetRotation(), 0.5f);
+				FTransform NewTransform = FTransform::Identity;
+				NewTransform.SetLocation(NewPointLocation);
+				NewTransform.SetScale3D(NewPointScale);
+				NewTransform.SetRotation(NewPointRotation);
 
-        FTransform NewTransform = FTransform::Identity;
-        NewTransform.SetLocation(NewPointLocation);
-        NewTransform.SetScale3D(NewPointScale);
-        NewTransform.SetRotation(NewPointRotation);
+				int32 NewPointIndex = AddControlPointAfter(NewTransform, EditedControlPointsIndexes[n - 1] + IndexIncrement);
+				tNewSelectedPoints.Add(NewPointIndex);
+				
 
-        int32 NewPointIndex = AddControlPointAfter(NewTransform, nCurrentCPIndex);
+				IndexIncrement += 1;
+			}
+		}
+	}
 
-        tNewSelection.Add(NewPointIndex);
-    }
+	EditedControlPointsIndexes.Empty();
+	EditedControlPointsIndexes = tNewSelectedPoints;
 
-    // Update the spline component
-    UpdateHoudiniComponents();
+	if (IsCookOnCurveChanged(EditedHoudiniSplineComponent))
+		EditedHoudiniSplineComponent->MarkChanged(true);
 
-    // Select the new points.
-    EditedControlPointsIndexes.Empty();
-    EditedControlPointsIndexes = tNewSelection;
+	RefreshViewport();
 }
+
 
 bool
 FHoudiniSplineComponentVisualizer::IsAddControlPointValid() const
 {
-    // We can always add points.
-    return true;
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	return EditedHoudiniSplineComponent && !EditedHoudiniSplineComponent->IsPendingKill() && 
+		EditedHoudiniSplineComponent->EditedControlPointsIndexes.Num() > 0;
 }
 
 void
 FHoudiniSplineComponentVisualizer::OnDeleteControlPoint()
 {
-    if (!EditedHoudiniSplineComponent || EditedControlPointsIndexes.Num() <= 0)
-        return;
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return;
 
-    UHoudiniAssetComponent * HoudiniAssetComponent =
-        Cast< UHoudiniAssetComponent >(EditedHoudiniSplineComponent->GetAttachParent() );
+	TArray<int32> & EditedControlPointsIndexes = EditedHoudiniSplineComponent->EditedControlPointsIndexes;
 
-    FScopedTransaction Transaction(
-        TEXT( HOUDINI_MODULE_EDITOR ),
-        LOCTEXT( "HoudiniSplineComponentChange", "Houdini Spline Component: Removing a control point" ),
-	HoudiniAssetComponent);
-    EditedHoudiniSplineComponent->Modify();
+	if (EditedControlPointsIndexes.Num() <= 0)
+		return;
 
-    // We need to sort the selection to delete the nodes properly
-    EditedControlPointsIndexes.Sort();
-    
-    int32 nOffset = 0;
-    TArray<int32> tNewSelection;
-    for (int32 n = 0; n < EditedControlPointsIndexes.Num(); n++)
-    {
-        int32 nIndex = EditedControlPointsIndexes[n] - nOffset;
-        EditedHoudiniSplineComponent->RemovePoint(nIndex);
+	// Transaction for Undo/Redo
+	FScopedTransaction Transaction(
+		TEXT(HOUDINI_MODULE_RUNTIME),
+		LOCTEXT("HoudiniSplineComponentDeletingPointsTransaction", "Houdini Spline Component: Deleting curve points."),
+		EditedHoudiniSplineComponent->GetOuter(), true);
+	EditedHoudiniSplineComponent->Modify();
 
-        if (!tNewSelection.Contains(--nIndex))
-            tNewSelection.Add(nIndex);  
-        nOffset++;
-    }
+	EditedControlPointsIndexes.Sort();
 
-    // Select previous points if possible
-    for (int32 n = tNewSelection.Num() - 1; n >= 0; n--)
-    {
-        // get the previous point
-        if (tNewSelection[n] < 0)
-            tNewSelection[n] = 0;
+	int32 SelectedIndexAfterDelete = EditedControlPointsIndexes[0] - 1;
+	SelectedIndexAfterDelete = FMath::Max(SelectedIndexAfterDelete, 0);
 
-        // if the new index is invalid, or has been removed, unselect it
-        if (tNewSelection[n] >= EditedHoudiniSplineComponent->CurvePoints.Num() || EditedControlPointsIndexes.Contains(tNewSelection[n]))
-        {
-            tNewSelection.RemoveAt(n);
-        }
-    }
+	for (int32 n = EditedControlPointsIndexes.Num() - 1; n >= 0; --n) 
+	{
+		int32 RemoveIndex = EditedControlPointsIndexes[n];
+		EditedHoudiniSplineComponent->RemovePointAtIndex(RemoveIndex);
+		
+	}
 
-    if(tNewSelection.Num() > 0)
-        EditedControlPointsIndexes = tNewSelection;
-    else
-    {
-        EditedControlPointsIndexes.Empty();
-        EditedControlPointsIndexes.Add(0);
-    }
+	EditedControlPointsIndexes.Empty();
+	OnDeselectAllControlPoints();
+	EditedControlPointsIndexes.Add(SelectedIndexAfterDelete);
 
-    // cache the rotation
-    CacheRotation();
+	if (IsCookOnCurveChanged(EditedHoudiniSplineComponent))
+		EditedHoudiniSplineComponent->MarkChanged(true);
 
-    // Update the spline object
-    UpdateHoudiniComponents();
+	// Force refresh the viewport after deleting points to ensure the consistency of HitProxy
+	RefreshViewport();
+	
 }
 
-bool
+bool 
 FHoudiniSplineComponentVisualizer::IsDeleteControlPointValid() const
 {
-    if ( !EditedHoudiniSplineComponent || EditedControlPointsIndexes.Num() <= 0 )
-        return false;
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return false;
 
-    // We can only delete points if we have more than two points.
-    if ( EditedHoudiniSplineComponent->GetCurvePointCount() < 2 )
-        return false;
+	TArray<int32> & EditedControlPointsIndexes = EditedHoudiniSplineComponent->EditedControlPointsIndexes;
 
-    // We need to leave 2 points after deleting
-    if ( EditedHoudiniSplineComponent->GetCurvePointCount() - EditedControlPointsIndexes.Num() < 2 )
-        return false;
+	if (EditedControlPointsIndexes.Num() <= 0)
+		return false;
+	
+	// We only allow the number of Control Points is at least 2 after delete
+	if (EditedHoudiniSplineComponent->GetCurvePointCount() - EditedControlPointsIndexes.Num() < 2)
+		return false;
 
-    return true;
-}
-
-int32 FHoudiniSplineComponentVisualizer::AddControlPointAfter( const FTransform & NewPoint, const int32& nIndex )
-{
-    if ( !EditedHoudiniSplineComponent )
-        return nIndex;
-
-    const TArray< FTransform > & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
-    check( nIndex >= 0 && nIndex < CurvePoints.Num() );
-
-    int32 ControlPointIndex = nIndex + 1;
-    if (ControlPointIndex == CurvePoints.Num())
-        EditedHoudiniSplineComponent->AddPoint( NewPoint );
-    else
-        EditedHoudiniSplineComponent->AddPoint( ControlPointIndex, NewPoint);
-
-    // Return the newly created point index.
-    return ControlPointIndex;
+	return true;
 }
 
 void
 FHoudiniSplineComponentVisualizer::OnDuplicateControlPoint()
 {
-    // Duplicate the selected points
-    DuplicateControlPoint();
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return;
 
-    // Update the spline component
-    UpdateHoudiniComponents();
+	TArray<int32> & EditedControlPointsIndexes = EditedHoudiniSplineComponent->EditedControlPointsIndexes;
+
+	if (EditedControlPointsIndexes.Num() <= 0)
+		return;
+
+	// Transaction for Undo/Redo
+	FScopedTransaction Transaction(
+		TEXT(HOUDINI_MODULE_RUNTIME),
+		LOCTEXT("HoudiniSplineComponentDuplicatingPointsTransaction", "Houdini Spline Component: Duplicating curve points."),
+		EditedHoudiniSplineComponent->GetOuter(), true);
+	EditedHoudiniSplineComponent->Modify();
+	
+	const TArray<FTransform> & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
+
+	EditedControlPointsIndexes.Sort();
+
+	TArray<int32> tNewSelectedPoints;
+	int IncrementIndex = 0;
+	for (int n = 0; n < EditedControlPointsIndexes.Num(); ++n) 
+	{
+		int32 IndexAfter = EditedControlPointsIndexes[n] + IncrementIndex;
+		FTransform CurrentPoint = CurvePoints[IndexAfter];
+		if (IndexAfter == 0)
+			IndexAfter = -1;
+		int32 NewPointIndex = AddControlPointAfter(CurrentPoint, IndexAfter);
+		tNewSelectedPoints.Add(NewPointIndex);
+		IncrementIndex ++;
+	}
+
+	EditedControlPointsIndexes.Empty();
+	EditedControlPointsIndexes = tNewSelectedPoints;
+
+	EditedHoudiniSplineComponent->MarkModified(true);
+
+	RefreshViewport();
+}
+
+bool 
+FHoudiniSplineComponentVisualizer::IsDuplicateControlPointValid() const
+{
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if(!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill() 
+		|| EditedHoudiniSplineComponent->EditedControlPointsIndexes.Num() == 0)
+		return false;
+
+	return true;
+}
+
+void 
+FHoudiniSplineComponentVisualizer::OnDeselectAllControlPoints() 
+{
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (EditedHoudiniSplineComponent && !EditedHoudiniSplineComponent->IsPendingKill())
+		EditedHoudiniSplineComponent->EditedControlPointsIndexes.Empty();
+}
+
+bool 
+FHoudiniSplineComponentVisualizer::IsDeselectAllControlPointsValid() const
+{
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (EditedHoudiniSplineComponent && !EditedHoudiniSplineComponent->IsPendingKill())
+		return EditedHoudiniSplineComponent->EditedControlPointsIndexes.Num() > 0;
+
+	return false;
+}
+
+int32
+FHoudiniSplineComponentVisualizer::AddControlPointAfter(
+	const FTransform & NewPoint,
+	const int32 & nIndex)
+{
+	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
+		return nIndex;
+
+	const TArray<FTransform> & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
+	
+	int32 NewControlPointIndex = nIndex + 1;
+
+	if (NewControlPointIndex == CurvePoints.Num())
+		EditedHoudiniSplineComponent->AppendPoint(NewPoint);
+	else
+		EditedHoudiniSplineComponent->InsertPointAtIndex(NewPoint, NewControlPointIndex);
+
+	// Return the index of the inserted control point
+	return NewControlPointIndex;
 }
 
 void
-FHoudiniSplineComponentVisualizer::DuplicateControlPoint()
+FHoudiniSplineComponentVisualizer::RefreshViewport()
 {
-    if (!EditedHoudiniSplineComponent || EditedControlPointsIndexes.Num() <= 0)
-	return;
+	if (GEditor)
+		GEditor->RedrawLevelEditingViewports(true);
+}
 
-    UHoudiniAssetComponent * HoudiniAssetComponent =
-	Cast< UHoudiniAssetComponent >(EditedHoudiniSplineComponent->GetAttachParent());
+// Find the EditorViewportClient of the viewport where the Houdini Spline Component lives in
+FEditorViewportClient *
+FHoudiniSplineComponentVisualizer::FindViewportClient(
+	const UHoudiniSplineComponent * InHoudiniSplineComponent,
+	const FSceneView * View)
+{
+	if (!View || !InHoudiniSplineComponent)
+		return nullptr;
 
-    if (!HoudiniAssetComponent)
-	return;
+	UWorld * World = InHoudiniSplineComponent->GetWorld();
+	uint32 ViewKey = View->GetViewKey();
 
-    FScopedTransaction Transaction(
-	TEXT(HOUDINI_MODULE_EDITOR),
-	LOCTEXT("HoudiniSplineComponentChange", "Houdini Spline Component: Adding a control point"),
-	HoudiniAssetComponent);
+	const TArray<FEditorViewportClient*> & AllViewportClients = GUnrealEd->GetAllViewportClients();
 
-    EditedHoudiniSplineComponent->Modify();
+	for (auto & NextViewportClient : AllViewportClients) 
+	{
+		if (!NextViewportClient)
+			continue;
 
-    const TArray< FTransform > & CurvePoints = EditedHoudiniSplineComponent->CurvePoints;
+		if (NextViewportClient->GetWorld() != World)
+			continue;
 
-    //
-    EditedControlPointsIndexes.Sort();
+		// Found the viewport client which matches the unique key of the current scene view
+		if (NextViewportClient->ViewState.GetReference()->GetViewKey() == ViewKey)
+			return NextViewportClient;
+	}
 
-    int32 nCurrentCPIndex = -1;
-    int32 nNewCPIndex = -1;
-    TArray<int32> tNewSelection;
-
-    FTransform NewPoint = FTransform::Identity;
-    int nOffset = 0;
-    for ( int32 n = 0; n < EditedControlPointsIndexes.Num(); n++ )
-    {
-	// Get current point from the selected points
-	nCurrentCPIndex = EditedControlPointsIndexes[n] + nOffset;
-	if (nCurrentCPIndex < 0 || nCurrentCPIndex >= CurvePoints.Num())
-	    continue;
-
-	// We just add the new point on top of the existing point.
-	NewPoint = CurvePoints[nCurrentCPIndex];
-
-	// Add the new point and select it.
-	nNewCPIndex = AddControlPointAfter(NewPoint, nCurrentCPIndex);
-
-	// Small hack when extending from the first point
-	if (nCurrentCPIndex == 0)
-	    nNewCPIndex = 0;
-
-	tNewSelection.Add(nNewCPIndex);
-	nOffset++;
-    }
-
-    // Select the new points.
-    EditedControlPointsIndexes.Empty();
-    EditedControlPointsIndexes = tNewSelection;
+	return nullptr;
 }
 
 bool
-FHoudiniSplineComponentVisualizer::IsDuplicateControlPointValid() const
+FHoudiniSplineComponentVisualizer::IsCookOnCurveChanged(UHoudiniSplineComponent * InHoudiniSplineComponent) 
 {
-    // We can only duplicate points if we have selected a point.
-    if (!EditedHoudiniSplineComponent || EditedControlPointsIndexes.Num() <= 0 )
-        return false;
+	if (!InHoudiniSplineComponent)
+		return true;
 
-    return true;
-}
+	return InHoudiniSplineComponent->bCookOnCurveChanged;
 
-
-void
-FHoudiniSplineComponentVisualizer::CacheRotation()
-{
-    FQuat NewCachedQuat = FQuat::Identity;
-    if (EditedHoudiniSplineComponent && EditedControlPointsIndexes.Num() == 1)
-    {
-        if (EditedHoudiniSplineComponent->CurvePoints.IsValidIndex(EditedControlPointsIndexes[0]))
-            NewCachedQuat = (EditedHoudiniSplineComponent->CurvePoints[EditedControlPointsIndexes[0]]).GetRotation();
-    }
-
-    CachedRotation = NewCachedQuat;
-}
+	// UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	// UHoudiniInputObject * InputObject = Cast<UHoudiniInputObject>(EditedHoudiniSplineComponent->GetOuter());
+	// if (!InputObject)
+	// 	return true;
+	//
+	// UHoudiniInput * Input = Cast<UHoudiniInput>(InputObject->GetOuter());
+	//
+	// if (!Input)
+	// 	return true;
+	//
+	// return Input->GetCookOnCurveChange();
+};
 
 #undef LOCTEXT_NAMESPACE
