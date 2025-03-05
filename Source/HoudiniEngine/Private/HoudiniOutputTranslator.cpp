@@ -34,10 +34,10 @@
 #include "HoudiniEngineString.h"
 #include "HoudiniGeoPartObject.h"
 #include "HoudiniEnginePrivatePCH.h"
-#include "HoudiniAsset.h"
-#include "HoudiniAssetActor.h"
-#include "HoudiniAssetComponent.h"
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniAsset.h"
+#include "T2HoudiniAssetActor.h"
+#include "T2HoudiniAssetComponent.h"
+#include "T2HoudiniSplineComponent.h"
 #include "HoudiniEngineRuntime.h"
 #include "HoudiniInput.h"
 #include "HoudiniStaticMesh.h"
@@ -63,7 +63,7 @@
 
 // 
 bool
-FHoudiniOutputTranslator::UpdateOutputs(UHoudiniAssetComponent* HAC, const bool& bInForceUpdate, bool& bOutHasHoudiniStaticMeshOutput)
+FHoudiniOutputTranslator::UpdateOutputs(UT2HoudiniAssetComponent* HAC, const bool& bInForceUpdate, bool& bOutHasHoudiniStaticMeshOutput)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -80,7 +80,7 @@ FHoudiniOutputTranslator::UpdateOutputs(UHoudiniAssetComponent* HAC, const bool&
 	if (!HAC->bOutputless)
 	{
 		// Check if we want to convert legacy v1 data
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 		bool bEnableBackwardCompatibility = HoudiniRuntimeSettings->bEnableBackwardCompatibility;
 		if (bEnableBackwardCompatibility && HAC->Version1CompatibilityHAC)
 		{
@@ -145,7 +145,7 @@ FHoudiniOutputTranslator::UpdateOutputs(UHoudiniAssetComponent* HAC, const bool&
 	}
 	
 	// NOTE: PersistentWorld can be NULL when, for example, working with
-	// HoudiniAssetComponents in Blueprints.
+	// T2HoudiniAssetComponents in Blueprints.
 	UWorld* PersistentWorld = HAC->GetWorld();
 	UWorldComposition* WorldComposition = nullptr;
 	if (PersistentWorld)
@@ -164,7 +164,7 @@ FHoudiniOutputTranslator::UpdateOutputs(UHoudiniAssetComponent* HAC, const bool&
 	// And see if some of this could be threaded
 	UObject* OuterComponent = HAC;
 	
-	FString HoudiniAssetPath = FPaths::GetPath(HAC->GetPathName());
+	FString T2HoudiniAssetPath = FPaths::GetPath(HAC->GetPathName());
 	FString ComponentGUIDString = HAC->GetComponentGUID().ToString().Left(FHoudiniEngineUtils::PackageGUIDComponentNameLength);
 	FString HoudiniAssetNameString = HAC->GetDisplayName();
 
@@ -342,9 +342,9 @@ FHoudiniOutputTranslator::UpdateOutputs(UHoudiniAssetComponent* HAC, const bool&
 				if (CurOutput->IsEditableNode())
 				{
 					if (!CurOutput->HasEditableNodeBuilt())
-					{
+					{ 
 						// Editable curve, only need to be built once. 
-						UHoudiniSplineComponent* HoudiniSplineComponent = FHoudiniSplineTranslator::CreateHoudiniSplineComponentFromHoudiniEditableNode(
+						UT2HoudiniSplineComponent* HoudiniSplineComponent = FHoudiniSplineTranslator::CreateHoudiniSplineComponentFromHoudiniEditableNode(
 							CurHGPO.GeoId, 
 							CurHGPO.PartName,
 							HAC);
@@ -582,7 +582,7 @@ FHoudiniOutputTranslator::UpdateOutputs(UHoudiniAssetComponent* HAC, const bool&
 }
 
 bool
-FHoudiniOutputTranslator::BuildStaticMeshesOnHoudiniProxyMeshOutputs(UHoudiniAssetComponent* HAC, bool bInDestroyProxies)
+FHoudiniOutputTranslator::BuildStaticMeshesOnHoudiniProxyMeshOutputs(UT2HoudiniAssetComponent* HAC, bool bInDestroyProxies)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -643,7 +643,7 @@ FHoudiniOutputTranslator::BuildStaticMeshesOnHoudiniProxyMeshOutputs(UHoudiniAss
 
 //
 bool
-FHoudiniOutputTranslator::UpdateLoadedOutputs(UHoudiniAssetComponent* HAC)
+FHoudiniOutputTranslator::UpdateLoadedOutputs(UT2HoudiniAssetComponent* HAC)
 {
 	HAPI_NodeId & AssetId = HAC->AssetId;
 	// Get the AssetInfo
@@ -764,7 +764,7 @@ FHoudiniOutputTranslator::UpdateLoadedOutputs(UHoudiniAssetComponent* HAC)
 					if (Idx >= EditableCurvePartIds.Num())
 						break;
 
-					UHoudiniSplineComponent * HoudiniSplineComponent = Cast<UHoudiniSplineComponent>(Pair.Value.OutputComponent);
+					UT2HoudiniSplineComponent * HoudiniSplineComponent = Cast<UT2HoudiniSplineComponent>(Pair.Value.OutputComponent);
 					if (HoudiniSplineComponent && !HoudiniSplineComponent->IsPendingKill())
 					{
 						HoudiniSplineComponent->SetNodeId(EditableCurveGeoIds[Idx]);
@@ -787,10 +787,10 @@ FHoudiniOutputTranslator::UpdateLoadedOutputs(UHoudiniAssetComponent* HAC)
 					if (!CurAttachedComp || CurAttachedComp->IsPendingKill())
 						continue;
 
-					if (!CurAttachedComp->IsA<UHoudiniSplineComponent>())
+					if (!CurAttachedComp->IsA<UT2HoudiniSplineComponent>())
 						continue;
 
-					UHoudiniSplineComponent * CurAttachedSplineComp = Cast<UHoudiniSplineComponent>(CurAttachedComp);
+					UT2HoudiniSplineComponent * CurAttachedSplineComp = Cast<UT2HoudiniSplineComponent>(CurAttachedComp);
 					if (!CurAttachedSplineComp)
 						continue;
 
@@ -841,7 +841,7 @@ FHoudiniOutputTranslator::UpdateLoadedOutputs(UHoudiniAssetComponent* HAC)
 //
 bool 
 FHoudiniOutputTranslator::UploadChangedEditableOutput(
-	UHoudiniAssetComponent* HAC,
+	UT2HoudiniAssetComponent* HAC,
 	const bool& bInForceUpdate) 
 {
 	if (!HAC || HAC->IsPendingKill())
@@ -861,7 +861,7 @@ FHoudiniOutputTranslator::UploadChangedEditableOutput(
 
 		for (auto& CurrentOutputObj : CurrentOutput->GetOutputObjects())
 		{
-			UHoudiniSplineComponent* HoudiniSplineComponent = Cast<UHoudiniSplineComponent>(CurrentOutputObj.Value.OutputComponent);
+			UT2HoudiniSplineComponent* HoudiniSplineComponent = Cast<UT2HoudiniSplineComponent>(CurrentOutputObj.Value.OutputComponent);
 			if (!HoudiniSplineComponent || HoudiniSplineComponent->IsPendingKill())
 				continue;
 
@@ -1595,7 +1595,7 @@ FHoudiniOutputTranslator::BuildAllOutputs(
 }
 
 bool
-FHoudiniOutputTranslator::UpdateChangedOutputs(UHoudiniAssetComponent* HAC)
+FHoudiniOutputTranslator::UpdateChangedOutputs(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -1875,7 +1875,7 @@ FHoudiniOutputTranslator::CacheCurveInfo(const HAPI_CurveInfo& InCurveInfo, FHou
 
 
 void
-FHoudiniOutputTranslator::ClearAndRemoveOutputs(UHoudiniAssetComponent *InHAC, TArray<UHoudiniOutput*>& OutputsPendingClear, bool bForceClearAll)
+FHoudiniOutputTranslator::ClearAndRemoveOutputs(UT2HoudiniAssetComponent *InHAC, TArray<UHoudiniOutput*>& OutputsPendingClear, bool bForceClearAll)
 {
 	if (!IsValid(InHAC))
 		return;
@@ -1968,7 +1968,7 @@ FHoudiniOutputTranslator::ClearOutput(UHoudiniOutput* Output)
 					UObject* const OutputOuter = Output->GetOuter();
 					if (IsValid(OutputOuter))
 					{
-						if (OutputOuter->IsA<UHoudiniAssetComponent>())
+						if (OutputOuter->IsA<UT2HoudiniAssetComponent>())
 						{
 							ParentComponent = Cast<USceneComponent>(OutputOuter);
 						}
@@ -2035,7 +2035,7 @@ FHoudiniOutputTranslator::GetCustomPartNameFromAttribute(const HAPI_NodeId & Nod
 }
 
 void
-FHoudiniOutputTranslator::GetTempFolderFromAttribute(UHoudiniAssetComponent * HAC)
+FHoudiniOutputTranslator::GetTempFolderFromAttribute(UT2HoudiniAssetComponent * HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return;
@@ -2088,7 +2088,7 @@ FHoudiniOutputTranslator::GetTempFolderFromAttribute(UHoudiniAssetComponent * HA
 		if(!AbsoluteOverridePath.IsEmpty())
 			HOUDINI_LOG_WARNING(TEXT("Invalid override temporary cook path: %s"), *TempFolderOverride);
 
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 		TempFolderOverride = HoudiniRuntimeSettings->DefaultTemporaryCookFolder;
 	}
 

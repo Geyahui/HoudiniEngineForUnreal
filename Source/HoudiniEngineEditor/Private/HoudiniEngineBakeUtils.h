@@ -30,7 +30,7 @@
 #include "HoudiniOutput.h"
 #include "HoudiniPackageParams.h"
 
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 class UHoudiniOutput;
 class ALandscapeProxy;
 class UStaticMesh;
@@ -38,7 +38,7 @@ class USplineComponent;
 class UPackage;
 class UWorld;
 class AActor;
-class UHoudiniSplineComponent;
+class UT2HoudiniSplineComponent;
 class UStaticMeshComponent;
 class UHoudiniPDGAssetLink;
 class UTOPNetwork;
@@ -73,7 +73,7 @@ enum class EHoudiniInstancerComponentType : uint8
 // Helper struct to track actors created/used when baking, with
 // the intended bake name (before making it unique), and their
 // output index and output object identifier.
-struct HOUDINIENGINEEDITOR_API FHoudiniEngineBakedActor
+struct T2HOUDINIENGINEEDITOR_API FHoudiniEngineBakedActor
 {
 	FHoudiniEngineBakedActor();
 
@@ -138,14 +138,14 @@ struct HOUDINIENGINEEDITOR_API FHoudiniEngineBakedActor
 	
 };
 
-struct HOUDINIENGINEEDITOR_API FHoudiniEngineBakeUtils
+struct T2HOUDINIENGINEEDITOR_API FHoudiniEngineBakeUtils
 {
 public:
 
 	/** Bake static mesh. **/
 
 	/*static UStaticMesh * BakeStaticMesh(
-		UHoudiniAssetComponent * HoudiniAssetComponent,
+		UT2HoudiniAssetComponent * HoudiniAssetComponent,
 		UStaticMesh * InStaticMesh,
 		const FHoudiniPackageParams &PackageParams);*/
 
@@ -177,13 +177,13 @@ public:
 		const FString& InFallbackWorldOutlinerFolder="");
 
 	static AActor* BakeInputHoudiniCurveToActor(
-		UHoudiniSplineComponent * InHoudiniSplineComponent,
+		UT2HoudiniSplineComponent * InHoudiniSplineComponent,
 		const FHoudiniPackageParams & PakcageParams,
 		UWorld* WorldToSpawn,
 		const FTransform & SpawnTransform);
 
 	static UBlueprint* BakeInputHoudiniCurveToBlueprint(
-		UHoudiniSplineComponent * InHoudiniSplineComponent,
+		UT2HoudiniSplineComponent * InHoudiniSplineComponent,
 		const FHoudiniPackageParams & PakcageParams,
 		UWorld* WorldToSpawn,
 		const FTransform & SpawnTransform);
@@ -324,16 +324,16 @@ public:
 	// Bake a Houdini asset component (InHACToBake) based on the bInReplace and BakeOption arguments.
 	// Returns true if the underlying bake function (for example, BakeHoudiniActorToActors, returns true (or a valid UObject*))
 	static bool BakeHoudiniAssetComponent(
-		UHoudiniAssetComponent* InHACToBake,
+		UT2HoudiniAssetComponent* InHACToBake,
 		bool bInReplacePreviousBake,
 		EHoudiniEngineBakeOption InBakeOption,
 		bool bInRemoveHACOutputOnSuccess);
 
 	static bool BakeHoudiniActorToActors(
-		UHoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceActors, bool bInReplaceAssets);
+		UT2HoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceActors, bool bInReplaceAssets);
 
 	static bool BakeHoudiniActorToActors(
-		UHoudiniAssetComponent* HoudiniAssetComponent,
+		UT2HoudiniAssetComponent* HoudiniAssetComponent,
 		bool bInReplaceActors,
 		bool bInReplaceAssets,
 		TArray<FHoudiniEngineBakedActor>& OutNewActors,
@@ -376,9 +376,9 @@ public:
 		TArray<FHoudiniEngineBakedActor>& OutActors,
 		TArray<UPackage*>& OutPackagesToSave);
 
-	static bool CanHoudiniAssetComponentBakeToFoliage(UHoudiniAssetComponent* HoudiniAssetComponent);
+	static bool CanHoudiniAssetComponentBakeToFoliage(UT2HoudiniAssetComponent* HoudiniAssetComponent);
 
-	static bool BakeHoudiniActorToFoliage(UHoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceAssets);
+	static bool BakeHoudiniActorToFoliage(UT2HoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceAssets);
 
 	static bool BakeStaticMeshOutputToActors(
 		int32 InOutputIndex, 
@@ -417,9 +417,9 @@ public:
 		TArray<UBlueprint*>& OutBlueprints,
 		TArray<UPackage*>& OutPackagesToSave);
 	
-	static bool BakeBlueprints(UHoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceAssets);
+	static bool BakeBlueprints(UT2HoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceAssets);
 
-	static bool BakeBlueprints(UHoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceAssets, FHoudiniEngineOutputStats& InBakeStats, TArray<UBlueprint*>& OutBlueprints, TArray<UPackage*>& OutPackagesToSave);
+	static bool BakeBlueprints(UT2HoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceAssets, FHoudiniEngineOutputStats& InBakeStats, TArray<UBlueprint*>& OutBlueprints, TArray<UPackage*>& OutPackagesToSave);
 
 	static bool CopyActorContentsToBlueprint(AActor * InActor, UBlueprint * OutBlueprint);
 
@@ -430,7 +430,7 @@ public:
 	static bool GetHoudiniGeneratedNameFromMetaInformation(
 		UPackage * Package, UObject * Object, FString & HoudiniName);
 
-	static bool DeleteBakedHoudiniAssetActor(UHoudiniAssetComponent* HoudiniAssetComponent);
+	static bool DeleteBakedHoudiniAssetActor(UT2HoudiniAssetComponent* HoudiniAssetComponent);
 
 	static void SaveBakedPackages(TArray<UPackage*> & PackagesToSave, bool bSaveCurrentWorld = false);
 
@@ -438,7 +438,7 @@ public:
 	static bool FindOutputObject(
 		const UObject* InObjectToFind, EHoudiniOutputType InOutputType, const TArray<UHoudiniOutput*> InOutputs, int32& OutOutputIndex, FHoudiniOutputObjectIdentifier &OutIdentifier);
 
-	static bool IsObjectTemporary(UObject* InObject, EHoudiniOutputType InOutputType, UHoudiniAssetComponent* InHAC);
+	static bool IsObjectTemporary(UObject* InObject, EHoudiniOutputType InOutputType, UT2HoudiniAssetComponent* InHAC);
 
 	static bool IsObjectTemporary(
 		UObject* InObject, EHoudiniOutputType InOutputType, const TArray<UHoudiniOutput*>& InParentOutputs, const FString& InTemporaryCookFolder);
@@ -643,7 +643,7 @@ protected:
 	// to true.
 	// bInReplace and BakeOption represents the baking settings to use if a delayed bake (post-cook) needs to be triggered.
 	static bool CheckForAndRefineHoudiniProxyMesh(
-		UHoudiniAssetComponent* InHoudiniAssetComponent,
+		UT2HoudiniAssetComponent* InHoudiniAssetComponent,
 		bool bInReplacePreviousBake,
 		EHoudiniEngineBakeOption BakeOption,
 		bool bInRemoveHACOutputOnSuccess,

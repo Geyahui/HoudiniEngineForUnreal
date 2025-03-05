@@ -28,7 +28,7 @@
 #include "HoudiniEngineRuntimePrivatePCH.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniEngine.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineString.h"
 
@@ -738,7 +738,7 @@ FUnrealLandscapeTranslator::ConvertLandscapeDataToHeightfieldData(
 	// Use default unreal scaling for marshalling landscapes
 	// A lot of precision will be lost in order to keep the same transform as the landscape input
 	bool bUseDefaultUE4Scaling = false;
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 	if (HoudiniRuntimeSettings && HoudiniRuntimeSettings->MarshallingLandscapesUseDefaultUnrealScaling)
 		bUseDefaultUE4Scaling = HoudiniRuntimeSettings->MarshallingLandscapesUseDefaultUnrealScaling;
 
@@ -1337,7 +1337,7 @@ FUnrealLandscapeTranslator::ExtractLandscapeData(
 		return false;
 
 	// Get runtime settings.
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 
 	// Calc all the needed sizes
 	int32 ComponentSizeQuads = ((LandscapeProxy->ComponentSizeQuads + 1) >> LandscapeProxy->ExportLOD) - 1;

@@ -65,7 +65,7 @@ enum class EHoudiniLandscapeOutputBakeType : uint8
 };
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FHoudiniCurveOutputProperties
+struct T2HOUDINIENGINERUNTIME_API FHoudiniCurveOutputProperties
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -87,7 +87,7 @@ struct HOUDINIENGINERUNTIME_API FHoudiniCurveOutputProperties
 };
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniLandscapePtr : public UObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniLandscapePtr : public UObject
 {
 	GENERATED_UCLASS_BODY()
 
@@ -120,7 +120,7 @@ public:
 
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FHoudiniOutputObjectIdentifier
+struct T2HOUDINIENGINERUNTIME_API FHoudiniOutputObjectIdentifier
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -173,10 +173,10 @@ public:
 };
 
 /** Function used by hashing containers to create a unique hash for this type of object. **/
-HOUDINIENGINERUNTIME_API uint32 GetTypeHash(const FHoudiniOutputObjectIdentifier& HoudiniOutputObjectIdentifier);
+T2HOUDINIENGINERUNTIME_API uint32 GetTypeHash(const FHoudiniOutputObjectIdentifier& HoudiniOutputObjectIdentifier);
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FHoudiniBakedOutputObjectIdentifier
+struct T2HOUDINIENGINERUNTIME_API FHoudiniBakedOutputObjectIdentifier
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -204,10 +204,10 @@ public:
 };
 
 /** Function used by hashing containers to create a unique hash for this type of object. **/
-HOUDINIENGINERUNTIME_API uint32 GetTypeHash(const FHoudiniBakedOutputObjectIdentifier& InIdentifier);
+T2HOUDINIENGINERUNTIME_API uint32 GetTypeHash(const FHoudiniBakedOutputObjectIdentifier& InIdentifier);
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FHoudiniInstancedOutput
+struct T2HOUDINIENGINERUNTIME_API FHoudiniInstancedOutput
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -273,7 +273,7 @@ public:
 };
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FHoudiniBakedOutputObject
+struct T2HOUDINIENGINERUNTIME_API FHoudiniBakedOutputObject
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -328,7 +328,7 @@ struct HOUDINIENGINERUNTIME_API FHoudiniBakedOutputObject
 // that the "previous/last" bake objects can survive output reconstruction or PDG
 // dirty/dirty all operations.
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FHoudiniBakedOutput
+struct T2HOUDINIENGINERUNTIME_API FHoudiniBakedOutput
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -338,7 +338,7 @@ struct HOUDINIENGINERUNTIME_API FHoudiniBakedOutput
 };
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FHoudiniOutputObject
+struct T2HOUDINIENGINERUNTIME_API FHoudiniOutputObject
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -399,7 +399,7 @@ struct HOUDINIENGINERUNTIME_API FHoudiniOutputObject
 };
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniOutput : public UObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniOutput : public UObject
 {
 	GENERATED_UCLASS_BODY()
 

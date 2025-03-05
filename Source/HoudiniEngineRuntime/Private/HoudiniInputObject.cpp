@@ -27,9 +27,9 @@
 #include "HoudiniInputObject.h"
 
 #include "HoudiniEngineRuntime.h"
-#include "HoudiniAssetActor.h"
-#include "HoudiniAssetComponent.h"
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniAssetActor.h"
+#include "T2HoudiniAssetComponent.h"
+#include "T2HoudiniSplineComponent.h"
 #include "HoudiniInput.h"
 
 #include "Engine/StaticMesh.h"
@@ -286,11 +286,11 @@ UHoudiniInputSplineComponent::GetSplineComponent()
 	return Cast<USplineComponent>(InputObject.LoadSynchronous());
 }
 
-UHoudiniSplineComponent*
+UT2HoudiniSplineComponent*
 UHoudiniInputHoudiniSplineComponent::GetCurveComponent() const
 {
-	return Cast<UHoudiniSplineComponent>(GetObject());
-	//return Cast<UHoudiniSplineComponent>(InputObject.LoadSynchronous());
+	return Cast<UT2HoudiniSplineComponent>(GetObject());
+	//return Cast<UT2HoudiniSplineComponent>(InputObject.LoadSynchronous());
 }
 
 UCameraComponent*
@@ -299,10 +299,10 @@ UHoudiniInputCameraComponent::GetCameraComponent()
 	return Cast<UCameraComponent>(InputObject.LoadSynchronous());
 }
 
-UHoudiniAssetComponent*
+UT2HoudiniAssetComponent*
 UHoudiniInputHoudiniAsset::GetHoudiniAssetComponent()
 {
-	return Cast<UHoudiniAssetComponent>(InputObject.LoadSynchronous());
+	return Cast<UT2HoudiniAssetComponent>(InputObject.LoadSynchronous());
 }
 
 AActor*
@@ -380,7 +380,7 @@ UHoudiniInputObject::CreateTypedInputObject(UObject * InObject, UObject* InOuter
 
 		case EHoudiniInputObjectType::HoudiniAssetActor:
 			{
-				AHoudiniAssetActor* HoudiniActor = Cast<AHoudiniAssetActor>(InObject);
+				AT2HoudiniAssetActor* HoudiniActor = Cast<AT2HoudiniAssetActor>(InObject);
 				if (HoudiniActor)
 				{
 					HoudiniInputObject = UHoudiniInputHoudiniAsset::Create(HoudiniActor->GetHoudiniAssetComponent(), InOuter, InName);
@@ -512,7 +512,7 @@ UHoudiniInputCameraComponent::Create(UObject * InObject, UObject* InOuter, const
 UHoudiniInputObject *
 UHoudiniInputHoudiniAsset::Create(UObject * InObject, UObject* InOuter, const FString& InName)
 {
-	UHoudiniAssetComponent * InHoudiniAssetComponent = Cast<UHoudiniAssetComponent>(InObject);
+	UT2HoudiniAssetComponent * InHoudiniAssetComponent = Cast<UT2HoudiniAssetComponent>(InObject);
 	if (!InHoudiniAssetComponent)
 		return nullptr;
 
@@ -1056,12 +1056,12 @@ UHoudiniInputHoudiniSplineComponent::Update(UObject* InObject)
 	// If we use a soft object reference, the editor will complain about deleting a reference that is in use 
 	// everytime we try to delete the actor, even though everything is contained within the actor.
 
-	CachedComponent = Cast<UHoudiniSplineComponent>(InObject);
+	CachedComponent = Cast<UT2HoudiniSplineComponent>(InObject);
 	InputObject = nullptr;
 
 	// We need a strong ref to the spline component to prevent it from being GCed
-	//MyHoudiniSplineComponent = Cast<UHoudiniSplineComponent>(InObject);
-	UHoudiniSplineComponent* HoudiniSplineComponent = GetCurveComponent();
+	//MyHoudiniSplineComponent = Cast<UT2HoudiniSplineComponent>(InObject);
+	UT2HoudiniSplineComponent* HoudiniSplineComponent = GetCurveComponent();
 
 	if (!HoudiniSplineComponent || HoudiniSplineComponent->IsPendingKill())
 	{
@@ -1089,7 +1089,7 @@ UHoudiniInputHoudiniSplineComponent::MarkChanged(const bool& bInChanged)
 {
 	Super::MarkChanged(bInChanged);
 	
-	UHoudiniSplineComponent* HoudiniSplineComponent = GetCurveComponent();
+	UT2HoudiniSplineComponent* HoudiniSplineComponent = GetCurveComponent();
 	if (HoudiniSplineComponent)
 	{
 		HoudiniSplineComponent->MarkChanged(bInChanged);
@@ -1101,7 +1101,7 @@ UHoudiniInputHoudiniSplineComponent::SetNeedsToTriggerUpdate(const bool& bInTrig
 {
 	Super::SetNeedsToTriggerUpdate(bInTriggersUpdate);
 
-	UHoudiniSplineComponent* HoudiniSplineComponent = GetCurveComponent();
+	UT2HoudiniSplineComponent* HoudiniSplineComponent = GetCurveComponent();
 	if (HoudiniSplineComponent)
 	{
 		HoudiniSplineComponent->SetNeedsToTriggerUpdate(bInTriggersUpdate);
@@ -1114,7 +1114,7 @@ UHoudiniInputHoudiniSplineComponent::HasChanged() const
 	if (Super::HasChanged())
 		return true;
 
-	UHoudiniSplineComponent* HoudiniSplineComponent = GetCurveComponent();
+	UT2HoudiniSplineComponent* HoudiniSplineComponent = GetCurveComponent();
 	if (HoudiniSplineComponent && HoudiniSplineComponent->HasChanged())
 		return true;
 
@@ -1126,7 +1126,7 @@ UHoudiniInputHoudiniSplineComponent::NeedsToTriggerUpdate() const
 {
 	if (Super::NeedsToTriggerUpdate())
 		return true;
-	UHoudiniSplineComponent* HoudiniSplineComponent = GetCurveComponent();
+	UT2HoudiniSplineComponent* HoudiniSplineComponent = GetCurveComponent();
 	if (HoudiniSplineComponent && HoudiniSplineComponent->NeedsToTriggerUpdate())
 		return true;
 
@@ -1138,7 +1138,7 @@ UHoudiniInputHoudiniAsset::Update(UObject * InObject)
 {
 	Super::Update(InObject);
 
-	UHoudiniAssetComponent* HAC = Cast<UHoudiniAssetComponent>(InObject);
+	UT2HoudiniAssetComponent* HAC = Cast<UT2HoudiniAssetComponent>(InObject);
 
 	ensure(HAC);
 
@@ -1253,11 +1253,11 @@ UHoudiniInputObject::GetInputObjectTypeFromObject(UObject* InObject)
 		{
 			return EHoudiniInputObjectType::SplineComponent;
 		}
-		else if (InObject->IsA(UHoudiniSplineComponent::StaticClass()))
+		else if (InObject->IsA(UT2HoudiniSplineComponent::StaticClass()))
 		{
 			return EHoudiniInputObjectType::HoudiniSplineComponent;
 		}
-		else if (InObject->IsA(UHoudiniAssetComponent::StaticClass()))
+		else if (InObject->IsA(UT2HoudiniAssetComponent::StaticClass()))
 		{
 			return EHoudiniInputObjectType::HoudiniAssetComponent;
 		}
@@ -1281,7 +1281,7 @@ UHoudiniInputObject::GetInputObjectTypeFromObject(UObject* InObject)
 		{
 			return EHoudiniInputObjectType::Brush;
 		}
-		else if (InObject->IsA(AHoudiniAssetActor::StaticClass()))
+		else if (InObject->IsA(AT2HoudiniAssetActor::StaticClass()))
 		{
 			return EHoudiniInputObjectType::HoudiniAssetActor;
 		}

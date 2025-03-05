@@ -1026,6 +1026,51 @@ struct HAPI_API HAPI_Session
 };
 HAPI_C_STRUCT_TYPEDEF( HAPI_Session )
 
+
+enum HAPI_TCP_PortType
+{
+    HAPI_TCP_PORT_ANY,
+    HAPI_TCP_PORT_RANGE,
+    HAPI_TCP_PORT_LIST
+};
+HAPI_C_ENUM_TYPEDEF( HAPI_TCP_PortType )
+
+enum HAPI_ThriftSharedMemoryBufferType
+{
+    HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER,
+    HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER
+};
+HAPI_C_ENUM_TYPEDEF( HAPI_ThriftSharedMemoryBufferType )
+
+#define HAPI_MAX_NUM_CONNECTIONS            128
+
+/// Configurations for sessions
+struct HAPI_API HAPI_SessionInfo
+{
+    /// The number of subconnections in this session
+    int connectionCount;
+
+    /// Specification for the port numbers
+    HAPI_TCP_PortType portType;
+
+    /// Specifies a range of port numbers, [minPort, maxPort]
+    int minPort;
+    int maxPort;
+
+    /// Specifies a list of port numbers
+    int ports[ HAPI_MAX_NUM_CONNECTIONS ];
+
+    // Must match the buffer type passed to the HARS executable through the
+    // command line or ::HAPI_StartThriftSharedMemoryServer
+    HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType;
+
+    // Must match the buffer size passed to the HARS executable through the
+    // command line or ::HAPI_StartThriftSharedMemoryServer. This is the size of
+    // the shared memory buffer in megabytes (MB).
+    HAPI_Int64 sharedMemoryBufferSize;
+};
+HAPI_C_STRUCT_TYPEDEF( HAPI_SessionInfo )
+
 /// Options to configure a Thrift server being started from HARC.
 struct HAPI_API HAPI_ThriftServerOptions
 {
@@ -1130,6 +1175,7 @@ struct HAPI_API HAPI_CookOptions
     /// and therefore geos will be split by group and primitive type. If
     /// set to false, geos will only be split by primitive type.
     HAPI_Bool splitGeosByGroup;
+    HAPI_StringHandle splitGroupSH;
 
     /// This toggle lets you enable the splitting by unique values
     /// of a specified attribute. By default, this is false and
@@ -1199,7 +1245,7 @@ struct HAPI_API HAPI_CookOptions
     /// geometry will update only the topology if the number of points changed.
     /// Use this to get better performance on deforming meshes.
     HAPI_Bool cacheMeshTopology;
-
+    HAPI_Bool preferOutputNodes;
     /// For internal use only. :)
     int extraFlags;
 };
@@ -1432,6 +1478,9 @@ struct HAPI_API HAPI_ParmInfo
     /// Provides the raw condition string which is used to evalute whether
     /// a parm is enabled or disabled
     HAPI_StringHandle disabledConditionSH;
+    
+    /// Whether or not the "Use Menu Item Token As Value" checkbox was checked in a integer menu item.
+    HAPI_Bool useMenuItemTokenAsValue;
 };
 HAPI_C_STRUCT_TYPEDEF( HAPI_ParmInfo )
 
@@ -1564,6 +1613,7 @@ struct HAPI_API HAPI_GeoInfo
     /// @{
     int pointGroupCount;
     int primitiveGroupCount;
+    int edgeGroupCount;
     /// @}
 
     /// Total number of parts this geometry contains.

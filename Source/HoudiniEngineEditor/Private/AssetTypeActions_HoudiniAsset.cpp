@@ -25,13 +25,13 @@
 */
 
 #include "AssetTypeActions_HoudiniAsset.h"
-#include "HoudiniAsset.h"
+#include "T2HoudiniAsset.h"
 
 #include "HoudiniEngineEditorPrivatePCH.h"
 #include "HoudiniEngineStyle.h"
 #include "HoudiniEngine.h"
-#include "HoudiniAsset.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAsset.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniTool.h"
 #include "HoudiniEngineEditorUtils.h"
 
@@ -49,7 +49,7 @@
 FText
 FAssetTypeActions_HoudiniAsset::GetName() const
 {
-	return LOCTEXT("HoudiniAssetTypeActions", "HoudiniAsset");
+	return LOCTEXT("HoudiniAssetTypeActions", "T2HoudiniAsset");
 }
 
 FColor
@@ -61,7 +61,7 @@ FAssetTypeActions_HoudiniAsset::GetTypeColor() const
 UClass *
 FAssetTypeActions_HoudiniAsset::GetSupportedClass() const
 {
-	return UHoudiniAsset::StaticClass();
+	return UT2HoudiniAsset::StaticClass();
 }
 
 uint32
@@ -77,7 +77,7 @@ FAssetTypeActions_HoudiniAsset::GetThumbnailInfo(UObject * Asset) const
 	if (!Asset || Asset->IsPendingKill())
 		return nullptr;
 
-	UHoudiniAsset * HoudiniAsset = CastChecked< UHoudiniAsset >(Asset);
+	UT2HoudiniAsset * HoudiniAsset = CastChecked< UT2HoudiniAsset >(Asset);
 	UThumbnailInfo * ThumbnailInfo = HoudiniAsset->ThumbnailInfo;
 	if (!ThumbnailInfo)
 	{
@@ -100,10 +100,10 @@ void
 FAssetTypeActions_HoudiniAsset::GetActions(const TArray<UObject *> & InObjects, class FMenuBuilder & MenuBuilder)
 {
 	bool ValidObjects = false;
-	TArray<TWeakObjectPtr<UHoudiniAsset>> HoudiniAssets;
+	TArray<TWeakObjectPtr<UT2HoudiniAsset>> HoudiniAssets;
 	if (InObjects.Num() > 0)
 	{
-		HoudiniAssets = GetTypedWeakObjectPtrs<UHoudiniAsset>(InObjects);
+		HoudiniAssets = GetTypedWeakObjectPtrs<UT2HoudiniAsset>(InObjects);
 		ValidObjects = true;
 	}
 
@@ -225,10 +225,10 @@ FAssetTypeActions_HoudiniAsset::AssetsActivatedOverride(const TArray<UObject*>& 
 	if (ActivationType == EAssetTypeActivationMethod::DoubleClicked)
 	{
 		bool ValidObjects = false;
-		TArray<TWeakObjectPtr<UHoudiniAsset>> HoudiniAssets;
+		TArray<TWeakObjectPtr<UT2HoudiniAsset>> HoudiniAssets;
 		if (InObjects.Num() > 0)
 		{
-			HoudiniAssets = GetTypedWeakObjectPtrs<UHoudiniAsset>(InObjects);
+			HoudiniAssets = GetTypedWeakObjectPtrs<UT2HoudiniAsset>(InObjects);
 			ValidObjects = true;
 		}
 
@@ -244,7 +244,7 @@ FAssetTypeActions_HoudiniAsset::AssetsActivatedOverride(const TArray<UObject*>& 
 
 
 TSharedRef<FExtender>
-FAssetTypeActions_HoudiniAsset::AddLevelEditorMenuExtenders(TArray<TWeakObjectPtr<UHoudiniAsset>> HoudiniAssets)
+FAssetTypeActions_HoudiniAsset::AddLevelEditorMenuExtenders(TArray<TWeakObjectPtr<UT2HoudiniAsset>> HoudiniAssets)
 {
 	FLevelEditorModule& LevelEditor = FModuleManager::GetModuleChecked<FLevelEditorModule>(TEXT("LevelEditor"));
 	TSharedRef<FUICommandList> LevelEditorCommandBindings = LevelEditor.GetGlobalLevelEditorActions();
@@ -284,22 +284,22 @@ FAssetTypeActions_HoudiniAsset::AddLevelEditorMenuExtenders(TArray<TWeakObjectPt
 }
 
 void
-FAssetTypeActions_HoudiniAsset::ExecuteReimport(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs)
+FAssetTypeActions_HoudiniAsset::ExecuteReimport(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs)
 {
 	for (auto ObjIt = InHoudiniAssetPtrs.CreateConstIterator(); ObjIt; ++ObjIt)
 	{
-		UHoudiniAsset * HoudiniAsset = (*ObjIt).Get();
+		UT2HoudiniAsset * HoudiniAsset = (*ObjIt).Get();
 		if (HoudiniAsset)
 			FReimportManager::Instance()->Reimport(HoudiniAsset, true);
 	}
 }
 
 void
-FAssetTypeActions_HoudiniAsset::ExecuteFindInExplorer(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs)
+FAssetTypeActions_HoudiniAsset::ExecuteFindInExplorer(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs)
 {
 	for (auto ObjIt = InHoudiniAssetPtrs.CreateConstIterator(); ObjIt; ++ObjIt)
 	{
-		UHoudiniAsset * HoudiniAsset = (*ObjIt).Get();
+		UT2HoudiniAsset * HoudiniAsset = (*ObjIt).Get();
 		if (HoudiniAsset && HoudiniAsset->AssetImportData)
 		{
 			const FString SourceFilePath = HoudiniAsset->AssetImportData->GetFirstFilename();
@@ -310,7 +310,7 @@ FAssetTypeActions_HoudiniAsset::ExecuteFindInExplorer(TArray<TWeakObjectPtr<UHou
 }
 
 void
-FAssetTypeActions_HoudiniAsset::ExecuteOpenInHoudini(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs)
+FAssetTypeActions_HoudiniAsset::ExecuteOpenInHoudini(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs)
 {
 	if (!FHoudiniEngine::IsInitialized())
 		return;
@@ -318,7 +318,7 @@ FAssetTypeActions_HoudiniAsset::ExecuteOpenInHoudini(TArray<TWeakObjectPtr<UHoud
 	if (InHoudiniAssetPtrs.Num() != 1)
 		return;
 
-	UHoudiniAsset * HoudiniAsset = InHoudiniAssetPtrs[0].Get();
+	UT2HoudiniAsset * HoudiniAsset = InHoudiniAssetPtrs[0].Get();
 	if (!HoudiniAsset || !(HoudiniAsset->AssetImportData))
 		return;
 
@@ -355,12 +355,12 @@ FAssetTypeActions_HoudiniAsset::ExecuteOpenInHoudini(TArray<TWeakObjectPtr<UHoud
 
 
 void
-FAssetTypeActions_HoudiniAsset::ExecuteRebuildAllInstances(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs)
+FAssetTypeActions_HoudiniAsset::ExecuteRebuildAllInstances(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs)
 {
 	// Reimports and then rebuild all instances of the asset
 	for (auto ObjIt = InHoudiniAssetPtrs.CreateConstIterator(); ObjIt; ++ObjIt)
 	{
-		UHoudiniAsset * HoudiniAsset = (*ObjIt).Get();
+		UT2HoudiniAsset * HoudiniAsset = (*ObjIt).Get();
 		if (!HoudiniAsset)
 			continue;
 
@@ -368,9 +368,9 @@ FAssetTypeActions_HoudiniAsset::ExecuteRebuildAllInstances(TArray<TWeakObjectPtr
 		FReimportManager::Instance()->Reimport(HoudiniAsset, true);
 
 		// Rebuilds all instances of that asset in the scene
-		for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
+		for (TObjectIterator<UT2HoudiniAssetComponent> Itr; Itr; ++Itr)
 		{
-			UHoudiniAssetComponent * Component = *Itr;
+			UT2HoudiniAssetComponent * Component = *Itr;
 			if (Component && (Component->GetHoudiniAsset() == HoudiniAsset))
 			{
 				Component->MarkAsNeedRebuild();
@@ -381,29 +381,29 @@ FAssetTypeActions_HoudiniAsset::ExecuteRebuildAllInstances(TArray<TWeakObjectPtr
 
 
 void
-FAssetTypeActions_HoudiniAsset::ExecuteApplyOpSingle(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs)
+FAssetTypeActions_HoudiniAsset::ExecuteApplyOpSingle(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs)
 {
 	return ExecuteApplyAssetToSelection(InHoudiniAssetPtrs, EHoudiniToolType::HTOOLTYPE_OPERATOR_SINGLE);
 }
 
 void
-FAssetTypeActions_HoudiniAsset::ExecuteApplyOpMulti(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs)
+FAssetTypeActions_HoudiniAsset::ExecuteApplyOpMulti(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs)
 {
 	return ExecuteApplyAssetToSelection(InHoudiniAssetPtrs, EHoudiniToolType::HTOOLTYPE_OPERATOR_MULTI);
 }
 void
-FAssetTypeActions_HoudiniAsset::ExecuteApplyBatch(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs)
+FAssetTypeActions_HoudiniAsset::ExecuteApplyBatch(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs)
 {
 	return ExecuteApplyAssetToSelection(InHoudiniAssetPtrs, EHoudiniToolType::HTOOLTYPE_OPERATOR_BATCH);
 }
 
 void
-FAssetTypeActions_HoudiniAsset::ExecuteApplyAssetToSelection(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs, const EHoudiniToolType& InType)
+FAssetTypeActions_HoudiniAsset::ExecuteApplyAssetToSelection(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs, const EHoudiniToolType& InType)
 {
 	if (InHoudiniAssetPtrs.Num() != 1)
 		return;
 
-	UHoudiniAsset * HoudiniAsset = InHoudiniAssetPtrs[0].Get();
+	UT2HoudiniAsset * HoudiniAsset = InHoudiniAssetPtrs[0].Get();
 	if (!HoudiniAsset || !(HoudiniAsset->AssetImportData))
 		return;
 
@@ -411,7 +411,7 @@ FAssetTypeActions_HoudiniAsset::ExecuteApplyAssetToSelection(TArray<TWeakObjectP
 	FHoudiniEngineEditorUtils::InstantiateHoudiniAsset(HoudiniAsset, InType, EHoudiniToolSelectionType::HTOOL_SELECTION_WORLD_ONLY);
 	/*
 	// Creating a temporary tool for the selected asset
-	TSoftObjectPtr<UHoudiniAsset> HoudiniAssetPtr(HoudiniAsset);
+	TSoftObjectPtr<UT2HoudiniAsset> HoudiniAssetPtr(HoudiniAsset);
 	FHoudiniTool HoudiniTool(
 		HoudiniAssetPtr,
 		FText::FromString(HoudiniAsset->GetName()),
@@ -430,11 +430,11 @@ FAssetTypeActions_HoudiniAsset::ExecuteApplyAssetToSelection(TArray<TWeakObjectP
 }
 
 void
-FAssetTypeActions_HoudiniAsset::ExecuteInstantiateOrigin(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs)
+FAssetTypeActions_HoudiniAsset::ExecuteInstantiateOrigin(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs)
 {
 	for (auto HoudiniAssetPtr : InHoudiniAssetPtrs)
 	{
-		UHoudiniAsset * HoudiniAsset = HoudiniAssetPtr.Get();
+		UT2HoudiniAsset * HoudiniAsset = HoudiniAssetPtr.Get();
 		if (!HoudiniAsset || !(HoudiniAsset->AssetImportData))
 			continue;
 
@@ -443,12 +443,12 @@ FAssetTypeActions_HoudiniAsset::ExecuteInstantiateOrigin(TArray<TWeakObjectPtr<U
 }
 
 void
-FAssetTypeActions_HoudiniAsset::ExecuteInstantiate(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs)
+FAssetTypeActions_HoudiniAsset::ExecuteInstantiate(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs)
 {
 	FTransform DefaultTransform = FHoudiniEngineEditorUtils::GetDefaulAssetSpawnTransform();
 	for (auto HoudiniAssetPtr : InHoudiniAssetPtrs)
 	{
-		UHoudiniAsset * HoudiniAsset = HoudiniAssetPtr.Get();
+		UT2HoudiniAsset * HoudiniAsset = HoudiniAssetPtr.Get();
 		if (!HoudiniAsset || !(HoudiniAsset->AssetImportData))
 			continue;
 

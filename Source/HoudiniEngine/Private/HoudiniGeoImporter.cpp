@@ -38,7 +38,7 @@
 #include "HoudiniLandscapeTranslator.h"
 #include "HoudiniInstanceTranslator.h"
 #include "HoudiniSplineTranslator.h"
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniSplineComponent.h"
 
 #include "CoreMinimal.h"
 #include "Misc/Paths.h"
@@ -404,7 +404,7 @@ UHoudiniGeoImporter::CreateLandscapes(TArray<UHoudiniOutput*>& InOutputs, UObjec
 		FHoudiniEngine::Get().UpdateTaskSlateNotification(FText::FromString(Notification));
 
 		TArray<ALandscapeProxy*> EmptyInputLandscapes;
-		UHoudiniAssetComponent* HAC = FHoudiniEngineUtils::GetOuterHoudiniAssetComponent(CurOutput);
+		UT2HoudiniAssetComponent* HAC = FHoudiniEngineUtils::GetOuterHoudiniAssetComponent(CurOutput);
 
 		bool bCreatedNewMaps = false;
 		ERuntimePackageMode RuntimePackageMode = ERuntimePackageMode::CookToTemp;

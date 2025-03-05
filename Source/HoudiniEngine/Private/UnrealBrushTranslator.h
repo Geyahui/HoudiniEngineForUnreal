@@ -36,7 +36,7 @@ class UHoudiniInputBrush;
 class ABrush;
 class AActor;
 
-struct HOUDINIENGINE_API FUnrealBrushTranslator 
+struct T2HOUDINIENGINE_API FUnrealBrushTranslator 
 {
 public:
 	static bool CreateInputNodeForBrush(

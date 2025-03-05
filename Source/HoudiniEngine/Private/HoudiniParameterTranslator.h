@@ -30,25 +30,25 @@
 
 #include "HoudiniEngineRuntimePrivatePCH.h"
 
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 class UHoudiniParameter;
 class UHoudiniParameterFile;
 
 enum class EHoudiniFolderParameterType : uint8;
 enum class EHoudiniParameterType : uint8;
 
-struct HOUDINIENGINE_API FHoudiniParameterTranslator
+struct T2HOUDINIENGINE_API FHoudiniParameterTranslator
 {
 	// 
-	static bool UpdateParameters(UHoudiniAssetComponent* HAC);
+	static bool UpdateParameters(UT2HoudiniAssetComponent* HAC);
 
-	static bool OnPreCookParameters(UHoudiniAssetComponent* HAC);
+	static bool OnPreCookParameters(UT2HoudiniAssetComponent* HAC);
 
 	//
-	static bool UpdateLoadedParameters(UHoudiniAssetComponent* HAC);
+	static bool UpdateLoadedParameters(UT2HoudiniAssetComponent* HAC);
 
 	// 
-	static bool UploadChangedParameters(UHoudiniAssetComponent* HAC);
+	static bool UploadChangedParameters(UT2HoudiniAssetComponent* HAC);
 
 	//
 	static bool UploadParameterValue(UHoudiniParameter* InParam);

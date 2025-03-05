@@ -54,7 +54,7 @@
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineString.h"
 #include "HoudiniParameter.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 
 
 // Default values for certain UI min and max parameter values
@@ -72,7 +72,7 @@
 
 // 
 bool 
-FHoudiniParameterTranslator::UpdateParameters(UHoudiniAssetComponent* HAC)
+FHoudiniParameterTranslator::UpdateParameters(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -107,7 +107,7 @@ FHoudiniParameterTranslator::UpdateParameters(UHoudiniAssetComponent* HAC)
 }
 
 bool
-FHoudiniParameterTranslator::OnPreCookParameters(UHoudiniAssetComponent* HAC)
+FHoudiniParameterTranslator::OnPreCookParameters(UT2HoudiniAssetComponent* HAC)
 {
 	// Call OnPreCook for all parameters.
 	// Parameters can use this to ensure that any cached / non-cooking state is properly
@@ -125,7 +125,7 @@ FHoudiniParameterTranslator::OnPreCookParameters(UHoudiniAssetComponent* HAC)
 
 // 
 bool
-FHoudiniParameterTranslator::UpdateLoadedParameters(UHoudiniAssetComponent* HAC)
+FHoudiniParameterTranslator::UpdateLoadedParameters(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -367,7 +367,7 @@ FHoudiniParameterTranslator::BuildAllParameters(
 					UHoudiniParameterRampFloat* FloatRampParam = Cast<UHoudiniParameterRampFloat>(HoudiniAssetParameter);
 					if (FloatRampParam)
 					{
-						UHoudiniAssetComponent* ParentHAC = Cast<UHoudiniAssetComponent>(FloatRampParam->GetOuter());
+						UT2HoudiniAssetComponent* ParentHAC = Cast<UT2HoudiniAssetComponent>(FloatRampParam->GetOuter());
 						if (ParentHAC && !ParentHAC->HasBeenLoaded() && !ParentHAC->HasBeenDuplicated())
 							FloatRampParam->bCaching = false;
 					}
@@ -380,7 +380,7 @@ FHoudiniParameterTranslator::BuildAllParameters(
 					UHoudiniParameterRampColor* ColorRampParam = Cast<UHoudiniParameterRampColor>(HoudiniAssetParameter);
 					if (ColorRampParam)
 					{
-						UHoudiniAssetComponent* ParentHAC = Cast<UHoudiniAssetComponent>(ColorRampParam->GetOuter());
+						UT2HoudiniAssetComponent* ParentHAC = Cast<UT2HoudiniAssetComponent>(ColorRampParam->GetOuter());
 						if (ParentHAC && !ParentHAC->HasBeenLoaded() && !ParentHAC->HasBeenDuplicated())
 							ColorRampParam->bCaching = false;
 					}
@@ -1569,7 +1569,7 @@ FHoudiniParameterTranslator::UpdateParameterFromInfo(
 				HoudiniParameterOperatorPath,
 				UHoudiniInput::StaticClass());
 
-				UHoudiniAssetComponent *ParentHAC = Cast<UHoudiniAssetComponent>(HoudiniParameterOperatorPath->GetOuter());
+				UT2HoudiniAssetComponent *ParentHAC = Cast<UT2HoudiniAssetComponent>(HoudiniParameterOperatorPath->GetOuter());
 
 				if (!ParentHAC)
 					return false;
@@ -2092,7 +2092,7 @@ FHoudiniParameterTranslator::HapiGetParameterHasTag(const HAPI_NodeId& NodeId, c
 
 
 bool
-FHoudiniParameterTranslator::UploadChangedParameters( UHoudiniAssetComponent * HAC )
+FHoudiniParameterTranslator::UploadChangedParameters( UT2HoudiniAssetComponent * HAC )
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniParameterTranslator::UploadChangedParameters);
 
@@ -2583,7 +2583,7 @@ bool FHoudiniParameterTranslator::UploadRampParameter(UHoudiniParameter* InParam
 	if (!MultiParam || MultiParam->IsPendingKill())
 		return false;
 
-	UHoudiniAssetComponent* HoudiniAssetComponent = Cast<UHoudiniAssetComponent>(InParam->GetOuter());
+	UT2HoudiniAssetComponent* HoudiniAssetComponent = Cast<UT2HoudiniAssetComponent>(InParam->GetOuter());
 	if (!HoudiniAssetComponent)
 		return false;
 

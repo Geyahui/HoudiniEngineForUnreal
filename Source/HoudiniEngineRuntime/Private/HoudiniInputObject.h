@@ -28,7 +28,7 @@
 
 #include <functional>
 
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniSplineComponent.h"
 #include "HoudiniGeoPartObject.h"
 
 #include "CoreTypes.h"
@@ -48,7 +48,7 @@ class USceneComponent;
 class UStaticMeshComponent;
 class UInstancedStaticMeshComponent;
 class USplineComponent;
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 class AActor;
 class ALandscapeProxy;
 class ABrush;
@@ -84,7 +84,7 @@ enum class EHoudiniInputObjectType : uint8
 // UObjects input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputObject : public UObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputObject : public UObject
 {
 	GENERATED_UCLASS_BODY()
 
@@ -208,7 +208,7 @@ protected:
 // UStaticMesh input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputStaticMesh : public UHoudiniInputObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputStaticMesh : public UHoudiniInputObject
 {
 	GENERATED_UCLASS_BODY()
 		
@@ -249,7 +249,7 @@ public:
 // USkeletalMesh input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputSkeletalMesh : public UHoudiniInputObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputSkeletalMesh : public UHoudiniInputObject
 {
 	GENERATED_UCLASS_BODY()
 
@@ -273,7 +273,7 @@ public:
 // USceneComponent input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputSceneComponent : public UHoudiniInputObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputSceneComponent : public UHoudiniInputObject
 {
 	GENERATED_UCLASS_BODY()
 
@@ -310,7 +310,7 @@ public:
 // UStaticMeshComponent input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputMeshComponent : public UHoudiniInputSceneComponent
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputMeshComponent : public UHoudiniInputSceneComponent
 {
 	GENERATED_UCLASS_BODY()
 
@@ -352,7 +352,7 @@ public:
 // UInstancedStaticMeshComponent input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputInstancedMeshComponent : public UHoudiniInputMeshComponent
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputInstancedMeshComponent : public UHoudiniInputMeshComponent
 {
 	GENERATED_UCLASS_BODY()
 
@@ -387,7 +387,7 @@ public:
 // USplineComponent input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputSplineComponent : public UHoudiniInputSceneComponent
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputSplineComponent : public UHoudiniInputSceneComponent
 {
 	GENERATED_UCLASS_BODY()
 
@@ -443,7 +443,7 @@ public:
 // UHoudiniSplineComponent input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputHoudiniSplineComponent : public UHoudiniInputObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputHoudiniSplineComponent : public UHoudiniInputObject
 {
 	GENERATED_UCLASS_BODY()
 
@@ -467,7 +467,7 @@ public:
 	virtual bool NeedsToTriggerUpdate() const override;
 
 	// UHoudiniSplineComponent accessor
-	UHoudiniSplineComponent* GetCurveComponent() const;
+	UT2HoudiniSplineComponent* GetCurveComponent() const;
 
 public:
 
@@ -489,7 +489,7 @@ protected:
 	// lives on the same actor as this input object. If we use a Soft Object Reference instead the editor
 	// will complain about breaking references everytime we try to delete the actor.
 	UPROPERTY(Instanced)
-	UHoudiniSplineComponent* CachedComponent;
+	UT2HoudiniSplineComponent* CachedComponent;
 };
 
 
@@ -498,7 +498,7 @@ protected:
 // UCameraComponent input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputCameraComponent : public UHoudiniInputSceneComponent
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputCameraComponent : public UHoudiniInputSceneComponent
 {
 	GENERATED_UCLASS_BODY()
 
@@ -535,7 +535,7 @@ public:
 // UHoudiniAssetComponent input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputHoudiniAsset : public UHoudiniInputObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputHoudiniAsset : public UHoudiniInputObject
 {
 	GENERATED_UCLASS_BODY()
 
@@ -548,7 +548,7 @@ public:
 	virtual void Update(UObject * InObject) override;
 
 	// UHoudiniAssetComponent accessor
-	UHoudiniAssetComponent* GetHoudiniAssetComponent();
+	UT2HoudiniAssetComponent* GetHoudiniAssetComponent();
 public:
 
 	// The output index of the node that we want to use as input
@@ -562,7 +562,7 @@ public:
 // AActor input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputActor : public UHoudiniInputObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputActor : public UHoudiniInputObject
 {
 	GENERATED_UCLASS_BODY()
 
@@ -598,7 +598,7 @@ public:
 // ALandscapeProxy input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputLandscape : public UHoudiniInputActor
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputLandscape : public UHoudiniInputActor
 {
 	GENERATED_UCLASS_BODY()
 
@@ -717,7 +717,7 @@ struct FHoudiniBrushInfo
 };
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputBrush : public UHoudiniInputActor
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputBrush : public UHoudiniInputActor
 {
 	GENERATED_BODY()
 
@@ -791,7 +791,7 @@ protected:
 // UDataTable input
 //-----------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInputDataTable : public UHoudiniInputObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniInputDataTable : public UHoudiniInputObject
 {
 	GENERATED_UCLASS_BODY()
 

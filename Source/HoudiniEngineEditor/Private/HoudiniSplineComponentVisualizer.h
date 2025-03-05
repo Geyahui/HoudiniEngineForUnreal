@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniSplineComponent.h"
 
 #include "ComponentVisualizer.h"
 #include "Framework/Commands/UICommandList.h"
@@ -146,7 +146,7 @@ class FHoudiniSplineComponentVisualizer : public FComponentVisualizer
 		// direct pointer breaks during Blueprint reconstructions properly
 		// (see SplineComponent / SplineMeshComponent visualizers).
 		FComponentPropertyPath SplinePropertyPath;
-		UHoudiniSplineComponent* GetEditedHoudiniSplineComponent() const { return Cast<UHoudiniSplineComponent>(SplinePropertyPath.GetComponent()); }
+		UT2HoudiniSplineComponent* GetEditedHoudiniSplineComponent() const { return Cast<UT2HoudiniSplineComponent>(SplinePropertyPath.GetComponent()); }
 
 	protected:
 
@@ -169,8 +169,8 @@ class FHoudiniSplineComponentVisualizer : public FComponentVisualizer
 		bool bRecordingMovingPoints;
 
 	private:
-		FEditorViewportClient * FindViewportClient(const UHoudiniSplineComponent * InHoudiniSplineComponent, const FSceneView * View);
+		FEditorViewportClient * FindViewportClient(const UT2HoudiniSplineComponent * InHoudiniSplineComponent, const FSceneView * View);
 
-		bool IsCookOnCurveChanged(UHoudiniSplineComponent* InHoudiniSplineComponent);
+		bool IsCookOnCurveChanged(UT2HoudiniSplineComponent* InHoudiniSplineComponent);
 
 };

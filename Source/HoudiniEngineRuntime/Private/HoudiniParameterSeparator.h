@@ -31,7 +31,7 @@
 #include "HoudiniParameterSeparator.generated.h"
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniParameterSeparator : public UHoudiniParameter
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterSeparator : public UHoudiniParameter
 {
 	GENERATED_UCLASS_BODY()
 

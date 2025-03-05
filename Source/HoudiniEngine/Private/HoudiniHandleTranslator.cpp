@@ -34,18 +34,18 @@
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
 
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniParameter.h"
-#include "HoudiniHandleComponent.h"
+#include "T2HoudiniHandleComponent.h"
 
 
 bool
-FHoudiniHandleTranslator::UpdateHandles(UHoudiniAssetComponent* HAC) 
+FHoudiniHandleTranslator::UpdateHandles(UT2HoudiniAssetComponent* HAC) 
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
 
-	TArray<UHoudiniHandleComponent*> NewHandles;
+	TArray<UT2HoudiniHandleComponent*> NewHandles;
 
 	if (FHoudiniHandleTranslator::BuildAllHandles(HAC->GetAssetId(), HAC, HAC->HandleComponents, NewHandles)) 
 	{
@@ -58,9 +58,9 @@ FHoudiniHandleTranslator::UpdateHandles(UHoudiniAssetComponent* HAC)
 }
 
 bool 
-FHoudiniHandleTranslator::BuildAllHandles(const HAPI_NodeId& AssetId, UHoudiniAssetComponent* OuterObject,
-											TArray<UHoudiniHandleComponent*>& CurrentHandles, 
-											TArray<UHoudiniHandleComponent*>& NewHandles)
+FHoudiniHandleTranslator::BuildAllHandles(const HAPI_NodeId& AssetId, UT2HoudiniAssetComponent* OuterObject,
+											TArray<UT2HoudiniHandleComponent*>& CurrentHandles, 
+											TArray<UT2HoudiniHandleComponent*>& NewHandles)
 {
 	if (AssetId < 0)
 		return false;
@@ -71,7 +71,7 @@ FHoudiniHandleTranslator::BuildAllHandles(const HAPI_NodeId& AssetId, UHoudiniAs
 	if (HAPI_RESULT_SUCCESS != FHoudiniApi::GetAssetInfo(FHoudiniEngine::Get().GetSession(), AssetId, &AssetInfo))
 		return false;
 
-	TMap<FString, UHoudiniHandleComponent*> CurrentHandlesByName;
+	TMap<FString, UT2HoudiniHandleComponent*> CurrentHandlesByName;
 
 	for (auto& Handle : CurrentHandles)
 	{
@@ -109,7 +109,7 @@ FHoudiniHandleTranslator::BuildAllHandles(const HAPI_NodeId& AssetId, UHoudiniAs
 				continue;
 
 			FString TypeName = TEXT("");
-			EHoudiniHandleType HandleType = EHoudiniHandleType::Unsupported;
+			ET2HoudiniHandleType HandleType = ET2HoudiniHandleType::Unsupported;
 			{
 				FHoudiniEngineString HoudiniEngineString(HandleInfo.typeNameSH);
 				if (!HoudiniEngineString.ToFString(TypeName))
@@ -118,9 +118,9 @@ FHoudiniHandleTranslator::BuildAllHandles(const HAPI_NodeId& AssetId, UHoudiniAs
 				}
 
 				if (TypeName.Equals(TEXT(HAPI_UNREAL_HANDLE_TRANSFORM)))
-					HandleType = EHoudiniHandleType::Xform;
+					HandleType = ET2HoudiniHandleType::Xform;
 				else if (TypeName.Equals(TEXT(HAPI_UNREAL_HANDLE_BOUNDER)))
-					HandleType = EHoudiniHandleType::Bounder;
+					HandleType = ET2HoudiniHandleType::Bounder;
 			}
 
 			FString HandleName = TEXT("");
@@ -131,15 +131,15 @@ FHoudiniHandleTranslator::BuildAllHandles(const HAPI_NodeId& AssetId, UHoudiniAs
 					continue;
 			}
 
-			if (HandleType == EHoudiniHandleType::Unsupported)
+			if (HandleType == ET2HoudiniHandleType::Unsupported)
 			{
 				HOUDINI_LOG_DISPLAY(TEXT("%s: Unsupported Handle Type %s for handle %s"), 
 					OuterObject ? *(OuterObject->GetName()) : *(OuterObject->GetName()), *TypeName, *HandleName);
 				continue;
 			}
 
-			UHoudiniHandleComponent* HandleComponent = nullptr;
-			UHoudiniHandleComponent** FoundHandleComponent = CurrentHandlesByName.Find(HandleName);
+			UT2HoudiniHandleComponent* HandleComponent = nullptr;
+			UT2HoudiniHandleComponent** FoundHandleComponent = CurrentHandlesByName.Find(HandleName);
 
 			if (FoundHandleComponent)
 			{
@@ -150,8 +150,8 @@ FHoudiniHandleTranslator::BuildAllHandles(const HAPI_NodeId& AssetId, UHoudiniAs
 			}
 			else
 			{
-				HandleComponent = NewObject<UHoudiniHandleComponent>(OuterObject,
-					UHoudiniHandleComponent::StaticClass(),
+				HandleComponent = NewObject<UT2HoudiniHandleComponent>(OuterObject,
+					UT2HoudiniHandleComponent::StaticClass(),
 					NAME_None, RF_Public | RF_Transactional);
 
 				HandleComponent->SetHandleName(HandleName);
@@ -262,7 +262,7 @@ FHoudiniHandleTranslator::BuildAllHandles(const HAPI_NodeId& AssetId, UHoudiniAs
 
 
 void
-FHoudiniHandleTranslator::ClearHandles(UHoudiniAssetComponent* HAC) 
+FHoudiniHandleTranslator::ClearHandles(UT2HoudiniAssetComponent* HAC) 
 {
 	if (!HAC || HAC->IsPendingKill())
 		return;
@@ -318,7 +318,7 @@ FHoudiniHandleTranslator::GetHapiXYZOrder(const TSharedPtr<FString> & StrPtr)
 
 
 void 
-FHoudiniHandleTranslator::UpdateTransformParameters(UHoudiniHandleComponent* HandleComponent) 
+FHoudiniHandleTranslator::UpdateTransformParameters(UT2HoudiniHandleComponent* HandleComponent) 
 {
 	if (!HandleComponent || HandleComponent->IsPendingKill())
 		return;

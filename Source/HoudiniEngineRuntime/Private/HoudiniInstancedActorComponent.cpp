@@ -24,10 +24,10 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "HoudiniInstancedActorComponent.h"
+#include "T2HoudiniInstancedActorComponent.h"
 
-#include "HoudiniMeshSplitInstancerComponent.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniMeshSplitInstancerComponent.h"
+#include "T2HoudiniRuntimeSettings.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
 
 #include "HoudiniPluginSerializationVersion.h"
@@ -43,7 +43,7 @@
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
-UHoudiniInstancedActorComponent::UHoudiniInstancedActorComponent( const FObjectInitializer& ObjectInitializer )
+UT2HoudiniInstancedActorComponent::UT2HoudiniInstancedActorComponent( const FObjectInitializer& ObjectInitializer )
 : Super( ObjectInitializer )
 , InstancedObject( nullptr )
 {
@@ -58,7 +58,7 @@ UHoudiniInstancedActorComponent::UHoudiniInstancedActorComponent( const FObjectI
 
 
 void
-UHoudiniInstancedActorComponent::Serialize(FArchive& Ar)
+UT2HoudiniInstancedActorComponent::Serialize(FArchive& Ar)
 {
 	int64 InitialOffset = Ar.Tell();
 
@@ -76,11 +76,11 @@ UHoudiniInstancedActorComponent::Serialize(FArchive& Ar)
 	{
 		// Legacy serialization
 		// Either try to convert or skip depending on the setting value
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 		bool bEnableBackwardCompatibility = HoudiniRuntimeSettings->bEnableBackwardCompatibility;
 		if (bEnableBackwardCompatibility)
 		{
-			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniInstancedActorComponent : converting v1 object to v2."));
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UT2HoudiniInstancedActorComponent : converting v1 object to v2."));
 
 			Super::Serialize(Ar);
 
@@ -90,7 +90,7 @@ UHoudiniInstancedActorComponent::Serialize(FArchive& Ar)
 		}
 		else
 		{
-			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniInstancedActorComponent : serialization will be skipped."));
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UT2HoudiniInstancedActorComponent : serialization will be skipped."));
 
 			Super::Serialize(Ar);
 
@@ -112,7 +112,7 @@ UHoudiniInstancedActorComponent::Serialize(FArchive& Ar)
 }
 
 
-void UHoudiniInstancedActorComponent::OnComponentDestroyed( bool bDestroyingHierarchy )
+void UT2HoudiniInstancedActorComponent::OnComponentDestroyed( bool bDestroyingHierarchy )
 {
     ClearAllInstances();
     Super::OnComponentDestroyed( bDestroyingHierarchy );
@@ -120,9 +120,9 @@ void UHoudiniInstancedActorComponent::OnComponentDestroyed( bool bDestroyingHier
 
 
 void 
-UHoudiniInstancedActorComponent::AddReferencedObjects(UObject * InThis, FReferenceCollector & Collector )
+UT2HoudiniInstancedActorComponent::AddReferencedObjects(UObject * InThis, FReferenceCollector & Collector )
 {
-    UHoudiniInstancedActorComponent * ThisHIAC = Cast< UHoudiniInstancedActorComponent >(InThis);
+    UT2HoudiniInstancedActorComponent * ThisHIAC = Cast< UT2HoudiniInstancedActorComponent >(InThis);
     if ( ThisHIAC && !ThisHIAC->IsPendingKill() )
     {
         if ( ThisHIAC->InstancedObject && !ThisHIAC->InstancedObject->IsPendingKill() )
@@ -134,7 +134,7 @@ UHoudiniInstancedActorComponent::AddReferencedObjects(UObject * InThis, FReferen
 
 
 int32
-UHoudiniInstancedActorComponent::AddInstance(const FTransform& InstanceTransform, AActor * NewActor)
+UT2HoudiniInstancedActorComponent::AddInstance(const FTransform& InstanceTransform, AActor * NewActor)
 {
 	if (!NewActor || NewActor->IsPendingKill())
 		return -1;
@@ -146,7 +146,7 @@ UHoudiniInstancedActorComponent::AddInstance(const FTransform& InstanceTransform
 
 
 bool
-UHoudiniInstancedActorComponent::SetInstanceAt(const int32& Idx, const FTransform& InstanceTransform, AActor * NewActor)
+UT2HoudiniInstancedActorComponent::SetInstanceAt(const int32& Idx, const FTransform& InstanceTransform, AActor * NewActor)
 {
 	if (!NewActor || NewActor->IsPendingKill())
 		return false;
@@ -164,7 +164,7 @@ UHoudiniInstancedActorComponent::SetInstanceAt(const int32& Idx, const FTransfor
 
 
 bool
-UHoudiniInstancedActorComponent::SetInstanceTransformAt(const int32& Idx, const FTransform& InstanceTransform)
+UT2HoudiniInstancedActorComponent::SetInstanceTransformAt(const int32& Idx, const FTransform& InstanceTransform)
 {
 	if (!InstancedActors.IsValidIndex(Idx))
 		return false;
@@ -177,7 +177,7 @@ UHoudiniInstancedActorComponent::SetInstanceTransformAt(const int32& Idx, const 
 
 
 void 
-UHoudiniInstancedActorComponent::ClearAllInstances()
+UT2HoudiniInstancedActorComponent::ClearAllInstances()
 {
     for ( AActor* Instance : InstancedActors )
     {
@@ -189,7 +189,7 @@ UHoudiniInstancedActorComponent::ClearAllInstances()
 
 
 void
-UHoudiniInstancedActorComponent::SetNumberOfInstances(const int32& NewInstanceNum)
+UT2HoudiniInstancedActorComponent::SetNumberOfInstances(const int32& NewInstanceNum)
 {
 	int32 OldInstanceNum = InstancedActors.Num();
 
@@ -210,7 +210,7 @@ UHoudiniInstancedActorComponent::SetNumberOfInstances(const int32& NewInstanceNu
 
 
 void 
-UHoudiniInstancedActorComponent::OnComponentCreated()
+UT2HoudiniInstancedActorComponent::OnComponentCreated()
 {
     Super::OnComponentCreated();
 

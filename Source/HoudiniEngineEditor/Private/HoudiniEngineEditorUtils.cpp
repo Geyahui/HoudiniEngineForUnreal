@@ -29,10 +29,10 @@
 #include "HoudiniEngineEditorPrivatePCH.h"
 #include "HoudiniEngine.h"
 #include "HoudiniEngineEditor.h"
-#include "HoudiniRuntimeSettings.h"
-#include "HoudiniAssetActor.h"
+#include "T2HoudiniRuntimeSettings.h"
+#include "T2HoudiniAssetActor.h"
 #include "HoudiniGeoPartObject.h"
-#include "HoudiniAsset.h"
+#include "T2HoudiniAsset.h"
 #include "HoudiniOutput.h"
 #include "HoudiniTool.h"
 
@@ -110,7 +110,7 @@ FHoudiniEngineEditorUtils::GetWorldSelection(TArray< UObject* >& WorldSelection,
 		// ... remove all but them
 		for (int32 Idx = WorldSelection.Num() - 1; Idx >= 0; Idx--)
 		{
-			AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>(WorldSelection[Idx]);
+			AT2HoudiniAssetActor * HoudiniAssetActor = Cast<AT2HoudiniAssetActor>(WorldSelection[Idx]);
 			if (!HoudiniAssetActor || HoudiniAssetActor->IsPendingKill())
 				WorldSelection.RemoveAt(Idx);
 		}
@@ -324,7 +324,7 @@ FHoudiniEngineEditorUtils::GetMeanWorldSelectionTransform()
 }
 
 void
-FHoudiniEngineEditorUtils::InstantiateHoudiniAsset(UHoudiniAsset* InHoudiniAsset, const EHoudiniToolType& InType, const EHoudiniToolSelectionType& InSelectionType)
+FHoudiniEngineEditorUtils::InstantiateHoudiniAsset(UT2HoudiniAsset* InHoudiniAsset, const EHoudiniToolType& InType, const EHoudiniToolSelectionType& InSelectionType)
 {
 	if (!InHoudiniAsset)
 		return;
@@ -337,7 +337,7 @@ FHoudiniEngineEditorUtils::InstantiateHoudiniAsset(UHoudiniAsset* InHoudiniAsset
 		return;
 
 	// Get the asset Factory
-	UActorFactory* Factory = GEditor->FindActorFactoryForActorClass(AHoudiniAssetActor::StaticClass());
+	UActorFactory* Factory = GEditor->FindActorFactoryForActorClass(AT2HoudiniAssetActor::StaticClass());
 	if (!Factory)
 		return;
 
@@ -398,11 +398,11 @@ FHoudiniEngineEditorUtils::InstantiateHoudiniAsset(UHoudiniAsset* InHoudiniAsset
 				continue;
 
 			// Get the HoudiniAssetActor / HoudiniAssetComponent we just created
-			AHoudiniAssetActor* HoudiniAssetActor = (AHoudiniAssetActor*)CreatedActor;
+			AT2HoudiniAssetActor* HoudiniAssetActor = (AT2HoudiniAssetActor*)CreatedActor;
 			if (!HoudiniAssetActor)
 				continue;
 
-			UHoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+			UT2HoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
 			if (!HoudiniAssetComponent)
 				continue;
 
@@ -427,8 +427,8 @@ FHoudiniEngineEditorUtils::InstantiateHoudiniAsset(UHoudiniAsset* InHoudiniAsset
 		if (InType != EHoudiniToolType::HTOOLTYPE_GENERATOR)
 		{
 			TMap<UObject*, int32> InputPresets;
-			AHoudiniAssetActor* HoudiniAssetActor = (AHoudiniAssetActor*)CreatedActor;
-			UHoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor ? HoudiniAssetActor->GetHoudiniAssetComponent() : nullptr;
+			AT2HoudiniAssetActor* HoudiniAssetActor = (AT2HoudiniAssetActor*)CreatedActor;
+			UT2HoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor ? HoudiniAssetActor->GetHoudiniAssetComponent() : nullptr;
 			if (HoudiniAssetComponent)
 			{
 				// Build the preset map
@@ -467,7 +467,7 @@ FHoudiniEngineEditorUtils::InstantiateHoudiniAsset(UHoudiniAsset* InHoudiniAsset
 }
 
 void
-FHoudiniEngineEditorUtils::InstantiateHoudiniAssetAt(UHoudiniAsset* InHoudiniAsset, const FTransform& InTransform)
+FHoudiniEngineEditorUtils::InstantiateHoudiniAssetAt(UT2HoudiniAsset* InHoudiniAsset, const FTransform& InTransform)
 {
 	if (!InHoudiniAsset)
 		return;
@@ -480,7 +480,7 @@ FHoudiniEngineEditorUtils::InstantiateHoudiniAssetAt(UHoudiniAsset* InHoudiniAss
 		return;
 
 	// Get the asset Factory
-	UActorFactory* Factory = GEditor->FindActorFactoryForActorClass(AHoudiniAssetActor::StaticClass());
+	UActorFactory* Factory = GEditor->FindActorFactoryForActorClass(AT2HoudiniAssetActor::StaticClass());
 	if (!Factory)
 		return;
 
@@ -506,9 +506,9 @@ FHoudiniEngineEditorUtils::SaveAllHoudiniTemporaryCookData(UWorld *InSaveWorld)
 	// FHoudiniEngineUtils::CreateSlateNotification(Notification);
 
 	TArray<UPackage*> PackagesToSave;
-	for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
+	for (TObjectIterator<UT2HoudiniAssetComponent> Itr; Itr; ++Itr)
 	{
-		UHoudiniAssetComponent * HAC = *Itr;
+		UT2HoudiniAssetComponent * HAC = *Itr;
 		if (!HAC || HAC->IsPendingKill())
 			continue;
 

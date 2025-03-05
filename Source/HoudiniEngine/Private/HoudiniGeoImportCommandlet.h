@@ -80,7 +80,7 @@ public:
 };
 
 UCLASS()
-class HOUDINIENGINE_API UHoudiniGeoImportCommandlet : public UCommandlet
+class T2HOUDINIENGINE_API UHoudiniGeoImportCommandlet : public UCommandlet
 {
 	GENERATED_BODY()
 

@@ -46,7 +46,7 @@ UHoudiniGeoFactory::UHoudiniGeoFactory(const FObjectInitializer & ObjectInitiali
 	: Super(ObjectInitializer)
 {
 	// This factory is responsible for manufacturing HoudiniEngine assets.
-	SupportedClass = nullptr;// UHoudiniAsset::StaticClass();
+	SupportedClass = nullptr;// UT2HoudiniAsset::StaticClass();
 
 	// This factory does not manufacture new objects from scratch.
 	bCreateNew = false;

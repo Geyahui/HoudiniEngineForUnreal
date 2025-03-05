@@ -31,25 +31,25 @@
 
 #include "Templates/SharedPointer.h"
 
-class UHoudiniAssetComponent;
-class UHoudiniHandleComponent;
+class UT2HoudiniAssetComponent;
+class UT2HoudiniHandleComponent;
 
-struct HOUDINIENGINE_API FHoudiniHandleTranslator 
+struct T2HOUDINIENGINE_API FHoudiniHandleTranslator 
 {
-	static bool UpdateHandles(UHoudiniAssetComponent* HAC);
+	static bool UpdateHandles(UT2HoudiniAssetComponent* HAC);
 
 
 	static bool BuildAllHandles(const HAPI_NodeId& AssetId, 
-								UHoudiniAssetComponent* OuterObject, 
-								TArray<UHoudiniHandleComponent*>& CurrentHandles,
-								TArray<UHoudiniHandleComponent*>& NewHandles);
+								UT2HoudiniAssetComponent* OuterObject, 
+								TArray<UT2HoudiniHandleComponent*>& CurrentHandles,
+								TArray<UT2HoudiniHandleComponent*>& NewHandles);
 
-	static void ClearHandles(UHoudiniAssetComponent* HAC);
+	static void ClearHandles(UT2HoudiniAssetComponent* HAC);
 
 	static HAPI_RSTOrder GetHapiRSTOrder(const TSharedPtr<FString> & StrPtr);
 
 	static HAPI_XYZOrder GetHapiXYZOrder(const TSharedPtr<FString> & StrPtr);
 
-	static void UpdateTransformParameters(UHoudiniHandleComponent* HandleComponent);
+	static void UpdateTransformParameters(UT2HoudiniHandleComponent* HandleComponent);
 
 };

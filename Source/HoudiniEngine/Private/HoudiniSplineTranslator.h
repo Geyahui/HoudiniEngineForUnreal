@@ -32,8 +32,8 @@
 
 class UHoudiniInput;
 class UHoudiniOutput;
-class UHoudiniAssetComponent;
-class UHoudiniSplineComponent;
+class UT2HoudiniAssetComponent;
+class UT2HoudiniSplineComponent;
 class USceneComponent;
 class USplineComponent;
 
@@ -45,23 +45,23 @@ enum class EHoudiniCurveType : int8;
 enum class EHoudiniCurveMethod : int8;
 enum class EHoudiniCurveOutputType : uint8;
 
-struct HOUDINIENGINE_API FHoudiniSplineTranslator
+struct T2HOUDINIENGINE_API FHoudiniSplineTranslator
 {
 	// Get the cooked Houdini curve.
-	static bool UpdateHoudiniCurve(UHoudiniSplineComponent * HoudiniSplineComponent);
+	static bool UpdateHoudiniCurve(UT2HoudiniSplineComponent * HoudiniSplineComponent);
 
 	// Get all cooked Houdini curves of an input.
 	static void UpdateHoudiniInputCurves(UHoudiniInput* Input);
 
 	// Get all cooked Houdini curves of inputs in an HAC.
-	static void UpdateHoudiniInputCurves(UHoudiniAssetComponent* HAC);
+	static void UpdateHoudiniInputCurves(UT2HoudiniAssetComponent* HAC);
 
 	// Upload Houdini spline component data to the curve node, and then sync the Houdini Spline Component with the curve node.
-	static bool HapiUpdateNodeForHoudiniSplineComponent(UHoudiniSplineComponent* HoudiniSplineComponent);
+	static bool HapiUpdateNodeForHoudiniSplineComponent(UT2HoudiniSplineComponent* HoudiniSplineComponent);
 
 	// Create a new curve node.
 	static bool HapiCreateInputNodeForHoudiniSplineComponent(
-		const FString& InObjNodeName, UHoudiniSplineComponent* SplineComponent);
+		const FString& InObjNodeName, UT2HoudiniSplineComponent* SplineComponent);
 
 	// Update the curve node data, or create a new curve node if the CurveNodeId is valid.
 	static bool HapiCreateCurveInputNodeForData(
@@ -82,7 +82,7 @@ struct HOUDINIENGINE_API FHoudiniSplineTranslator
 		HAPI_NodeId& OutCurveNodeId, const FString& InputNodeName);
 
 	// Create a Houdini spline component from a given editable node. (Only called once when first build the editable node.)
-	static UHoudiniSplineComponent* CreateHoudiniSplineComponentFromHoudiniEditableNode(const int32 & GeoId, const FString & PartName, UObject* OuterComponent);
+	static UT2HoudiniSplineComponent* CreateHoudiniSplineComponentFromHoudiniEditableNode(const int32 & GeoId, const FString & PartName, UObject* OuterComponent);
 
 	// Helper functions.
 	static void ExtractStringPositions(const FString& Positions, TArray<FVector>& OutPositions);
@@ -106,11 +106,11 @@ struct HOUDINIENGINE_API FHoudiniSplineTranslator
 	static USplineComponent* CreateOutputUnrealSplineComponent(const TArray<FVector>& CurvePoints, 
 				const TArray<FVector>& CurveRotations, const TArray<FVector>& CurveScales, UObject* OuterComponent, const bool& bIsLinear, const bool& bIsClosed);
 
-	static UHoudiniSplineComponent* CreateOutputHoudiniSplineComponent(TArray<FVector>& CurvePoints, const TArray<FVector>& CurveRotations, const TArray<FVector>& CurveScales, UHoudiniAssetComponent* OuterHAC);
+	static UT2HoudiniSplineComponent* CreateOutputHoudiniSplineComponent(TArray<FVector>& CurvePoints, const TArray<FVector>& CurveRotations, const TArray<FVector>& CurveScales, UT2HoudiniAssetComponent* OuterHAC);
 
 	static bool UpdateOutputUnrealSplineComponent(const TArray<FVector>& CurvePoints, USplineComponent* EditedSplineComponent, const EHoudiniCurveType& CurveType, const bool& bClosed);
 
-	static bool UpdateOutputHoudiniSplineComponent(const TArray<FVector>& CurvePoints, UHoudiniSplineComponent* EditedHoudiniSplineComponent);
+	static bool UpdateOutputHoudiniSplineComponent(const TArray<FVector>& CurvePoints, UT2HoudiniSplineComponent* EditedHoudiniSplineComponent);
 
 	static void ReselectSelectedActors();
 };

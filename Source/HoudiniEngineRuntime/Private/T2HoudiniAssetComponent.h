@@ -30,7 +30,7 @@
 #include "UObject/ObjectMacros.h"
 
 #include "HoudiniEngineRuntimeUtils.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 #include "HoudiniOutput.h"
 #include "HoudiniInputTypes.h"
 #include "HoudiniPluginSerializationVersion.h"
@@ -38,13 +38,13 @@
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 
-#include "HoudiniAssetComponent.generated.h"
+#include "T2HoudiniAssetComponent.generated.h"
 
-class UHoudiniAsset;
+class UT2HoudiniAsset;
 class UHoudiniParameter;
 class UHoudiniInput;
 class UHoudiniOutput;
-class UHoudiniHandleComponent;
+class UT2HoudiniHandleComponent;
 class UHoudiniPDGAssetLink;
 class UHoudiniAssetComponent_V1;
 
@@ -128,13 +128,13 @@ enum class EHoudiniEngineBakeOption : uint8
 };
 #endif
 
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FHoudiniAssetEvent, UHoudiniAsset*);
-DECLARE_MULTICAST_DELEGATE_OneParam(FHoudiniAssetComponentEvent, UHoudiniAssetComponent*)
+DECLARE_MULTICAST_DELEGATE_OneParam(FHoudiniAssetEvent, UT2HoudiniAsset*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FHoudiniAssetComponentEvent, UT2HoudiniAssetComponent*)
 
 UCLASS(ClassGroup = (Rendering, Common), hidecategories = (Object, Activation, "Components|Activation"), ShowCategories = (Mobility), editinlinenew)
-class HOUDINIENGINERUNTIME_API UHoudiniAssetComponent : public UPrimitiveComponent
+class T2HOUDINIENGINERUNTIME_API UT2HoudiniAssetComponent : public UPrimitiveComponent
 {
 	GENERATED_UCLASS_BODY()
 
@@ -155,10 +155,10 @@ class HOUDINIENGINERUNTIME_API UHoudiniAssetComponent : public UPrimitiveCompone
 public:
 
 	// Declare the delegate that is broadcast when RefineMeshesTimer fires
-	DECLARE_MULTICAST_DELEGATE_OneParam(FOnRefineMeshesTimerDelegate, UHoudiniAssetComponent*);
-	DECLARE_DELEGATE_RetVal_OneParam(bool, FOnPostCookBakeDelegate, UHoudiniAssetComponent*);
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnRefineMeshesTimerDelegate, UT2HoudiniAssetComponent*);
+	DECLARE_DELEGATE_RetVal_OneParam(bool, FOnPostCookBakeDelegate, UT2HoudiniAssetComponent*);
 
-	virtual ~UHoudiniAssetComponent();
+	virtual ~UT2HoudiniAssetComponent();
 
 	virtual void Serialize(FArchive & Ar) override;
 
@@ -191,7 +191,7 @@ public:
 	UHoudiniInput* FindMatchingInput(UHoudiniInput* InOtherInput);
 
 	// Try to find one of our handle that matches another one (name and handle type)
-	UHoudiniHandleComponent* FindMatchingHandle(UHoudiniHandleComponent* InOtherHandle);
+	UT2HoudiniHandleComponent* FindMatchingHandle(UT2HoudiniHandleComponent* InOtherHandle);
 
 	// Finds a parameter by name
 	UHoudiniParameter* FindParameterByName(const FString& InParamName);
@@ -215,7 +215,7 @@ public:
 	//------------------------------------------------------------------------------------------------
 	// Accessors
 	//------------------------------------------------------------------------------------------------
-	UHoudiniAsset * GetHoudiniAsset() const;
+	UT2HoudiniAsset * GetHoudiniAsset() const;
 	int32 GetAssetId() const { return AssetId; };
 	EHoudiniAssetState GetAssetState() const { return AssetState; };
 	FString GetAssetStateAsString() const { return FHoudiniEngineRuntimeUtils::EnumToString(TEXT("EHoudiniAssetState"), GetAssetState()); };
@@ -231,7 +231,7 @@ public:
 	UHoudiniInput* GetInputAt(const int32& Idx) { return Inputs.IsValidIndex(Idx) ? Inputs[Idx] : nullptr; };
 	UHoudiniOutput* GetOutputAt(const int32& Idx) { return Outputs.IsValidIndex(Idx) ? Outputs[Idx] : nullptr;};
 	UHoudiniParameter* GetParameterAt(const int32& Idx) { return Parameters.IsValidIndex(Idx) ? Parameters[Idx] : nullptr;};
-	UHoudiniHandleComponent* GetHandleComponentAt(const int32& Idx) { return HandleComponents.IsValidIndex(Idx) ? HandleComponents[Idx] : nullptr; };
+	UT2HoudiniHandleComponent* GetHandleComponentAt(const int32& Idx) { return HandleComponents.IsValidIndex(Idx) ? HandleComponents[Idx] : nullptr; };
 
 	void GetOutputs(TArray<UHoudiniOutput*>& OutOutputs) const;
 
@@ -292,7 +292,7 @@ public:
 	//void SetComponentGUID(const FGuid& InGUID) { ComponentGUID = InGUID; };
 
 	//UFUNCTION(BlueprintSetter)
-	virtual void SetHoudiniAsset(UHoudiniAsset * NewHoudiniAsset);
+	virtual void SetHoudiniAsset(UT2HoudiniAsset * NewHoudiniAsset);
 
 	void SetHasBeenLoaded(const bool& InLoaded) { bHasBeenLoaded = InLoaded; };
 
@@ -333,9 +333,9 @@ public:
 	virtual void OnHoudiniAssetChanged();
 
 	//
-	void AddDownstreamHoudiniAsset(UHoudiniAssetComponent* InDownstreamAsset) { DownstreamHoudiniAssets.Add(InDownstreamAsset); };
+	void AddDownstreamHoudiniAsset(UT2HoudiniAssetComponent* InDownstreamAsset) { DownstreamHoudiniAssets.Add(InDownstreamAsset); };
 	//
-	void RemoveDownstreamHoudiniAsset(UHoudiniAssetComponent* InRemoveDownstreamAsset) { DownstreamHoudiniAssets.Remove(InRemoveDownstreamAsset); };
+	void RemoveDownstreamHoudiniAsset(UT2HoudiniAssetComponent* InRemoveDownstreamAsset) { DownstreamHoudiniAssets.Remove(InRemoveDownstreamAsset); };
 	//
 	void ClearDownstreamHoudiniAsset() { DownstreamHoudiniAssets.Empty(); };
 	//
@@ -379,7 +379,7 @@ public:
 
 	void SetStaticMeshGenerationProperties(UStaticMesh* InStaticMesh) const;
 
-	virtual void RegisterHoudiniComponent(UHoudiniAssetComponent* InComponent);
+	virtual void RegisterHoudiniComponent(UT2HoudiniAssetComponent* InComponent);
 
 	virtual void OnRegister() override;
 
@@ -395,7 +395,7 @@ public:
 	void ApplyInputPresets();
 
 	// return the cached component template, if available.
-	virtual UHoudiniAssetComponent* GetCachedTemplate() const { return nullptr; }
+	virtual UT2HoudiniAssetComponent* GetCachedTemplate() const { return nullptr; }
 
 	//------------------------------------------------------------------------------------------------
 	// Supported Features
@@ -485,7 +485,7 @@ public:
 	// Houdini Asset associated with this component.
 	/*Category = HoudiniAsset, EditAnywhere, meta = (DisplayPriority=0)*/
 	UPROPERTY(Category = HoudiniAsset, EditAnywhere)// BlueprintSetter = SetHoudiniAsset, BlueprintReadWrite, )
-	UHoudiniAsset* HoudiniAsset;
+	UT2HoudiniAsset* HoudiniAsset;
 
 	// Automatically cook when a parameter or input is changed
 	UPROPERTY()
@@ -594,7 +594,7 @@ protected:
 
 	// List of dependent downstream HACs that have us as an asset input
 	UPROPERTY(DuplicateTransient)
-	TSet<UHoudiniAssetComponent*> DownstreamHoudiniAssets;
+	TSet<UT2HoudiniAssetComponent*> DownstreamHoudiniAssets;
 
 	// Unique GUID created by component.
 	UPROPERTY(DuplicateTransient)
@@ -683,7 +683,7 @@ protected:
 	TArray<TWeakObjectPtr<AActor>> UntrackedOutputs;
 
 	UPROPERTY()
-	TArray<UHoudiniHandleComponent*> HandleComponents;
+	TArray<UT2HoudiniHandleComponent*> HandleComponents;
 
 	UPROPERTY(Transient, DuplicateTransient)
 	bool bHasComponentTransformChanged;

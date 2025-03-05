@@ -31,7 +31,7 @@
 #include "HoudiniStringResolver.generated.h"
 
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniStringResolver
+struct T2HOUDINIENGINE_API FHoudiniStringResolver
 {
 
 	GENERATED_USTRUCT_BODY();
@@ -67,7 +67,7 @@ public:
 
 
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniAttributeResolver : public FHoudiniStringResolver
+struct T2HOUDINIENGINE_API FHoudiniAttributeResolver : public FHoudiniStringResolver
 {
 	GENERATED_USTRUCT_BODY();
 

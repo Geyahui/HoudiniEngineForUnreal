@@ -36,7 +36,7 @@
 class IDetailCategoryBuilder;
 class FDetailWidgetRow;
 class UHoudiniOutput;
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 class FAssetThumbnailPool;
 class ALandscapeProxy;
 class USplineComponent;
@@ -202,7 +202,7 @@ public:
 		const FGeometry & InMyGeometry, const FPointerEvent & InMouseEvent, UObject * Object);
 
 	// Handler for bake individual static mesh action.
-	// static FReply OnBakeStaticMesh(UStaticMesh * StaticMesh, UHoudiniAssetComponent * HoudiniAssetComponent, FHoudiniGeoPartObject& GeoPartObject);
+	// static FReply OnBakeStaticMesh(UStaticMesh * StaticMesh, UT2HoudiniAssetComponent * HoudiniAssetComponent, FHoudiniGeoPartObject& GeoPartObject);
 
 private:
 

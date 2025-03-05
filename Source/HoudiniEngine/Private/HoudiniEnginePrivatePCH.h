@@ -45,13 +45,13 @@
 #define HAPI_HFS_SUBFOLDER_LINUX        TEXT( "dsolib" )
 
 // Unreal HAPI Resources.
-#define HAPI_UNREAL_RESOURCE_HOUDINI_LOGO				TEXT( "/HoudiniEngine/houdini_logo.houdini_logo" )
-#define HAPI_UNREAL_RESOURCE_HOUDINI_MATERIAL			TEXT( "/HoudiniEngine/houdini_default_material.houdini_default_material" )
-#define HAPI_UNREAL_RESOURCE_HOUDINI_TEMPLATE_MATERIAL	TEXT( "/HoudiniEngine/houdini_templated_material.houdini_templated_material")
-#define HAPI_UNREAL_RESOURCE_BGEO_IMPORT				TEXT( "/HoudiniEngine/houdini_bgeo_import.houdini_bgeo_import" )
+#define HAPI_UNREAL_RESOURCE_HOUDINI_LOGO				TEXT( "/T2HoudiniEngine/houdini_logo.houdini_logo" )
+#define HAPI_UNREAL_RESOURCE_HOUDINI_MATERIAL			TEXT( "/T2HoudiniEngine/houdini_default_material.houdini_default_material" )
+#define HAPI_UNREAL_RESOURCE_HOUDINI_TEMPLATE_MATERIAL	TEXT( "/T2HoudiniEngine/houdini_templated_material.houdini_templated_material")
+#define HAPI_UNREAL_RESOURCE_BGEO_IMPORT				TEXT( "/T2HoudiniEngine/houdini_bgeo_import.houdini_bgeo_import" )
 
-#define HAPI_UNREAL_RESOURCE_HOUDINI_DEFAULT_REFERENCE_MESH             TEXT("/HoudiniEngine/default_reference_static_mesh.default_reference_static_mesh")
-#define HAPI_UNREAL_RESOURCE_HOUDINI_DEFAULT_REFERENCE_MESH_MATERIAL    TEXT("/HoudiniEngine/default_reference_static_mesh_material.default_reference_static_mesh_material")
+#define HAPI_UNREAL_RESOURCE_HOUDINI_DEFAULT_REFERENCE_MESH             TEXT("/T2HoudiniEngine/default_reference_static_mesh.default_reference_static_mesh")
+#define HAPI_UNREAL_RESOURCE_HOUDINI_DEFAULT_REFERENCE_MESH_MATERIAL    TEXT("/T2HoudiniEngine/default_reference_static_mesh_material.default_reference_static_mesh_material")
 
 // Client name so HAPI knows we're running inside unreal
 #define HAPI_UNREAL_CLIENT_NAME         "unreal"

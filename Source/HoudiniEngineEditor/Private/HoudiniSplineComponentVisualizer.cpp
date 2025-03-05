@@ -30,8 +30,8 @@
 #include "HoudiniEngineEditor.h"
 #include "HoudiniEngineEditorPrivatePCH.h"
 #include "HoudiniApi.h"
-#include "HoudiniAssetComponent.h"
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniSplineComponent.h"
+#include "T2HoudiniSplineComponent.h"
 #include "HoudiniInputObject.h"
 #include "HoudiniInput.h"
 #include "HoudiniEngineStyle.h"
@@ -71,7 +71,7 @@ HHoudiniSplineCurveSegmentVisProxy::HHoudiniSplineCurveSegmentVisProxy(
 
 FHoudiniSplineComponentVisualizerCommands::FHoudiniSplineComponentVisualizerCommands()
 	: TCommands< FHoudiniSplineComponentVisualizerCommands >(
-		"HoudiniSplineComponentVisualizer",
+		"T2HoudiniSplineComponentVisualizer",
 		LOCTEXT("HoudiniSplineComponentVisualizer", "Houdini Spline Component Visualizer"),
 		NAME_None,
 		FEditorStyle::GetStyleSetName())
@@ -151,7 +151,7 @@ FHoudiniSplineComponentVisualizer::DrawVisualization(
 	const FSceneView * View,
 	FPrimitiveDrawInterface * PDI)
 {
-	const UHoudiniSplineComponent * HoudiniSplineComponent = Cast< const UHoudiniSplineComponent >(Component);
+	const UT2HoudiniSplineComponent * HoudiniSplineComponent = Cast< const UT2HoudiniSplineComponent >(Component);
 
 	if (!HoudiniSplineComponent
 		|| !PDI
@@ -160,7 +160,7 @@ FHoudiniSplineComponentVisualizer::DrawVisualization(
 		|| !HoudiniSplineComponent->IsHoudiniSplineVisible())
 		return;
 
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	
 	// Note: Undo a transaction clears the active visualizer in ComponnetVisMangaer, which is private to Visualizer manager.
 	//       HandleProxyForComponentVis() sets the active visualizer. So the selection will be lost after undo.
@@ -284,7 +284,7 @@ FHoudiniSplineComponentVisualizer::VisProxyHandleClick(
 	if (!InViewportClient || !VisProxy || !VisProxy->Component.IsValid())
 		return false;
 
-	const UHoudiniSplineComponent * HoudiniSplineComponent = CastChecked< const UHoudiniSplineComponent >(VisProxy->Component.Get());
+	const UT2HoudiniSplineComponent * HoudiniSplineComponent = CastChecked< const UT2HoudiniSplineComponent >(VisProxy->Component.Get());
 
 	AActor* OldSplineOwningActor = SplinePropertyPath.GetParentOwningActor();
 	SplinePropertyPath = FComponentPropertyPath(HoudiniSplineComponent);
@@ -308,9 +308,9 @@ FHoudiniSplineComponentVisualizer::VisProxyHandleClick(
 	if (!VisProxy->IsA(HHoudiniSplineControlPointVisProxy::StaticGetType()) && !VisProxy->IsA(HHoudiniSplineCurveSegmentVisProxy::StaticGetType()))
 		return true;
 
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 
-	EditedHoudiniSplineComponent = const_cast<UHoudiniSplineComponent *>(HoudiniSplineComponent);
+	EditedHoudiniSplineComponent = const_cast<UT2HoudiniSplineComponent *>(HoudiniSplineComponent);
 
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return false;
@@ -402,7 +402,7 @@ FHoudiniSplineComponentVisualizer::VisProxyHandleClick(
 bool 
 FHoudiniSplineComponentVisualizer::HandleInputKey(FEditorViewportClient * ViewportClient, FViewport * Viewport, FKey Key, EInputEvent Event) 
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return false;
 
@@ -471,7 +471,7 @@ FHoudiniSplineComponentVisualizer::HandleInputKey(FEditorViewportClient * Viewpo
 void 
 FHoudiniSplineComponentVisualizer::EndEditing() 
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return;
 
@@ -492,7 +492,7 @@ FHoudiniSplineComponentVisualizer::GetWidgetLocation(
 	const FEditorViewportClient* ViewportClient,
 	FVector& OutLocation) const
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return false;
 	
@@ -520,7 +520,7 @@ FHoudiniSplineComponentVisualizer::GetWidgetLocation(
 bool
 FHoudiniSplineComponentVisualizer::IsVisualizingArchetype() const
 {
-	UHoudiniSplineComponent* SplineComp = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* SplineComp = GetEditedHoudiniSplineComponent();
 	return (SplineComp && SplineComp->GetOwner() && FActorEditorUtils::IsAPreviewOrInactiveActor(SplineComp->GetOwner()));
 }
 
@@ -532,7 +532,7 @@ FHoudiniSplineComponentVisualizer::HandleInputDelta(
 	FRotator& DeltaRotate,
 	FVector& DeltaScale) 
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!ViewportClient || !EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return false;
 
@@ -612,7 +612,7 @@ FHoudiniSplineComponentVisualizer::GenerateContextMenu() const
 	MenuBuilder.BeginSection("Houdini Spline actions");
 	
 	// Create the context menu section
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (EditedHoudiniSplineComponent && !EditedHoudiniSplineComponent->IsPendingKill())
 	{
 		MenuBuilder.AddMenuEntry(
@@ -652,7 +652,7 @@ FHoudiniSplineComponentVisualizer::GenerateContextMenu() const
 int32
 FHoudiniSplineComponentVisualizer::OnInsertControlPointWithoutUpdate() 
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill()) 
 		return -1;
 
@@ -699,7 +699,7 @@ FHoudiniSplineComponentVisualizer::OnInsertControlPointWithoutUpdate()
 void 
 FHoudiniSplineComponentVisualizer::OnInsertControlPoint() 
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return;
 
@@ -725,7 +725,7 @@ FHoudiniSplineComponentVisualizer::IsInsertControlPointValid() const
 void 
 FHoudiniSplineComponentVisualizer::OnAddControlPoint()
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return;
 	
@@ -810,7 +810,7 @@ FHoudiniSplineComponentVisualizer::OnAddControlPoint()
 bool
 FHoudiniSplineComponentVisualizer::IsAddControlPointValid() const
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	return EditedHoudiniSplineComponent && !EditedHoudiniSplineComponent->IsPendingKill() && 
 		EditedHoudiniSplineComponent->EditedControlPointsIndexes.Num() > 0;
 }
@@ -818,7 +818,7 @@ FHoudiniSplineComponentVisualizer::IsAddControlPointValid() const
 void
 FHoudiniSplineComponentVisualizer::OnDeleteControlPoint()
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return;
 
@@ -861,7 +861,7 @@ FHoudiniSplineComponentVisualizer::OnDeleteControlPoint()
 bool 
 FHoudiniSplineComponentVisualizer::IsDeleteControlPointValid() const
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return false;
 
@@ -880,7 +880,7 @@ FHoudiniSplineComponentVisualizer::IsDeleteControlPointValid() const
 void
 FHoudiniSplineComponentVisualizer::OnDuplicateControlPoint()
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return;
 
@@ -924,7 +924,7 @@ FHoudiniSplineComponentVisualizer::OnDuplicateControlPoint()
 bool 
 FHoudiniSplineComponentVisualizer::IsDuplicateControlPointValid() const
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if(!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill() 
 		|| EditedHoudiniSplineComponent->EditedControlPointsIndexes.Num() == 0)
 		return false;
@@ -935,7 +935,7 @@ FHoudiniSplineComponentVisualizer::IsDuplicateControlPointValid() const
 void 
 FHoudiniSplineComponentVisualizer::OnDeselectAllControlPoints() 
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (EditedHoudiniSplineComponent && !EditedHoudiniSplineComponent->IsPendingKill())
 		EditedHoudiniSplineComponent->EditedControlPointsIndexes.Empty();
 }
@@ -943,7 +943,7 @@ FHoudiniSplineComponentVisualizer::OnDeselectAllControlPoints()
 bool 
 FHoudiniSplineComponentVisualizer::IsDeselectAllControlPointsValid() const
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (EditedHoudiniSplineComponent && !EditedHoudiniSplineComponent->IsPendingKill())
 		return EditedHoudiniSplineComponent->EditedControlPointsIndexes.Num() > 0;
 
@@ -955,7 +955,7 @@ FHoudiniSplineComponentVisualizer::AddControlPointAfter(
 	const FTransform & NewPoint,
 	const int32 & nIndex)
 {
-	UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	if (!EditedHoudiniSplineComponent || EditedHoudiniSplineComponent->IsPendingKill())
 		return nIndex;
 
@@ -982,7 +982,7 @@ FHoudiniSplineComponentVisualizer::RefreshViewport()
 // Find the EditorViewportClient of the viewport where the Houdini Spline Component lives in
 FEditorViewportClient *
 FHoudiniSplineComponentVisualizer::FindViewportClient(
-	const UHoudiniSplineComponent * InHoudiniSplineComponent,
+	const UT2HoudiniSplineComponent * InHoudiniSplineComponent,
 	const FSceneView * View)
 {
 	if (!View || !InHoudiniSplineComponent)
@@ -1010,14 +1010,14 @@ FHoudiniSplineComponentVisualizer::FindViewportClient(
 }
 
 bool
-FHoudiniSplineComponentVisualizer::IsCookOnCurveChanged(UHoudiniSplineComponent * InHoudiniSplineComponent) 
+FHoudiniSplineComponentVisualizer::IsCookOnCurveChanged(UT2HoudiniSplineComponent * InHoudiniSplineComponent) 
 {
 	if (!InHoudiniSplineComponent)
 		return true;
 
 	return InHoudiniSplineComponent->bCookOnCurveChanged;
 
-	// UHoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
+	// UT2HoudiniSplineComponent* EditedHoudiniSplineComponent = GetEditedHoudiniSplineComponent();
 	// UHoudiniInputObject * InputObject = Cast<UHoudiniInputObject>(EditedHoudiniSplineComponent->GetOuter());
 	// if (!InputObject)
 	// 	return true;

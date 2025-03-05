@@ -30,8 +30,8 @@
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniGenericAttribute.h"
-#include "HoudiniInstancedActorComponent.h"
-#include "HoudiniMeshSplitInstancerComponent.h"
+#include "T2HoudiniInstancedActorComponent.h"
+#include "T2HoudiniMeshSplitInstancerComponent.h"
 #include "HoudiniStaticMeshComponent.h"
 #include "HoudiniStaticMesh.h"
 
@@ -1234,7 +1234,7 @@ FHoudiniInstanceTranslator::GetAttributeInstancerObjectsAndTransforms(
 
 	// Get the settings indicating if we want to use a default object when the referenced mesh is invalid
 	bool bDefaultObjectEnabled = true;
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 	if (HoudiniRuntimeSettings)
 	{
 		bDefaultObjectEnabled = HoudiniRuntimeSettings->bShowDefaultMesh;
@@ -1706,9 +1706,9 @@ FHoudiniInstanceTranslator::CreateOrUpdateInstanceComponent(
 			OldType = HierarchicalInstancedStaticMeshComponent;			
 		else if (OldComponent->IsA<UInstancedStaticMeshComponent>())
 			OldType = InstancedStaticMeshComponent;
-		else if (OldComponent->IsA<UHoudiniMeshSplitInstancerComponent>())
+		else if (OldComponent->IsA<UT2HoudiniMeshSplitInstancerComponent>())
 			OldType = MeshSplitInstancerComponent;
-		else if (OldComponent->IsA<UHoudiniInstancedActorComponent>())
+		else if (OldComponent->IsA<UT2HoudiniInstancedActorComponent>())
 			OldType = HoudiniInstancedActorComponent;
 		else if (OldComponent->IsA<UStaticMeshComponent>())
 			OldType = StaticMeshComponent;
@@ -1903,7 +1903,7 @@ FHoudiniInstanceTranslator::CreateOrUpdateInstancedStaticMeshComponent(
 	}
 
 	// Now add the instances themselves
-	// TODO: We should be calling  UHoudiniInstancedActorComponent::UpdateInstancerComponentInstances( ... )
+	// TODO: We should be calling  UT2HoudiniInstancedActorComponent::UpdateInstancerComponentInstances( ... )
 	InstancedStaticMeshComponent->ClearInstances();
 	InstancedStaticMeshComponent->PreAllocateInstancesMemory(InstancedObjectTransforms.Num());
 	for (const auto& Transform : InstancedObjectTransforms)
@@ -1945,12 +1945,12 @@ FHoudiniInstanceTranslator::CreateOrUpdateInstancedActorComponent(
 		ComponentOuter = ParentComponent->GetOwner();
 
 	bool bCreatedNewComponent = false;
-	UHoudiniInstancedActorComponent* InstancedActorComponent = Cast<UHoudiniInstancedActorComponent>(CreatedInstancedComponent);
+	UT2HoudiniInstancedActorComponent* InstancedActorComponent = Cast<UT2HoudiniInstancedActorComponent>(CreatedInstancedComponent);
 	if (!InstancedActorComponent || InstancedActorComponent->IsPendingKill())
 	{
 		// If the mesh doesnt have LOD, we can use a regular ISMC
-		InstancedActorComponent = NewObject<UHoudiniInstancedActorComponent>(
-			ComponentOuter, UHoudiniInstancedActorComponent::StaticClass(), NAME_None, RF_Transactional);
+		InstancedActorComponent = NewObject<UT2HoudiniInstancedActorComponent>(
+			ComponentOuter, UT2HoudiniInstancedActorComponent::StaticClass(), NAME_None, RF_Transactional);
 		
 		// Change the creation method so the component is listed in the details panels
 		InstancedActorComponent->CreationMethod = EComponentCreationMethod::Instance;
@@ -2034,12 +2034,12 @@ FHoudiniInstanceTranslator::CreateOrUpdateMeshSplitInstancerComponent(
 		ComponentOuter = ParentComponent->GetOwner();
 
 	bool bCreatedNewComponent = false;
-	UHoudiniMeshSplitInstancerComponent* MeshSplitComponent = Cast<UHoudiniMeshSplitInstancerComponent>(CreatedInstancedComponent);
+	UT2HoudiniMeshSplitInstancerComponent* MeshSplitComponent = Cast<UT2HoudiniMeshSplitInstancerComponent>(CreatedInstancedComponent);
 	if (!MeshSplitComponent || MeshSplitComponent->IsPendingKill())
 	{
 		// If the mesh doesn't have LOD, we can use a regular ISMC
-		MeshSplitComponent = NewObject<UHoudiniMeshSplitInstancerComponent>(
-			ComponentOuter, UHoudiniMeshSplitInstancerComponent::StaticClass(), NAME_None, RF_Transactional);
+		MeshSplitComponent = NewObject<UT2HoudiniMeshSplitInstancerComponent>(
+			ComponentOuter, UT2HoudiniMeshSplitInstancerComponent::StaticClass(), NAME_None, RF_Transactional);
 
 		// Change the creation method so the component is listed in the details panels
 		MeshSplitComponent->CreationMethod = EComponentCreationMethod::Instance;
@@ -2409,7 +2409,7 @@ FHoudiniInstanceTranslator::CreateOrUpdateFoliageInstances(
 	if (!FoliageInfo)
 		return false;
 
-	FTransform HoudiniAssetTransform = ParentComponent->GetComponentTransform();
+	FTransform T2HoudiniAssetTransform = ParentComponent->GetComponentTransform();
 	FFoliageInstance FoliageInstance;
 	int32 CurrentInstanceCount = 0;
 	for (auto CurrentTransform : InstancedObjectTransforms)
@@ -2429,9 +2429,9 @@ FHoudiniInstanceTranslator::CreateOrUpdateFoliageInstances(
 		}
 		else
 		{
-			FoliageInstance.Location = HoudiniAssetTransform.TransformPosition(CurrentTransform.GetLocation());
-			FoliageInstance.Rotation = HoudiniAssetTransform.TransformRotation(CurrentTransform.GetRotation()).Rotator();
-			FoliageInstance.DrawScale3D = CurrentTransform.GetScale3D() * HoudiniAssetTransform.GetScale3D();
+			FoliageInstance.Location = T2HoudiniAssetTransform.TransformPosition(CurrentTransform.GetLocation());
+			FoliageInstance.Rotation = T2HoudiniAssetTransform.TransformRotation(CurrentTransform.GetRotation()).Rotator();
+			FoliageInstance.DrawScale3D = CurrentTransform.GetScale3D() * T2HoudiniAssetTransform.GetScale3D();
 		}
 
 		FoliageInfo->AddInstance(InstancedFoliageActor, FoliageType, FoliageInstance);
@@ -2570,7 +2570,7 @@ FHoudiniInstanceTranslator::RemoveAndDestroyComponent(UObject* InComponent)
 	USceneComponent* SceneComponent = Cast<USceneComponent>(InComponent);
 	if (SceneComponent && !SceneComponent->IsPendingKill())
 	{
-		// Remove from the HoudiniAssetActor
+		// Remove from the T2HoudiniAssetActor
 		if (SceneComponent->GetOwner())
 			SceneComponent->GetOwner()->RemoveOwnedComponent(SceneComponent);
 
@@ -2824,7 +2824,7 @@ FHoudiniInstanceTranslator::IsFoliageInstancer(const int32& InGeoId, const int32
 
 
 AActor*
-FHoudiniInstanceTranslator::SpawnInstanceActor(const FTransform& InTransform, ULevel* InSpawnLevel, UHoudiniInstancedActorComponent* InIAC)
+FHoudiniInstanceTranslator::SpawnInstanceActor(const FTransform& InTransform, ULevel* InSpawnLevel, UT2HoudiniInstancedActorComponent* InIAC)
 {
 	if (!InIAC || InIAC->IsPendingKill())
 		return nullptr;
@@ -2896,11 +2896,11 @@ FHoudiniInstanceTranslator::GetInstancerTypeFromComponent(UObject* InObject)
 	FString InstancerType = TEXT("Instancer");
 	if (InComponent && !InComponent->IsPendingKill())
 	{
-		if (InComponent->IsA<UHoudiniMeshSplitInstancerComponent>())
+		if (InComponent->IsA<UT2HoudiniMeshSplitInstancerComponent>())
 		{
 			InstancerType = TEXT("(Split Instancer)");
 		}
-		else if (InComponent->IsA<UHoudiniInstancedActorComponent>())
+		else if (InComponent->IsA<UT2HoudiniInstancedActorComponent>())
 		{
 			InstancerType = TEXT("(Actor Instancer)");
 		}

@@ -29,7 +29,7 @@
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
 
-#include "HoudiniAsset.h"
+#include "T2HoudiniAsset.h"
 
 #include "Components/PrimitiveComponent.h"
 
@@ -45,10 +45,10 @@ class ALandscapeProxy;
 class UMaterialInterface;
 class UHoudiniInput;
 class UHoudiniParameter;
-class UHoudiniHandleComponent;
-class UHoudiniSplineComponent;
-class UHoudiniInstancedActorComponent;
-class UHoudiniMeshSplitInstancerComponent;
+class UT2HoudiniHandleComponent;
+class UT2HoudiniSplineComponent;
+class UT2HoudiniInstancedActorComponent;
+class UT2HoudiniMeshSplitInstancerComponent;
 class UFoliageType_InstancedStaticMesh;
 
 
@@ -272,7 +272,7 @@ public:
 */
 
 UCLASS()
-class UHoudiniAssetParameter : public UObject
+class UT2HoudiniAssetParameter : public UObject
 {
 	GENERATED_UCLASS_BODY()
 
@@ -349,7 +349,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetParameterButton : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterButton : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -357,7 +357,7 @@ class UHoudiniAssetParameterButton : public UHoudiniAssetParameter
 };
 
 UCLASS()
-class UHoudiniAssetParameterChoice : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterChoice : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -384,7 +384,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetParameterColor : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterColor : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -399,7 +399,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetParameterFile : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterFile : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -420,7 +420,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetParameterFloat : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterFloat : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -449,7 +449,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetParameterFolder : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterFolder : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -457,7 +457,7 @@ class UHoudiniAssetParameterFolder : public UHoudiniAssetParameter
 };
 
 UCLASS()
-class UHoudiniAssetParameterFolderList : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterFolderList : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -465,7 +465,7 @@ class UHoudiniAssetParameterFolderList : public UHoudiniAssetParameter
 };
 
 UCLASS()
-class UHoudiniAssetParameterInt : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterInt : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -491,7 +491,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetParameterLabel : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterLabel : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -499,7 +499,7 @@ class UHoudiniAssetParameterLabel : public UHoudiniAssetParameter
 };
 
 UCLASS()
-class UHoudiniAssetParameterMultiparm : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterMultiparm : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -514,7 +514,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetParameterRamp : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterRamp : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -535,7 +535,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetParameterSeparator : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterSeparator : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -543,7 +543,7 @@ class UHoudiniAssetParameterSeparator : public UHoudiniAssetParameter
 };
 
 UCLASS()
-class UHoudiniAssetParameterString : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterString : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -558,7 +558,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetParameterToggle : public UHoudiniAssetParameter
+class UT2HoudiniAssetParameterToggle : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -597,17 +597,17 @@ public:
 
 	virtual void Serialize(FArchive & Ar) override;
 
-	bool UpdateFromLegacyData(UHoudiniHandleComponent* NewHC);
+	bool UpdateFromLegacyData(UT2HoudiniHandleComponent* NewHC);
 
-	//virtual UHoudiniHandleComponent* ConvertLegacyData(UObject* Outer);
+	//virtual UT2HoudiniHandleComponent* ConvertLegacyData(UObject* Outer);
 
-	UHoudiniAssetParameterFloat* XFormParams[9];
+	UT2HoudiniAssetParameterFloat* XFormParams[9];
 	int32 XFormParamsTupleIndex[9];
 
-	UHoudiniAssetParameterChoice* RSTParm;
+	UT2HoudiniAssetParameterChoice* RSTParm;
 	int32 RSTParmTupleIdx;
 
-	UHoudiniAssetParameterChoice* RotOrderParm;
+	UT2HoudiniAssetParameterChoice* RotOrderParm;
 	int32 RotOrderParmTupleIdx;
 };
 
@@ -620,9 +620,9 @@ public:
 
 	virtual void Serialize(FArchive & Ar) override;
 
-	virtual UHoudiniSplineComponent* ConvertLegacyData(UObject* Outer);
+	virtual UT2HoudiniSplineComponent* ConvertLegacyData(UObject* Outer);
 
-	bool UpdateFromLegacyData(UHoudiniSplineComponent* NewSpline);
+	bool UpdateFromLegacyData(UT2HoudiniSplineComponent* NewSpline);
 
 	/** Corresponding geo part object. **/
 	FHoudiniGeoPartObject_V1 HoudiniGeoPartObject;
@@ -646,7 +646,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetInput : public UHoudiniAssetParameter
+class UT2HoudiniAssetInput : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -675,7 +675,7 @@ public:
 	TArray<UObject *> InputObjects;
 
 	/** Houdini spline component which is used for curve input. **/
-	UHoudiniSplineComponent * InputCurve;
+	UT2HoudiniSplineComponent * InputCurve;
 
 	/** Houdini asset component pointer of the input asset (actor). **/
 	UHoudiniAssetComponent_V1 * InputAssetComponent;
@@ -687,7 +687,7 @@ public:
 	TArray<FHoudiniAssetInputOutlinerMesh_V1> InputOutlinerMeshArray;
 
 	/** Parameters used by a curve input asset. **/
-	TMap<FString, UHoudiniAssetParameter *> InputCurveParameters;
+	TMap<FString, UT2HoudiniAssetParameter *> InputCurveParameters;
 
 	float UnrealSplineResolution;
 
@@ -765,7 +765,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniAssetInstanceInput : public UHoudiniAssetParameter
+class UT2HoudiniAssetInstanceInput : public UT2HoudiniAssetParameter
 {
 	GENERATED_UCLASS_BODY()
 
@@ -774,7 +774,7 @@ public:
 	virtual void Serialize(FArchive & Ar) override;
 
 	/** List of fields created by this instance input. **/
-	TArray<UHoudiniAssetInstanceInputField *> InstanceInputFields;
+	TArray<UT2HoudiniAssetInstanceInputField *> InstanceInputFields;
 
 	/** Corresponding geo part object. **/
 	FHoudiniGeoPartObject_V1 HoudiniGeoPartObject;
@@ -807,7 +807,7 @@ public:
 };
  
 UCLASS()
-class UHoudiniAssetInstanceInputField : public UObject
+class UT2HoudiniAssetInstanceInputField : public UObject
 {
 	GENERATED_UCLASS_BODY()
 
@@ -957,7 +957,7 @@ public:
 	virtual void Serialize(FArchive & Ar) override;
 
 	/** Houdini Asset associated with this component. **/
-	UHoudiniAsset* HoudiniAsset;
+	UT2HoudiniAsset* HoudiniAsset;
 
 	/** Unique GUID created by component. **/
 	FGuid ComponentGUID;
@@ -976,16 +976,16 @@ public:
 
 	/** Parameters for this component's asset, indexed by parameter id. **/
 	//TMap<HAPI_ParmId, UHoudiniAssetParameter_V1 *> Parameters;
-	TMap<int, UHoudiniAssetParameter *> Parameters;
+	TMap<int, UT2HoudiniAssetParameter *> Parameters;
 
 	/** Parameters for this component's asset, indexed by name for fast look up. **/
-	TMap<FString, UHoudiniAssetParameter *> ParameterByName;
+	TMap<FString, UT2HoudiniAssetParameter *> ParameterByName;
 
 	/** Inputs for this component's asset. **/
-	TArray<UHoudiniAssetInput *> Inputs;
+	TArray<UT2HoudiniAssetInput *> Inputs;
 
 	/** Instance inputs for this component's asset **/
-	TArray<UHoudiniAssetInstanceInput *> InstanceInputs;
+	TArray<UT2HoudiniAssetInstanceInput *> InstanceInputs;
 
 	/** Material assignments. **/
 	UHoudiniAssetComponentMaterials_V1 * HoudiniAssetComponentMaterials;
@@ -1001,7 +1001,7 @@ public:
 	TMap<FString, UHoudiniHandleComponent_V1 *> HandleComponents;
 
 	/** Map of curve / spline components. **/
-	TMap<FHoudiniGeoPartObject_V1, UHoudiniSplineComponent*> SplineComponents;
+	TMap<FHoudiniGeoPartObject_V1, UT2HoudiniSplineComponent*> SplineComponents;
 
 	/** Map of Landscape / Heightfield components. **/
 	TMap<FHoudiniGeoPartObject_V1, TWeakObjectPtr<ALandscapeProxy>> LandscapeComponents;
@@ -1067,7 +1067,7 @@ public:
 
 	virtual void Serialize(FArchive & Ar) override;
 
-	bool UpdateFromLegacyData(UHoudiniInstancedActorComponent* NewIAC);
+	bool UpdateFromLegacyData(UT2HoudiniInstancedActorComponent* NewIAC);
 
 	//UPROPERTY(SkipSerialization, VisibleAnywhere, Category = Instances)
 	UObject* InstancedAsset;
@@ -1077,7 +1077,7 @@ public:
 };
 
 UCLASS()
-class UHoudiniMeshSplitInstancerComponent_V1 : public USceneComponent
+class UT2HoudiniMeshSplitInstancerComponent_V1 : public USceneComponent
 {
 	GENERATED_UCLASS_BODY()
 
@@ -1085,7 +1085,7 @@ public:
 
 	virtual void Serialize(FArchive & Ar) override;
 
-	bool UpdateFromLegacyData(UHoudiniMeshSplitInstancerComponent* NewMSIC);
+	bool UpdateFromLegacyData(UT2HoudiniMeshSplitInstancerComponent* NewMSIC);
 
 	//UPROPERTY(SkipSerialization, VisibleInstanceOnly, Category = Instances)
 	TArray<UStaticMeshComponent*> Instances;

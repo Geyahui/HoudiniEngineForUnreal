@@ -1027,7 +1027,7 @@ FDirectoryPath
 UHoudiniPDGAssetLink::GetTemporaryCookFolder() const
 {
 	UObject* Owner = GetOuter();
-	UHoudiniAssetComponent* HAC = Cast<UHoudiniAssetComponent>(Owner);
+	UT2HoudiniAssetComponent* HAC = Cast<UT2HoudiniAssetComponent>(Owner);
 	if (HAC)
 		return HAC->TemporaryCookFolder;
 	

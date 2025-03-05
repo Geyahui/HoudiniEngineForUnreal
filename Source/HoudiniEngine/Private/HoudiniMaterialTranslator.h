@@ -49,7 +49,7 @@ struct FHoudiniGenericAttribute;
 // Forward declared enums do not work with 4.24 builds on Linux with the Clang 8.0.1 toolchain: ISO C++ forbids forward references to 'enum' types
 // enum TextureGroup;
 
-struct HOUDINIENGINE_API FHoudiniMaterialTranslator
+struct T2HOUDINIENGINE_API FHoudiniMaterialTranslator
 {
 public:
 

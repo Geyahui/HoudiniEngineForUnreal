@@ -33,13 +33,13 @@
 #include "HoudiniEngineString.h"
 #include "HoudiniParameter.h"
 #include "HoudiniParameterOperatorPath.h"
-#include "HoudiniAssetComponent.h"
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniAssetComponent.h"
+#include "T2HoudiniSplineComponent.h"
 #include "HoudiniInputObject.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniGeoPartObject.h"
 #include "HoudiniSplineTranslator.h"
-#include "HoudiniAssetActor.h"
+#include "T2HoudiniAssetActor.h"
 #include "HoudiniOutputTranslator.h"
 #include "UnrealBrushTranslator.h"
 #include "UnrealSplineTranslator.h"
@@ -92,7 +92,7 @@ struct FHoudiniMoveTracker
 
 // 
 bool
-FHoudiniInputTranslator::UpdateInputs(UHoudiniAssetComponent* HAC)
+FHoudiniInputTranslator::UpdateInputs(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -335,7 +335,7 @@ FHoudiniInputTranslator::DisconnectInput(UHoudiniInput* InputToDestroy, const EH
 		// then reset this input's flag
 
 		// TODO: Check this? Clean our DS assets?? why?? likely uneeded
-		UHoudiniAssetComponent* OuterHAC = Cast<UHoudiniAssetComponent>(InputToDestroy->GetOuter());
+		UT2HoudiniAssetComponent* OuterHAC = Cast<UT2HoudiniAssetComponent>(InputToDestroy->GetOuter());
 		if (OuterHAC)
 			OuterHAC->ClearDownstreamHoudiniAsset();
 
@@ -422,7 +422,7 @@ FHoudiniInputTranslator::DestroyInputNodes(UHoudiniInput* InputToDestroy, const 
 			UHoudiniInputHoudiniSplineComponent* HoudiniSplineInputObject = Cast<UHoudiniInputHoudiniSplineComponent>(CurInputObject);
 			if (IsValid(HoudiniSplineInputObject) && !IsGarbageCollecting())
 			{
-				UHoudiniSplineComponent* SplineComponent = HoudiniSplineInputObject->GetCurveComponent();
+				UT2HoudiniSplineComponent* SplineComponent = HoudiniSplineInputObject->GetCurveComponent();
 				if (SplineComponent && !SplineComponent->IsPendingKill())
 				{
 					SplineComponent->SetNodeId(-1);
@@ -633,7 +633,7 @@ FHoudiniInputTranslator::SetDefaultAssetFromHDA(UHoudiniInput* Input, bool& bOut
 		// Select the found actor in the world input
 		Input->SetInputObjectAt(EHoudiniInputType::World, WorldIdx++, FoundActor);
 
-		if (FoundActor->IsA<UHoudiniAssetComponent>())
+		if (FoundActor->IsA<UT2HoudiniAssetComponent>())
 		{
 			// Select the HDA in the asset input
 			Input->SetInputObjectAt(EHoudiniInputType::Asset, HDAIdx++, FoundActor);
@@ -672,7 +672,7 @@ FHoudiniInputTranslator::SetDefaultAssetFromHDA(UHoudiniInput* Input, bool& bOut
 }
 
 bool
-FHoudiniInputTranslator::UploadChangedInputs(UHoudiniAssetComponent * HAC)
+FHoudiniInputTranslator::UploadChangedInputs(UT2HoudiniAssetComponent * HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -986,7 +986,7 @@ FHoudiniInputTranslator::UploadInputData(UHoudiniInput* InInput)
 
 			if (InInput->GetInputType() == EHoudiniInputType::Asset)
 			{
-				UHoudiniAssetComponent * OuterHAC = Cast<UHoudiniAssetComponent>(InInput->GetOuter());
+				UT2HoudiniAssetComponent * OuterHAC = Cast<UT2HoudiniAssetComponent>(InInput->GetOuter());
 				HAPI_NodeId  AssetId = OuterHAC->GetAssetId();
 
 				// Disconnect the asset input
@@ -2078,7 +2078,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForHoudiniSplineComponent(
 	if (!InObject || InObject->IsPendingKill())
 		return false;
 
-	UHoudiniSplineComponent* Curve = InObject->GetCurveComponent();
+	UT2HoudiniSplineComponent* Curve = InObject->GetCurveComponent();
 	if (!Curve || Curve->IsPendingKill())
 		return true;
 
@@ -2110,7 +2110,7 @@ HapiCreateInputNodeForHoudiniAssetComponent(const FString& InObjNodeName, UHoudi
 	if (!InObject || InObject->IsPendingKill())
 		return false;
 
-	UHoudiniAssetComponent* InputHAC = InObject->GetHoudiniAssetComponent();
+	UT2HoudiniAssetComponent* InputHAC = InObject->GetHoudiniAssetComponent();
 	if (!InputHAC || InputHAC->IsPendingKill())
 		return true;
 
@@ -2121,7 +2121,7 @@ HapiCreateInputNodeForHoudiniAssetComponent(const FString& InObjNodeName, UHoudi
 	if (!HoudiniInput || HoudiniInput->IsPendingKill())
 		return true;
 
-	UHoudiniAssetComponent* OuterHAC = Cast<UHoudiniAssetComponent>(HoudiniInput->GetOuter());
+	UT2HoudiniAssetComponent* OuterHAC = Cast<UT2HoudiniAssetComponent>(HoudiniInput->GetOuter());
 	if (!OuterHAC || OuterHAC->IsPendingKill())
 		return true;
 
@@ -2239,12 +2239,12 @@ FHoudiniInputTranslator::HapiCreateInputNodeForActor(
 	if (!Actor || Actor->IsPendingKill())
 		return true;
 
-	// Check if this is a world input and if this is a HoudiniAssetActor
+	// Check if this is a world input and if this is a T2HoudiniAssetActor
 	// If so we need to build static meshes for any proxy meshes
-	if (InInput->GetInputType() == EHoudiniInputType::World && Actor->IsA<AHoudiniAssetActor>())
+	if (InInput->GetInputType() == EHoudiniInputType::World && Actor->IsA<AT2HoudiniAssetActor>())
 	{
-		AHoudiniAssetActor *HAA = Cast<AHoudiniAssetActor>(Actor);
-		UHoudiniAssetComponent *HAC = HAA->GetHoudiniAssetComponent();
+		AT2HoudiniAssetActor *HAA = Cast<AT2HoudiniAssetActor>(Actor);
+		UT2HoudiniAssetComponent *HAC = HAA->GetHoudiniAssetComponent();
 		if (HAC && !HAC->IsPendingKill())
 		{
 			if (HAC->HasAnyCurrentProxyOutput())
@@ -2452,7 +2452,7 @@ FHoudiniInputTranslator::HapiCreateInputNodeForCamera(const FString& InNodeName,
 }
 
 bool
-FHoudiniInputTranslator::UpdateLoadedInputs(UHoudiniAssetComponent* HAC)
+FHoudiniInputTranslator::UpdateLoadedInputs(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -2485,7 +2485,7 @@ FHoudiniInputTranslator::UpdateLoadedInputs(UHoudiniAssetComponent* HAC)
 
 
 bool
-FHoudiniInputTranslator::UpdateWorldInputs(UHoudiniAssetComponent* HAC)
+FHoudiniInputTranslator::UpdateWorldInputs(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;

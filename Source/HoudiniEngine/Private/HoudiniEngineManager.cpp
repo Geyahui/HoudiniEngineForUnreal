@@ -29,8 +29,8 @@
 #include "HoudiniEngineRuntimePrivatePCH.h"
 #include "HoudiniEngine.h"
 #include "HoudiniEngineRuntime.h"
-#include "HoudiniAsset.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAsset.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniParameterTranslator.h"
 #include "HoudiniPDGManager.h"
@@ -130,7 +130,7 @@ FHoudiniEngineManager::Tick(float DeltaTime)
 	// Process the current component if possible
 	while (true)
 	{
-		UHoudiniAssetComponent * CurrentComponent = nullptr;
+		UT2HoudiniAssetComponent * CurrentComponent = nullptr;
 		if (FHoudiniEngineRuntime::IsInitialized())
 		{
 			FHoudiniEngineRuntime::Get().CleanUpRegisteredHoudiniComponents();
@@ -313,7 +313,7 @@ FHoudiniEngineManager::Tick(float DeltaTime)
 }
 
 void
-FHoudiniEngineManager::ProcessComponent(UHoudiniAssetComponent* HAC)
+FHoudiniEngineManager::ProcessComponent(UT2HoudiniAssetComponent* HAC)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FHoudiniEngineManager::ProcessComponent);
 
@@ -374,13 +374,13 @@ FHoudiniEngineManager::ProcessComponent(UHoudiniAssetComponent* HAC)
 
 		case EHoudiniAssetState::PreInstantiation:
 		{
-			// Only proceed forward if we don't need to wait for our input HoudiniAssets to finish cooking/instantiating
+			// Only proceed forward if we don't need to wait for our input T2HoudiniAssets to finish cooking/instantiating
 			if (HAC->NeedsToWaitForInputHoudiniAssets())
 				break;
 
 			FGuid TaskGuid;
-			UHoudiniAsset* HoudiniAsset = HAC->GetHoudiniAsset();
-			if (StartTaskAssetInstantiation(HoudiniAsset, HAC->GetDisplayName(), TaskGuid))
+			UT2HoudiniAsset* T2HoudiniAsset = HAC->GetHoudiniAsset();
+			if (StartTaskAssetInstantiation(T2HoudiniAsset, HAC->GetDisplayName(), TaskGuid))
 			{
 				// Update the HAC's state
 				HAC->AssetState = EHoudiniAssetState::Instantiating;
@@ -418,7 +418,7 @@ FHoudiniEngineManager::ProcessComponent(UHoudiniAssetComponent* HAC)
 		case EHoudiniAssetState::PreCook:
 		{
 			// Only proceed forward if we don't need to wait for our input
-			// HoudiniAssets to finish cooking/instantiating
+			// T2HoudiniAssets to finish cooking/instantiating
 			if (HAC->NeedsToWaitForInputHoudiniAssets())
 				break;
 
@@ -574,7 +574,7 @@ FHoudiniEngineManager::ProcessComponent(UHoudiniAssetComponent* HAC)
 
 
 bool 
-FHoudiniEngineManager::StartTaskAssetInstantiation(UHoudiniAsset* HoudiniAsset, const FString& DisplayName, FGuid& OutTaskGUID)
+FHoudiniEngineManager::StartTaskAssetInstantiation(UT2HoudiniAsset* HoudiniAsset, const FString& DisplayName, FGuid& OutTaskGUID)
 {
 	// Make sure we have a valid session before attempting anything
 	if (!FHoudiniEngine::Get().GetSession())
@@ -590,7 +590,7 @@ FHoudiniEngineManager::StartTaskAssetInstantiation(UHoudiniAsset* HoudiniAsset, 
 	}
 
 	HAPI_AssetLibraryId AssetLibraryId = -1;
-	if (!FHoudiniEngineUtils::LoadHoudiniAsset(HoudiniAsset, AssetLibraryId) )
+	if (!FHoudiniEngineUtils::LoadT2HoudiniAsset(HoudiniAsset, AssetLibraryId) )
 	{
 		HOUDINI_LOG_ERROR(TEXT("Cancelling asset instantiation - could not load Houdini Asset."));
 		return false;
@@ -611,7 +611,7 @@ FHoudiniEngineManager::StartTaskAssetInstantiation(UHoudiniAsset* HoudiniAsset, 
 	// Should we show the multi asset dialog?
 	bool bShowMultiAssetDialog = false;
 
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 	if (HoudiniRuntimeSettings && AssetNames.Num() > 1)
 		bShowMultiAssetDialog = HoudiniRuntimeSettings->bShowMultiAssetDialog;
 
@@ -641,7 +641,7 @@ FHoudiniEngineManager::StartTaskAssetInstantiation(UHoudiniAsset* HoudiniAsset, 
 }
 
 bool 
-FHoudiniEngineManager::UpdateInstantiating(UHoudiniAssetComponent* HAC, EHoudiniAssetState& NewState )
+FHoudiniEngineManager::UpdateInstantiating(UT2HoudiniAssetComponent* HAC, EHoudiniAssetState& NewState )
 {
 	check(HAC);
 
@@ -828,7 +828,7 @@ FHoudiniEngineManager::StartTaskAssetCooking(const HAPI_NodeId& AssetId, const F
 }
 
 bool
-FHoudiniEngineManager::UpdateCooking(UHoudiniAssetComponent* HAC, EHoudiniAssetState& NewState)
+FHoudiniEngineManager::UpdateCooking(UT2HoudiniAssetComponent* HAC, EHoudiniAssetState& NewState)
 {
 	check(HAC);
 
@@ -914,7 +914,7 @@ FHoudiniEngineManager::UpdateCooking(UHoudiniAssetComponent* HAC, EHoudiniAssetS
 }
 
 bool
-FHoudiniEngineManager::PreCook(UHoudiniAssetComponent* HAC)
+FHoudiniEngineManager::PreCook(UT2HoudiniAssetComponent* HAC)
 {
 	// Handle duplicated HAC
 	// We need to clean/duplicate some of the HAC's output data manually here
@@ -962,7 +962,7 @@ FHoudiniEngineManager::PreCook(UHoudiniAssetComponent* HAC)
 }
 
 bool
-FHoudiniEngineManager::PostCook(UHoudiniAssetComponent* HAC, const bool& bSuccess, const HAPI_NodeId& TaskAssetId)
+FHoudiniEngineManager::PostCook(UT2HoudiniAssetComponent* HAC, const bool& bSuccess, const HAPI_NodeId& TaskAssetId)
 {
 	// Get the HAC display name for the logs
 	FString DisplayName = HAC->GetDisplayName();
@@ -1039,7 +1039,7 @@ FHoudiniEngineManager::PostCook(UHoudiniAssetComponent* HAC, const bool& bSucces
 		if (bHasHoudiniStaticMeshOutput)
 			bNeedsToTriggerViewportUpdate = true;
 
-		UHoudiniAssetComponent::FOnPostCookBakeDelegate& OnPostCookBakeDelegate = HAC->GetOnPostCookBakeDelegate();
+		UT2HoudiniAssetComponent::FOnPostCookBakeDelegate& OnPostCookBakeDelegate = HAC->GetOnPostCookBakeDelegate();
 		if (OnPostCookBakeDelegate.IsBound())
 		{
 			OnPostCookBakeDelegate.Execute(HAC);
@@ -1055,7 +1055,7 @@ FHoudiniEngineManager::PostCook(UHoudiniAssetComponent* HAC, const bool& bSucces
 		//CreateHandles();
 
 		// Clear the bake after cook delegate if 
-		UHoudiniAssetComponent::FOnPostCookBakeDelegate& OnPostCookBakeDelegate = HAC->GetOnPostCookBakeDelegate();
+		UT2HoudiniAssetComponent::FOnPostCookBakeDelegate& OnPostCookBakeDelegate = HAC->GetOnPostCookBakeDelegate();
 		if (OnPostCookBakeDelegate.IsBound() && !HAC->IsBakeAfterNextCookEnabled())
 		{
 			OnPostCookBakeDelegate.Unbind();
@@ -1092,7 +1092,7 @@ FHoudiniEngineManager::PostCook(UHoudiniAssetComponent* HAC, const bool& bSucces
 }
 
 bool
-FHoudiniEngineManager::StartTaskAssetProcess(UHoudiniAssetComponent* HAC)
+FHoudiniEngineManager::StartTaskAssetProcess(UT2HoudiniAssetComponent* HAC)
 {
 	HAC->AssetState = EHoudiniAssetState::Processing;
 
@@ -1100,7 +1100,7 @@ FHoudiniEngineManager::StartTaskAssetProcess(UHoudiniAssetComponent* HAC)
 }
 
 bool
-FHoudiniEngineManager::UpdateProcess(UHoudiniAssetComponent* HAC)
+FHoudiniEngineManager::UpdateProcess(UT2HoudiniAssetComponent* HAC)
 {
 	HAC->AssetState = EHoudiniAssetState::None;
 
@@ -1184,7 +1184,7 @@ FHoudiniEngineManager::UpdateTaskStatus(FGuid& OutTaskGUID, FHoudiniEngineTaskIn
 
 	// Check whether we want to display Slate cooking and instantiation notifications.
 	bool bDisplaySlateCookingNotifications = false;
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	if (HoudiniRuntimeSettings)
 		bDisplaySlateCookingNotifications = HoudiniRuntimeSettings->bDisplaySlateCookingNotifications;
 
@@ -1233,7 +1233,7 @@ FHoudiniEngineManager::UpdateTaskStatus(FGuid& OutTaskGUID, FHoudiniEngineTaskIn
 }
 
 bool
-FHoudiniEngineManager::IsCookingEnabledForHoudiniAsset(UHoudiniAssetComponent* HAC)
+FHoudiniEngineManager::IsCookingEnabledForHoudiniAsset(UT2HoudiniAssetComponent* HAC)
 {
 	bool bManualRecook = false;
 	bool bComponentEnable = false;
@@ -1253,7 +1253,7 @@ FHoudiniEngineManager::IsCookingEnabledForHoudiniAsset(UHoudiniAssetComponent* H
 }
 
 void 
-FHoudiniEngineManager::BuildStaticMeshesForAllHoudiniStaticMeshes(UHoudiniAssetComponent* HAC)
+FHoudiniEngineManager::BuildStaticMeshesForAllHoudiniStaticMeshes(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 	{
@@ -1493,7 +1493,7 @@ FHoudiniEngineManager::SyncUnrealViewportToHoudini()
 
 
 void
-FHoudiniEngineManager::DisableEditorAutoSave(const UHoudiniAssetComponent* HAC)
+FHoudiniEngineManager::DisableEditorAutoSave(const UT2HoudiniAssetComponent* HAC)
 {
 #if WITH_EDITOR
 	if (!HAC || HAC->IsPendingKill())
@@ -1519,7 +1519,7 @@ FHoudiniEngineManager::DisableEditorAutoSave(const UHoudiniAssetComponent* HAC)
 
 
 void
-FHoudiniEngineManager::EnableEditorAutoSave(const UHoudiniAssetComponent* HAC = nullptr)
+FHoudiniEngineManager::EnableEditorAutoSave(const UT2HoudiniAssetComponent* HAC = nullptr)
 {
 #if WITH_EDITOR
 	if (!GUnrealEd)
@@ -1532,7 +1532,7 @@ FHoudiniEngineManager::EnableEditorAutoSave(const UHoudiniAssetComponent* HAC = 
 		if (DisableAutoSavingHACs.Num() <= 0)
 			return;
 		
-		TSet<const UHoudiniAssetComponent*> ValidComponents;
+		TSet<const UT2HoudiniAssetComponent*> ValidComponents;
 		for (auto& CurHAC : DisableAutoSavingHACs)
 		{
 			if (CurHAC && !CurHAC->IsPendingKill())

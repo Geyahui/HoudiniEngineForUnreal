@@ -62,7 +62,7 @@ class FHoudiniPDGDetails : public TSharedFromThis<FHoudiniPDGDetails>
 		void CreateWidget(
 			IDetailCategoryBuilder & HouPDGCategory,
 			UHoudiniPDGAssetLink* InPDGAssetLink);
-			//UHoudiniAssetComponent* InHAC);
+			//UT2HoudiniAssetComponent* InHAC);
 
 		void AddPDGAssetWidget(
 			IDetailCategoryBuilder& InPDGCategory, UHoudiniPDGAssetLink* InPDGAssetLink);

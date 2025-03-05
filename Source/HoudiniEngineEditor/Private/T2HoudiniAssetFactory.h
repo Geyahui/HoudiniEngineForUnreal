@@ -28,19 +28,20 @@
 
 #include "EditorReimportHandler.h"
 #include "Factories/Factory.h"
-#include "HoudiniAssetFactory.generated.h"
+#include "T2HoudiniAssetFactory.generated.h"
+
 
 class UClass;
 class UObject;
 class FFeedbackContext;
 
 UCLASS(config = Editor)
-class UHoudiniAssetFactory : public UFactory, public FReimportHandler
+class UT2HoudiniAssetFactory : public UFactory, public FReimportHandler
 {
 	GENERATED_UCLASS_BODY()
 
 	public:
-
+		virtual bool FactoryCanImport(const FString& Filename) override;
 		// UFactory methods.
 		// return true if it supports this class
 		virtual bool DoesSupportClass(UClass * Class) override;

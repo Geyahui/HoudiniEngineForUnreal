@@ -33,8 +33,8 @@
 #include "HoudiniEngineBakeUtils.h"
 #include "HoudiniEngineEditorUtils.h"
 #include "HoudiniEngineRuntime.h"
-#include "HoudiniAssetActor.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetActor.h"
+#include "T2HoudiniSplineComponent.h"
 #include "HoudiniOutputTranslator.h"
 #include "HoudiniStaticMesh.h"
 #include "HoudiniOutput.h"
@@ -268,7 +268,7 @@ FHoudiniEngineCommands::CleanUpTempFolder()
 
 	TArray<FString> TempCookFolders;
 	TempCookFolders.Add(FHoudiniEngineRuntime::Get().GetDefaultTemporaryCookFolder());
-	for (TObjectIterator<UHoudiniAssetComponent> It; It; ++It)
+	for (TObjectIterator<UT2HoudiniAssetComponent> It; It; ++It)
 	{
 		FString CookFolder = It->TemporaryCookFolder.Path;
 		if (CookFolder.IsEmpty())
@@ -467,9 +467,9 @@ FHoudiniEngineCommands::BakeAllAssets()
 
 	// Bakes and replaces with blueprints all Houdini Assets in the current level
 	int32 BakedCount = 0;
-	for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
+	for (TObjectIterator<UT2HoudiniAssetComponent> Itr; Itr; ++Itr)
 	{
-		UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = *Itr;
 		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 		{
 			HOUDINI_LOG_ERROR(TEXT("Failed to bake a Houdini Asset in the scene! - Invalid Houdini Asset Component"));
@@ -582,9 +582,9 @@ FHoudiniEngineCommands::PauseAssetCooking()
 
 	/*
 	// If we are unpausing, tick each asset component to "update" them
-	for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
+	for (TObjectIterator<UT2HoudiniAssetComponent> Itr; Itr; ++Itr)
 	{
-		UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = *Itr;
 		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill() || !HoudiniAssetComponent->IsValidLowLevel())
 		{
 			HOUDINI_LOG_ERROR(TEXT("Failed to cook a Houdini Asset in the scene!"));
@@ -622,11 +622,11 @@ FHoudiniEngineCommands::RecookSelection()
 	int32 CookedCount = 0;
 	for (int32 Idx = 0; Idx < SelectedHoudiniAssets; Idx++)
 	{
-		AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>(WorldSelection[Idx]);
+		AT2HoudiniAssetActor * HoudiniAssetActor = Cast<AT2HoudiniAssetActor>(WorldSelection[Idx]);
 		if (!HoudiniAssetActor || HoudiniAssetActor->IsPendingKill())
 			continue;
 
-		UHoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
 		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 			continue;
 
@@ -651,9 +651,9 @@ FHoudiniEngineCommands::RecookAllAssets()
 
 	// Bakes and replaces with blueprints all Houdini Assets in the current level
 	int32 CookedCount = 0;
-	for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
+	for (TObjectIterator<UT2HoudiniAssetComponent> Itr; Itr; ++Itr)
 	{
-		UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = *Itr;
 		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 			continue;
 
@@ -678,9 +678,9 @@ FHoudiniEngineCommands::RebuildAllAssets()
 
 	// Bakes and replaces with blueprints all Houdini Assets in the current level
 	int32 RebuiltCount = 0;
-	for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
+	for (TObjectIterator<UT2HoudiniAssetComponent> Itr; Itr; ++Itr)
 	{
-		UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = *Itr;
 		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 			continue;
 
@@ -716,11 +716,11 @@ FHoudiniEngineCommands::RebuildSelection()
 	int32 RebuiltCount = 0;
 	for (int32 Idx = 0; Idx < SelectedHoudiniAssets; Idx++)
 	{
-		AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>(WorldSelection[Idx]);
+		AT2HoudiniAssetActor * HoudiniAssetActor = Cast<AT2HoudiniAssetActor>(WorldSelection[Idx]);
 		if (!HoudiniAssetActor || HoudiniAssetActor->IsPendingKill())
 			continue;
 
-		UHoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
 		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())// || !HoudiniAssetComponent->IsComponentValid())
 			continue;
 
@@ -756,11 +756,11 @@ FHoudiniEngineCommands::BakeSelection()
 	int32 BakedCount = 0;
 	for (int32 Idx = 0; Idx < SelectedHoudiniAssets; Idx++)
 	{
-		AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>(WorldSelection[Idx]);
+		AT2HoudiniAssetActor * HoudiniAssetActor = Cast<AT2HoudiniAssetActor>(WorldSelection[Idx]);
 		if (!HoudiniAssetActor || HoudiniAssetActor->IsPendingKill())
 			continue;
 
-		UHoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+		UT2HoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
 		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 		{
 			HOUDINI_LOG_ERROR(TEXT("Failed to export a Houdini Asset in the scene!"));
@@ -844,11 +844,11 @@ void FHoudiniEngineCommands::RecentreSelection()
 	int32 RecentreCount = 0;
 	for (int32 Idx = 0; Idx < SelectedHoudiniAssets; Idx++)
 	{
-		AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>(WorldSelection[Idx]);
+		AT2HoudiniAssetActor * HoudiniAssetActor = Cast<AT2HoudiniAssetActor>(WorldSelection[Idx]);
 		if (!HoudiniAssetActor || HoudiniAssetActor->IsPendingKill())
 			continue;
 
-		UHoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
 		if (!HoudiniAssetComponent || !HoudiniAssetComponent->IsComponentValid())
 			continue;
 
@@ -944,19 +944,19 @@ FHoudiniEngineCommands::OpenSessionSync()
 	}
 
 	// Get the runtime settings to get the session/type and settings
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 
-	EHoudiniRuntimeSettingsSessionType SessionType = HoudiniRuntimeSettings->SessionType;
+	ET2HoudiniRuntimeSettingsSessionType SessionType = HoudiniRuntimeSettings->SessionType;
 	FString ServerPipeName = HoudiniRuntimeSettings->ServerPipeName;
 	int32 ServerPort = HoudiniRuntimeSettings->ServerPort;
 	
 	FString SessionSyncArgs = TEXT("-hess=");
-	if (SessionType == EHoudiniRuntimeSettingsSessionType::HRSST_NamedPipe)
+	if (SessionType == ET2HoudiniRuntimeSettingsSessionType::HRSST_NamedPipe)
 	{
 		// Add the -hess=pipe:hapi argument
 		SessionSyncArgs += TEXT("pipe:") + ServerPipeName;
 	}
-	else if (SessionType == EHoudiniRuntimeSettingsSessionType::HRSST_Socket)
+	else if (SessionType == ET2HoudiniRuntimeSettingsSessionType::HRSST_Socket)
 	{
 		// Add the -hess=port:9090 argument
 		SessionSyncArgs += TEXT("port:") + FString::FromInt(ServerPort);
@@ -1148,7 +1148,7 @@ FHoudiniEngineCommands::RestartSession()
 void 
 FHoudiniEngineCommands::CreateSession()
 {
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 
 	// Restart the current Houdini Engine Session
 	if (!FHoudiniEngine::Get().CreateSession(HoudiniRuntimeSettings->SessionType))
@@ -1163,7 +1163,7 @@ FHoudiniEngineCommands::CreateSession()
 void 
 FHoudiniEngineCommands::ConnectSession()
 {
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 
 	// Restart the current Houdini Engine Session
 	if (!FHoudiniEngine::Get().ConnectSession(HoudiniRuntimeSettings->SessionType))
@@ -1179,9 +1179,9 @@ void
 FHoudiniEngineCommands::MarkAllHACsAsNeedInstantiation()
 {	
 	// Notify all the HoudiniAssetComponents that they need to re instantiate themselves in the new Houdini engine session.
-	for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
+	for (TObjectIterator<UT2HoudiniAssetComponent> Itr; Itr; ++Itr)
 	{
-		UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = *Itr;
 		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 			continue;
 
@@ -1239,19 +1239,19 @@ FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshes(bool bOnlySelecte
 	// FHoudiniEngineUtils::CreateSlateNotification(Notification);
 
 	// First find the components that have meshes that we must refine
-	TArray<UHoudiniAssetComponent*> ComponentsToRefine;
-	TArray<UHoudiniAssetComponent*> ComponentsToCook;
+	TArray<UT2HoudiniAssetComponent*> ComponentsToRefine;
+	TArray<UT2HoudiniAssetComponent*> ComponentsToCook;
 	// Components that would be candidates for refinement/cooking, but have errors
-	TArray<UHoudiniAssetComponent*> SkippedComponents;
+	TArray<UT2HoudiniAssetComponent*> SkippedComponents;
 	if (bOnlySelectedActors)
 	{
 		for (int32 Index = 0; Index < NumSelectedHoudiniAssets; ++Index)
 		{
-			AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>(WorldSelection[Index]);
+			AT2HoudiniAssetActor * HoudiniAssetActor = Cast<AT2HoudiniAssetActor>(WorldSelection[Index]);
 			if (!HoudiniAssetActor || HoudiniAssetActor->IsPendingKill())
 				continue;
 
-			UHoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+			UT2HoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
 			if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 				continue;
 
@@ -1262,9 +1262,9 @@ FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshes(bool bOnlySelecte
 	}
 	else
 	{
-		for (TObjectIterator<UHoudiniAssetComponent> Itr; Itr; ++Itr)
+		for (TObjectIterator<UT2HoudiniAssetComponent> Itr; Itr; ++Itr)
 		{
-			UHoudiniAssetComponent * HoudiniAssetComponent = *Itr;
+			UT2HoudiniAssetComponent * HoudiniAssetComponent = *Itr;
 			if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 				continue;
 
@@ -1290,7 +1290,7 @@ FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshes(bool bOnlySelecte
 }
 
 void 
-FHoudiniEngineCommands::RefineHoudiniProxyMeshActorArrayToStaticMeshes(const TArray<AHoudiniAssetActor*>& InActorsToRefine, bool bSilent)
+FHoudiniEngineCommands::RefineHoudiniProxyMeshActorArrayToStaticMeshes(const TArray<AT2HoudiniAssetActor*>& InActorsToRefine, bool bSilent)
 {
 	const bool bRefineAll = true;
 	const bool bOnPreSaveWorld = false;
@@ -1298,16 +1298,16 @@ FHoudiniEngineCommands::RefineHoudiniProxyMeshActorArrayToStaticMeshes(const TAr
 	const bool bOnPreBeginPIE = false;
 
 	// First find the components that have meshes that we must refine
-	TArray<UHoudiniAssetComponent*> ComponentsToRefine;
-	TArray<UHoudiniAssetComponent*> ComponentsToCook;
+	TArray<UT2HoudiniAssetComponent*> ComponentsToRefine;
+	TArray<UT2HoudiniAssetComponent*> ComponentsToCook;
 	// Components that would be candidates for refinement/cooking, but have errors
-	TArray<UHoudiniAssetComponent*> SkippedComponents;
-	for (const AHoudiniAssetActor* HoudiniAssetActor : InActorsToRefine)
+	TArray<UT2HoudiniAssetComponent*> SkippedComponents;
+	for (const AT2HoudiniAssetActor* HoudiniAssetActor : InActorsToRefine)
 	{
 		if (!HoudiniAssetActor || HoudiniAssetActor->IsPendingKill())
 			continue;
 
-		UHoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+		UT2HoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
 		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 			continue;
 
@@ -1349,7 +1349,7 @@ FHoudiniEngineCommands::IsPDGCommandletRunningOrConnected()
 bool
 FHoudiniEngineCommands::IsPDGCommandletEnabled()
 {
-	const UHoudiniRuntimeSettings* const Settings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings* const Settings = GetDefault<UT2HoudiniRuntimeSettings>();
 	if (IsValid(Settings))
 	{
 		return Settings->bPDGAsyncCommandletImportEnabled;
@@ -1361,7 +1361,7 @@ FHoudiniEngineCommands::IsPDGCommandletEnabled()
 bool
 FHoudiniEngineCommands::SetPDGCommandletEnabled(bool InEnabled)
 {
-	UHoudiniRuntimeSettings* const Settings = GetMutableDefault<UHoudiniRuntimeSettings>();
+	UT2HoudiniRuntimeSettings* const Settings = GetMutableDefault<UT2HoudiniRuntimeSettings>();
 	if (IsValid(Settings))
 	{
 		Settings->bPDGAsyncCommandletImportEnabled = InEnabled;
@@ -1372,7 +1372,7 @@ FHoudiniEngineCommands::SetPDGCommandletEnabled(bool InEnabled)
 }
 
 void
-FHoudiniEngineCommands::TriageHoudiniAssetComponentsForProxyMeshRefinement(UHoudiniAssetComponent* InHAC, bool bRefineAll, bool bOnPreSaveWorld, UWorld *OnPreSaveWorld, bool bOnPreBeginPIE, TArray<UHoudiniAssetComponent*> &OutToRefine, TArray<UHoudiniAssetComponent*> &OutToCook, TArray<UHoudiniAssetComponent*> &OutSkipped)
+FHoudiniEngineCommands::TriageHoudiniAssetComponentsForProxyMeshRefinement(UT2HoudiniAssetComponent* InHAC, bool bRefineAll, bool bOnPreSaveWorld, UWorld *OnPreSaveWorld, bool bOnPreBeginPIE, TArray<UT2HoudiniAssetComponent*> &OutToRefine, TArray<UT2HoudiniAssetComponent*> &OutToCook, TArray<UT2HoudiniAssetComponent*> &OutSkipped)
 {
 	if (!InHAC || InHAC->IsPendingKill())
 		return;
@@ -1396,7 +1396,7 @@ FHoudiniEngineCommands::TriageHoudiniAssetComponentsForProxyMeshRefinement(UHoud
 		(bOnPreBeginPIE && InHAC->IsProxyStaticMeshRefinementOnPreBeginPIEEnabled()))
 	{
 		TArray<UPackage*> ProxyMeshPackagesToSave;
-		TArray<UHoudiniAssetComponent*> ComponentsWithProxiesToSave;
+		TArray<UT2HoudiniAssetComponent*> ComponentsWithProxiesToSave;
 		
 		if (InHAC->HasAnyCurrentProxyOutput())
 		{
@@ -1472,7 +1472,7 @@ FHoudiniEngineCommands::TriageHoudiniAssetComponentsForProxyMeshRefinement(UHoud
 			}
 		}
 
-		for (UHoudiniAssetComponent* const HAC : ComponentsWithProxiesToSave)
+		for (UT2HoudiniAssetComponent* const HAC : ComponentsWithProxiesToSave)
 		{
 			const uint32 NumOutputs = HAC->GetNumOutputs();
 			for (uint32 Index = 0; Index < NumOutputs; ++Index)
@@ -1505,9 +1505,9 @@ FHoudiniEngineCommands::TriageHoudiniAssetComponentsForProxyMeshRefinement(UHoud
 
 void
 FHoudiniEngineCommands::RefineTriagedHoudiniProxyMesehesToStaticMeshes(
-	const TArray<UHoudiniAssetComponent*>& InComponentsToRefine, 
-	const TArray<UHoudiniAssetComponent*>& InComponentsToCook, 
-	const TArray<UHoudiniAssetComponent*>& InSkippedComponents,
+	const TArray<UT2HoudiniAssetComponent*>& InComponentsToRefine, 
+	const TArray<UT2HoudiniAssetComponent*>& InComponentsToCook, 
+	const TArray<UT2HoudiniAssetComponent*>& InSkippedComponents,
 	bool bInSilent,
 	bool bInRefineAll,
 	bool bInOnPreSaveWorld,
@@ -1520,7 +1520,7 @@ FHoudiniEngineCommands::RefineTriagedHoudiniProxyMesehesToStaticMeshes(
 	const uint32 NumComponentsToCook = InComponentsToCook.Num();
 	const uint32 NumComponentsToRefine = InComponentsToRefine.Num();
 	const uint32 NumComponentsToProcess = NumComponentsToCook + NumComponentsToRefine;
-	TArray<UHoudiniAssetComponent*> SuccessfulComponents;
+	TArray<UT2HoudiniAssetComponent*> SuccessfulComponents;
 	uint32 NumSkippedComponents = InSkippedComponents.Num();
 	if (NumComponentsToProcess > 0)
 	{
@@ -1535,7 +1535,7 @@ FHoudiniEngineCommands::RefineTriagedHoudiniProxyMesehesToStaticMeshes(
 		bool bCancelled = false;
 		for (uint32 ComponentIndex = 0; ComponentIndex < NumComponentsToRefine; ++ComponentIndex)
 		{
-			UHoudiniAssetComponent* HoudiniAssetComponent = InComponentsToRefine[ComponentIndex];
+			UT2HoudiniAssetComponent* HoudiniAssetComponent = InComponentsToRefine[ComponentIndex];
 			TaskProgress->EnterProgressFrame(1.0f);
 			const bool bDestroyProxies = true;
 			FHoudiniOutputTranslator::BuildStaticMeshesOnHoudiniProxyMeshOutputs(HoudiniAssetComponent, bDestroyProxies);
@@ -1566,29 +1566,29 @@ FHoudiniEngineCommands::RefineTriagedHoudiniProxyMesehesToStaticMeshes(
 
 
 void
-FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshesWithCookInBackgroundThread(const TArray<UHoudiniAssetComponent*>& InComponentsToCook, TSharedPtr<FSlowTask, ESPMode::ThreadSafe> InTaskProgress, uint32 InNumComponentsToProcess, uint32 InNumSkippedComponents, bool bInOnPreSaveWorld, UWorld *InOnPreSaveWorld, const TArray<UHoudiniAssetComponent*> &InSuccessfulComponents)
+FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshesWithCookInBackgroundThread(const TArray<UT2HoudiniAssetComponent*>& InComponentsToCook, TSharedPtr<FSlowTask, ESPMode::ThreadSafe> InTaskProgress, uint32 InNumComponentsToProcess, uint32 InNumSkippedComponents, bool bInOnPreSaveWorld, UWorld *InOnPreSaveWorld, const TArray<UT2HoudiniAssetComponent*> &InSuccessfulComponents)
 {
 	// Copy to a double linked list so that we can loop through
 	// to check progress of each component and remove it easily
 	// if it has completed/failed
-	TDoubleLinkedList<UHoudiniAssetComponent*> CookList;
-	for (UHoudiniAssetComponent *HAC : InComponentsToCook)
+	TDoubleLinkedList<UT2HoudiniAssetComponent*> CookList;
+	for (UT2HoudiniAssetComponent *HAC : InComponentsToCook)
 	{
 		CookList.AddTail(HAC);
 	}
 
 	// Add the successfully cooked compoments to the incoming successful components (previously refined)
-	TArray<UHoudiniAssetComponent*> SuccessfulComponents(InSuccessfulComponents);
+	TArray<UT2HoudiniAssetComponent*> SuccessfulComponents(InSuccessfulComponents);
 
 	bool bCancelled = false;
 	uint32 NumFailedToCook = 0;
 	while (CookList.Num() > 0 && !bCancelled)
 	{
-		TDoubleLinkedList<UHoudiniAssetComponent*>::TDoubleLinkedListNode *Node = CookList.GetHead();
+		TDoubleLinkedList<UT2HoudiniAssetComponent*>::TDoubleLinkedListNode *Node = CookList.GetHead();
 		while (Node && !bCancelled)
 		{
-			TDoubleLinkedList<UHoudiniAssetComponent*>::TDoubleLinkedListNode *Next = Node->GetNextNode();
-			UHoudiniAssetComponent* HAC = Node->GetValue();
+			TDoubleLinkedList<UT2HoudiniAssetComponent*>::TDoubleLinkedListNode *Next = Node->GetNextNode();
+			UT2HoudiniAssetComponent* HAC = Node->GetValue();
 
 			if (HAC && !HAC->IsPendingKill())
 			{
@@ -1639,7 +1639,7 @@ FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshesWithCookInBackgrou
 }
 
 void
-FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshesNotifyDone(uint32 InNumTotalComponents, uint32 InNumSkippedComponents, uint32 InNumFailedToCook, FSlowTask *InTaskProgress, bool bCancelled, bool bOnPreSaveWorld, UWorld *InOnPreSaveWorld, const TArray<UHoudiniAssetComponent*> &InSuccessfulComponents)
+FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshesNotifyDone(uint32 InNumTotalComponents, uint32 InNumSkippedComponents, uint32 InNumFailedToCook, FSlowTask *InTaskProgress, bool bCancelled, bool bOnPreSaveWorld, UWorld *InOnPreSaveWorld, const TArray<UT2HoudiniAssetComponent*> &InSuccessfulComponents)
 {
 	FString Notification;
 	if (InNumSkippedComponents + InNumFailedToCook > 0)
@@ -1693,11 +1693,11 @@ FHoudiniEngineCommands::RefineHoudiniProxyMeshesToStaticMeshesNotifyDone(uint32 
 }
 
 void
-FHoudiniEngineCommands::RefineProxyMeshesHandleOnPostSaveWorld(const TArray<UHoudiniAssetComponent*> &InSuccessfulComponents, uint32 InSaveFlags, UWorld* InWorld, bool bInSuccess)
+FHoudiniEngineCommands::RefineProxyMeshesHandleOnPostSaveWorld(const TArray<UT2HoudiniAssetComponent*> &InSuccessfulComponents, uint32 InSaveFlags, UWorld* InWorld, bool bInSuccess)
 {
 	TArray<UPackage*> PackagesToSave;
 
-	for (UHoudiniAssetComponent* HAC : InSuccessfulComponents)
+	for (UT2HoudiniAssetComponent* HAC : InSuccessfulComponents)
 	{
 		if (!HAC || HAC->IsPendingKill())
 			continue;

@@ -26,14 +26,14 @@
 
 #include "HoudiniLandscapeTranslator.h"
 
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniGeoPartObject.h"
 #include "HoudiniEngineString.h"
 #include "HoudiniApi.h"
 #include "HoudiniEngine.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineRuntime.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniGenericAttribute.h"
 #include "HoudiniPackageParams.h"
@@ -578,7 +578,7 @@ FHoudiniLandscapeTranslator::CreateLandscape(
 	// Currently the Temp Cook mode is not concerned with creating packages. This will, at the time of writing,
 	// exclusively be dealt with during Bake mode so don't bother with searching / creating other packages.
 
-	UHoudiniAssetComponent* HAC = FHoudiniEngineUtils::GetOuterHoudiniAssetComponent(InOutput);
+	UT2HoudiniAssetComponent* HAC = FHoudiniEngineUtils::GetOuterHoudiniAssetComponent(InOutput);
 	if (IsValid(HAC))
 	{
 		TileWorld = HAC->GetWorld();
@@ -1441,7 +1441,7 @@ FHoudiniLandscapeTranslator::SetLandscapeActorAsOutput_Temp(
 bool
 FHoudiniLandscapeTranslator::AttachActorToHAC(UHoudiniOutput* InOutput, AActor* InActor)
 {
-	UHoudiniAssetComponent* HAC = FHoudiniEngineUtils::GetOuterHoudiniAssetComponent(InOutput);
+	UT2HoudiniAssetComponent* HAC = FHoudiniEngineUtils::GetOuterHoudiniAssetComponent(InOutput);
 	if (IsValid(HAC))
 	{
 		InActor->AttachToComponent(HAC, FAttachmentTransformRules::KeepRelativeTransform);
@@ -1516,7 +1516,7 @@ FHoudiniLandscapeTranslator::ConvertHeightfieldDataToLandscapeData(
 	// We may want to not use the full range in order to be able to sculpt the landscape past the min/max values after.
 	const double dUINT16_MAX = (double)UINT16_MAX;
 	double DigitZRange = 49152.0;
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 	if (HoudiniRuntimeSettings && HoudiniRuntimeSettings->MarshallingLandscapesUseFullResolution)
 		DigitZRange = dUINT16_MAX - 1.0;
 	

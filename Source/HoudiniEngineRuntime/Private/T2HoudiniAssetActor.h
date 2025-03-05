@@ -26,29 +26,29 @@
 
 #pragma once
 
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 
 #include "UObject/ObjectMacros.h"
 #include "Components/ActorComponent.h"
 #include "GameFramework/Actor.h"
 
-#include "HoudiniAssetActor.generated.h"
+#include "T2HoudiniAssetActor.generated.h"
 
 class UHoudiniPDGAssetLink;
 
 UCLASS(hidecategories = (Input), ConversionRoot, meta = (ChildCanTick), Blueprintable)
-class HOUDINIENGINERUNTIME_API AHoudiniAssetActor : public AActor
+class T2HOUDINIENGINERUNTIME_API AT2HoudiniAssetActor : public AActor
 {
 	GENERATED_UCLASS_BODY()
 
 	// Pointer to the root HoudiniAssetComponent
 	UPROPERTY(Category = HoudiniAssetActor, VisibleAnywhere, BlueprintReadOnly, meta = (ExposeFunctionCategories = "Mesh,Rendering,Physics,Components|HoudiniEngine")/*, AllowPrivateAccess = "true"*/)
-	UHoudiniAssetComponent * HoudiniAssetComponent;
+	UT2HoudiniAssetComponent * HoudiniAssetComponent;
 
 public:
 
 	// Returns the actor's houdini component.
-	UHoudiniAssetComponent* GetHoudiniAssetComponent() const;
+	UT2HoudiniAssetComponent* GetHoudiniAssetComponent() const;
 
 	bool IsUsedForPreview() const;
 	

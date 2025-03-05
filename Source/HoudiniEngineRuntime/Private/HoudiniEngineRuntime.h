@@ -26,14 +26,14 @@
 
 #pragma once
 
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniPDGAssetLink.h"
 
 #include "Modules/ModuleInterface.h"
 #include "Misc/ScopeLock.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 
-class HOUDINIENGINERUNTIME_API FHoudiniEngineRuntime : public IModuleInterface
+class T2HOUDINIENGINERUNTIME_API FHoudiniEngineRuntime : public IModuleInterface
 {
 	public:
 		FHoudiniEngineRuntime();
@@ -56,16 +56,16 @@ class HOUDINIENGINERUNTIME_API FHoudiniEngineRuntime : public IModuleInterface
 		// Ensure that the registered components are all still valid
 		void CleanUpRegisteredHoudiniComponents();
 
-		void RegisterHoudiniComponent(UHoudiniAssetComponent* HAC, bool bAllowArchetype=false);
+		void RegisterHoudiniComponent(UT2HoudiniAssetComponent* HAC, bool bAllowArchetype=false);
 
-		void UnRegisterHoudiniComponent(UHoudiniAssetComponent* HAC);
+		void UnRegisterHoudiniComponent(UT2HoudiniAssetComponent* HAC);
 		void UnRegisterHoudiniComponent(const int32& ValidIdx);
 
-		bool IsComponentRegistered(UHoudiniAssetComponent* HAC) const;
+		bool IsComponentRegistered(UT2HoudiniAssetComponent* HAC) const;
 		int32 GetRegisteredHoudiniComponentCount();
-		UHoudiniAssetComponent* GetRegisteredHoudiniComponentAt(const int32& Index);
+		UT2HoudiniAssetComponent* GetRegisteredHoudiniComponentAt(const int32& Index);
 
-		virtual TArray<TWeakObjectPtr<UHoudiniAssetComponent>>* GetRegisteredHoudiniComponents() { return &RegisteredHoudiniComponents; };
+		virtual TArray<TWeakObjectPtr<UT2HoudiniAssetComponent>>* GetRegisteredHoudiniComponents() { return &RegisteredHoudiniComponents; };
 		
 		//
 		// Node deletion
@@ -99,7 +99,7 @@ class HOUDINIENGINERUNTIME_API FHoudiniEngineRuntime : public IModuleInterface
 		static FHoudiniEngineRuntime * HoudiniEngineRuntimeInstance;
 
 		// 
-		TArray<TWeakObjectPtr<UHoudiniAssetComponent>> RegisteredHoudiniComponents;
+		TArray<TWeakObjectPtr<UT2HoudiniAssetComponent>> RegisteredHoudiniComponents;
 
 		TArray<int32> NodeIdsPendingDelete;
 

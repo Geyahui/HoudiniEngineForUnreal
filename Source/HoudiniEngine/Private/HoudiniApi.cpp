@@ -774,6 +774,9 @@ FHoudiniApi::SaveHIPFile = &FHoudiniApi::SaveHIPFileEmptyStub;
 FHoudiniApi::SaveNodeToFileFuncPtr
 FHoudiniApi::SaveNodeToFile = &FHoudiniApi::SaveNodeToFileEmptyStub;
 
+FHoudiniApi::SessionInfo_InitFuncPtr
+FHoudiniApi::SessionInfo_Init = &FHoudiniApi::SessionInfo_InitEmptyStub;
+
 FHoudiniApi::SessionSyncInfo_CreateFuncPtr
 FHoudiniApi::SessionSyncInfo_Create = &FHoudiniApi::SessionSyncInfo_CreateEmptyStub;
 
@@ -1212,6 +1215,7 @@ FHoudiniApi::InitializeHAPI(void* LibraryHandle)
 	FHoudiniApi::SaveGeoToMemory = (SaveGeoToMemoryFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SaveGeoToMemory"));
 	FHoudiniApi::SaveHIPFile = (SaveHIPFileFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SaveHIPFile"));
 	FHoudiniApi::SaveNodeToFile = (SaveNodeToFileFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SaveNodeToFile"));
+	FHoudiniApi::SessionInfo_Init = (SessionInfo_InitFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SessionInfo_Init"));
 	FHoudiniApi::SessionSyncInfo_Create = (SessionSyncInfo_CreateFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SessionSyncInfo_Create"));
 	FHoudiniApi::SetAnimCurve = (SetAnimCurveFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAnimCurve"));
 	FHoudiniApi::SetAttributeFloat64Data = (SetAttributeFloat64DataFuncPtr) FPlatformProcess::GetDllExport(LibraryHandle, TEXT("HAPI_SetAttributeFloat64Data"));
@@ -1528,6 +1532,7 @@ FHoudiniApi::FinalizeHAPI()
 	FHoudiniApi::SaveGeoToMemory = &FHoudiniApi::SaveGeoToMemoryEmptyStub;
 	FHoudiniApi::SaveHIPFile = &FHoudiniApi::SaveHIPFileEmptyStub;
 	FHoudiniApi::SaveNodeToFile = &FHoudiniApi::SaveNodeToFileEmptyStub;
+	FHoudiniApi::SessionInfo_Init = &FHoudiniApi::SessionInfo_InitEmptyStub;
 	FHoudiniApi::SessionSyncInfo_Create = &FHoudiniApi::SessionSyncInfo_CreateEmptyStub;
 	FHoudiniApi::SetAnimCurve = &FHoudiniApi::SetAnimCurveEmptyStub;
 	FHoudiniApi::SetAttributeFloat64Data = &FHoudiniApi::SetAttributeFloat64DataEmptyStub;
@@ -1838,7 +1843,7 @@ FHoudiniApi::CreateNodeEmptyStub(const HAPI_Session * session, HAPI_NodeId paren
 
 
 HAPI_Result
-FHoudiniApi::CreateThriftNamedPipeSessionEmptyStub(HAPI_Session * session, const char * pipe_name)
+FHoudiniApi::CreateThriftNamedPipeSessionEmptyStub(HAPI_Session * session, const char * pipe_name ,const HAPI_SessionInfo * session_info)
 {
 	return HAPI_RESULT_FAILURE;
 }
@@ -3341,6 +3346,11 @@ FHoudiniApi::SaveNodeToFileEmptyStub(const HAPI_Session * session, HAPI_NodeId n
 	return HAPI_RESULT_FAILURE;
 }
 
+void
+FHoudiniApi::SessionInfo_InitEmptyStub(HAPI_SessionInfo * in)
+{
+	return;
+}
 
 HAPI_SessionSyncInfo
 FHoudiniApi::SessionSyncInfo_CreateEmptyStub()
@@ -3665,7 +3675,7 @@ FHoudiniApi::SetWorkitemStringDataEmptyStub(const HAPI_Session * session, HAPI_N
 
 
 HAPI_Result
-FHoudiniApi::StartThriftNamedPipeServerEmptyStub(const HAPI_ThriftServerOptions * options, const char * pipe_name, HAPI_ProcessId * process_id)
+FHoudiniApi::StartThriftNamedPipeServerEmptyStub(const HAPI_ThriftServerOptions * options, const char * pipe_name, HAPI_ProcessId * process_id,const char * log_file)
 {
 	return HAPI_RESULT_FAILURE;
 }

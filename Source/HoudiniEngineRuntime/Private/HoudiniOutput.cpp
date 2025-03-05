@@ -25,10 +25,10 @@
 */
 
 #include "HoudiniOutput.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 
 #include "HoudiniEngineRuntimeUtils.h"
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniSplineComponent.h"
 
 #include "Components/SceneComponent.h"
 #include "Components/MeshComponent.h"
@@ -507,7 +507,7 @@ UHoudiniOutput::GetBounds() const
 		for (auto & CurPair : OutputObjects)
 		{
 			const FHoudiniOutputObject& CurObj = CurPair.Value;
-			UHoudiniSplineComponent* CurHoudiniSplineComp = Cast<UHoudiniSplineComponent>(CurObj.OutputComponent);
+			UT2HoudiniSplineComponent* CurHoudiniSplineComp = Cast<UT2HoudiniSplineComponent>(CurObj.OutputComponent);
 			if (!CurHoudiniSplineComp || CurHoudiniSplineComp->IsPendingKill())
 				continue;
 
@@ -517,7 +517,7 @@ UHoudiniOutput::GetBounds() const
 				CurCurveBound += Trans.GetLocation();
 			}
 
-			UHoudiniAssetComponent* OuterHAC = Cast<UHoudiniAssetComponent>(GetOuter());
+			UT2HoudiniAssetComponent* OuterHAC = Cast<UT2HoudiniAssetComponent>(GetOuter());
 			if (OuterHAC && !OuterHAC->IsPendingKill())
 				BoxBounds += CurCurveBound.MoveTo(OuterHAC->GetComponentLocation());
 		}

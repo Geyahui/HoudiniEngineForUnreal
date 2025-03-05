@@ -35,7 +35,7 @@ class UHoudiniOutput;
 struct FHoudiniPackageParams;
 
 UCLASS()
-class HOUDINIENGINE_API UHoudiniGeoImporter : public UObject
+class T2HOUDINIENGINE_API UHoudiniGeoImporter : public UObject
 {
 public:
 

@@ -26,7 +26,7 @@
 
 #include "HoudiniParameterDetails.h"
 
-#include "HoudiniAssetComponent.h"
+ #include "T2HoudiniAssetComponent.h"
 #include "HoudiniParameter.h"
 #include "HoudiniParameterFloat.h"
 #include "HoudiniParameterInt.h"
@@ -45,7 +45,7 @@
 #include "HoudiniParameterRamp.h"
 #include "HoudiniParameterOperatorPath.h"
 #include "HoudiniInput.h"
-#include "HoudiniAsset.h"
+#include "T2HoudiniAsset.h"
 
 #include "HoudiniEngine.h"
 #include "HoudiniEngineUtils.h"
@@ -3181,7 +3181,7 @@ FHoudiniParameterDetails::CreateWidgetString( IDetailCategoryBuilder & HouParame
 					// Using UObject would list way too many assets, and take a long time to open the menu,
 					// so we need to reestrict the classes a bit
 					AllowedClasses.Add(UStaticMesh::StaticClass());
-					AllowedClasses.Add(UHoudiniAsset::StaticClass());
+					AllowedClasses.Add(UT2HoudiniAsset::StaticClass());
 					AllowedClasses.Add(USkeletalMesh::StaticClass());
 					AllowedClasses.Add(UBlueprint::StaticClass());
 					AllowedClasses.Add(UMaterialInterface::StaticClass());
@@ -3759,7 +3759,7 @@ void FHoudiniParameterDetails::CreateWidgetFile(IDetailCategoryBuilder & HouPara
 
 	auto UpdateCheckRelativePath = [MainParam](const FString & PickedPath) 
 	{
-		UHoudiniAssetComponent* HoudiniAssetComponent = Cast<UHoudiniAssetComponent>(MainParam->GetOuter());
+		UT2HoudiniAssetComponent* HoudiniAssetComponent = Cast<UT2HoudiniAssetComponent>(MainParam->GetOuter());
 		if (MainParam->GetOuter() && !PickedPath.IsEmpty() && FPaths::IsRelative(PickedPath))
 		{
 			// Check if the path is relative to the UE4 project

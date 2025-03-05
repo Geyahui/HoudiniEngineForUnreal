@@ -47,7 +47,7 @@ enum class EHoudiniCurveType : int8;
 enum class ECheckBoxState : unsigned char;
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniInput : public UObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniInput : public UObject
 {
 	GENERATED_BODY()
 

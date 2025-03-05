@@ -26,7 +26,7 @@
 
 #include "HoudiniEngineRuntimeUtils.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 
 #include "EngineUtils.h"
 
@@ -539,7 +539,7 @@ FHoudiniEngineRuntimeUtils::GetDefaultStaticMeshGenerationProperties()
 {
 	FHoudiniStaticMeshGenerationProperties SMGP;
 
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	if (HoudiniRuntimeSettings)
 	{
 		SMGP.bGeneratedDoubleSidedGeometry = HoudiniRuntimeSettings->bDoubleSidedGeometry;

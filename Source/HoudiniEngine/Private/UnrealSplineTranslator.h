@@ -31,7 +31,7 @@
 
 class USplineComponent;
 
-struct HOUDINIENGINE_API FUnrealSplineTranslator 
+struct T2HOUDINIENGINE_API FUnrealSplineTranslator 
 {
 public:
 	static bool CreateInputNodeForSplineComponent(USplineComponent* SplineComponent, const float& SplineResolution, HAPI_NodeId &CreatedInputNodeId, const FString& NodeName);

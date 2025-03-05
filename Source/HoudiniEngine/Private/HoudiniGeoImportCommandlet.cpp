@@ -424,7 +424,7 @@ bool UHoudiniGeoImportCommandlet::StartHoudiniEngineSession()
 	HOUDINI_LOG_DISPLAY(TEXT("Starting Houdini Engine session..."));
 	FHoudiniEngine& HoudiniEngine = FHoudiniEngine::Get();
 	if (!HoudiniEngine.CreateSession(
-		EHoudiniRuntimeSettingsSessionType::HRSST_NamedPipe,
+		ET2HoudiniRuntimeSettingsSessionType::HRSST_NamedPipe,
 		"hapi_bgeo_cmdlet"))
 	{
 		HOUDINI_LOG_ERROR(TEXT("Failed to start Houdini Engine session."));

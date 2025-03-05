@@ -29,7 +29,7 @@
 #include "HoudiniEngineEditorPrivatePCH.h"
 
 #include "HoudiniInput.h"
-#include "HoudiniAssetActor.h"
+#include "T2HoudiniAssetActor.h"
 #include "HoudiniAssetBlueprintComponent.h"
 #include "HoudiniEngineEditor.h"
 #include "HoudiniEngineEditorUtils.h"
@@ -79,7 +79,7 @@
 class SCurveEditingTextBlock : public STextBlock
 {
 public:
-	UHoudiniSplineComponent* HoudiniSplineComponent;
+	UT2HoudiniSplineComponent* HoudiniSplineComponent;
 	TSharedPtr<FHoudiniSplineComponentVisualizer> HoudiniSplineComponentVisualizer;
 public:
 	virtual int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyClippingRect,
@@ -113,7 +113,7 @@ FHoudiniInputDetails::CreateWidget(
 	TSharedPtr< FAssetThumbnailPool > AssetThumbnailPool = HouInputCategory.GetParentLayout().GetThumbnailPool();
 	
 	EHoudiniInputType MainInputType = MainInput->GetInputType();
-	UHoudiniAssetComponent* HAC = MainInput->GetTypedOuter<UHoudiniAssetComponent>();
+	UT2HoudiniAssetComponent* HAC = MainInput->GetTypedOuter<UT2HoudiniAssetComponent>();
 
 	// Create a widget row, or get the given row.
 	FDetailWidgetRow* Row = InputRow;
@@ -1845,7 +1845,7 @@ FHoudiniInputDetails::AddCurveInputUI(IDetailCategoryBuilder& CategoryBuilder, T
 		if (!MainInput || MainInput->IsPendingKill())
 			return;
 
-		UHoudiniAssetComponent* OuterHAC = Cast<UHoudiniAssetComponent>(MainInput->GetOuter());
+		UT2HoudiniAssetComponent* OuterHAC = Cast<UT2HoudiniAssetComponent>(MainInput->GetOuter());
 		if (!OuterHAC || OuterHAC->IsPendingKill())
 			return;
 
@@ -1924,7 +1924,7 @@ FHoudiniInputDetails::AddCurveInputUI(IDetailCategoryBuilder& CategoryBuilder, T
 					if (!HoudiniInput || HoudiniInput->IsPendingKill())
 						continue;
 
-					UHoudiniSplineComponent* HoudiniSplineComponent = HoudiniInput->GetCurveComponent();
+					UT2HoudiniSplineComponent* HoudiniSplineComponent = HoudiniInput->GetCurveComponent();
 					if (!HoudiniSplineComponent || HoudiniSplineComponent->IsPendingKill())
 						continue;
 
@@ -1949,7 +1949,7 @@ FHoudiniInputDetails::AddCurveInputUI(IDetailCategoryBuilder& CategoryBuilder, T
 					if (!HoudiniInput || HoudiniInput->IsPendingKill())
 						continue;
 
-					UHoudiniSplineComponent* HoudiniSplineComponent = HoudiniInput->GetCurveComponent();
+					UT2HoudiniSplineComponent* HoudiniSplineComponent = HoudiniInput->GetCurveComponent();
 					if (!HoudiniSplineComponent || HoudiniSplineComponent->IsPendingKill())
 						continue;
 
@@ -1984,12 +1984,12 @@ FHoudiniInputDetails::AddCurveInputUI(IDetailCategoryBuilder& CategoryBuilder, T
 		]
 	];
 
-	//UHoudiniSplineComponent* SplineCompBeingEdited = nullptr;
+	//UT2HoudiniSplineComponent* SplineCompBeingEdited = nullptr;
 	TSharedPtr<FHoudiniSplineComponentVisualizer> HouSplineComponentVisualizer;
 	if (GUnrealEd)
 	{
 		TSharedPtr<FComponentVisualizer> Visualizer =
-			GUnrealEd->FindComponentVisualizer(UHoudiniSplineComponent::StaticClass()->GetFName());
+			GUnrealEd->FindComponentVisualizer(UT2HoudiniSplineComponent::StaticClass()->GetFName());
 
 		HouSplineComponentVisualizer = StaticCastSharedPtr<FHoudiniSplineComponentVisualizer>(Visualizer);
 	}
@@ -2015,13 +2015,13 @@ FHoudiniInputDetails::Helper_CreateCurveWidget(
 	if (!MainInput || MainInput->IsPendingKill())
 		return;
 
-	UHoudiniAssetComponent * OuterHAC = Cast<UHoudiniAssetComponent>(MainInput->GetOuter());
+	UT2HoudiniAssetComponent * OuterHAC = Cast<UT2HoudiniAssetComponent>(MainInput->GetOuter());
 	if (!OuterHAC || OuterHAC->IsPendingKill())
 		return;
 
 	auto GetHoudiniSplineComponentAtIndex = [](UHoudiniInput * Input, int32 Index)
 	{
-		UHoudiniSplineComponent* FoundHoudiniSplineComponent = nullptr;
+		UT2HoudiniSplineComponent* FoundHoudiniSplineComponent = nullptr;
 		if (!Input || Input->IsPendingKill())
 			return FoundHoudiniSplineComponent;
 
@@ -2057,7 +2057,7 @@ FHoudiniInputDetails::Helper_CreateCurveWidget(
 	UHoudiniInputHoudiniSplineComponent* HoudiniSplineInputObject =
 		Cast<UHoudiniInputHoudiniSplineComponent>(HoudiniInputObject);
 
-	UHoudiniSplineComponent * HoudiniSplineComponent = HoudiniSplineInputObject->GetCurveComponent();
+	UT2HoudiniSplineComponent * HoudiniSplineComponent = HoudiniSplineInputObject->GetCurveComponent();
 	if (!HoudiniSplineComponent)
 		return;
 
@@ -2147,7 +2147,7 @@ FHoudiniInputDetails::Helper_CreateCurveWidget(
 			if (!HoudiniInput || HoudiniInput->IsPendingKill())
 				return;
 
-			UHoudiniSplineComponent* HoudiniSplineComponent = HoudiniInput->GetCurveComponent();
+			UT2HoudiniSplineComponent* HoudiniSplineComponent = HoudiniInput->GetCurveComponent();
 			if (!HoudiniSplineComponent)
 				return;
 
@@ -2205,7 +2205,7 @@ FHoudiniInputDetails::Helper_CreateCurveWidget(
 			if (!Input || Input->IsPendingKill())
 				continue;
 
-			UHoudiniSplineComponent * HoudiniSplineComponent = GetHoudiniSplineComponentAtIndex(Input, InCurveObjectIdx);
+			UT2HoudiniSplineComponent * HoudiniSplineComponent = GetHoudiniSplineComponentAtIndex(Input, InCurveObjectIdx);
 
 			if (!HoudiniSplineComponent || HoudiniSplineComponent->IsPendingKill())
 				continue;
@@ -2269,7 +2269,7 @@ FHoudiniInputDetails::Helper_CreateCurveWidget(
 			if (!Input || Input->IsPendingKill())
 				continue;
 
-			UHoudiniSplineComponent * HoudiniSplineComponent = GetHoudiniSplineComponentAtIndex(Input, InCurveObjectIdx);
+			UT2HoudiniSplineComponent * HoudiniSplineComponent = GetHoudiniSplineComponentAtIndex(Input, InCurveObjectIdx);
 			if (!HoudiniSplineComponent || HoudiniSplineComponent->IsPendingKill())
 				continue;
 
@@ -2324,7 +2324,7 @@ FHoudiniInputDetails::Helper_CreateCurveWidget(
 			if (!Input || Input->IsPendingKill())
 				continue;
 
-			UHoudiniSplineComponent * HoudiniSplineComponent = GetHoudiniSplineComponentAtIndex(Input, InCurveObjectIdx);
+			UT2HoudiniSplineComponent * HoudiniSplineComponent = GetHoudiniSplineComponentAtIndex(Input, InCurveObjectIdx);
 			if (!HoudiniSplineComponent)
 				continue;
 
@@ -2382,7 +2382,7 @@ FHoudiniInputDetails::Helper_CreateCurveWidget(
 			if (!Input || Input->IsPendingKill())
 				continue;
 
-			UHoudiniSplineComponent * HoudiniSplineComponent = GetHoudiniSplineComponentAtIndex(Input, InCurveObjectIdx);
+			UT2HoudiniSplineComponent * HoudiniSplineComponent = GetHoudiniSplineComponentAtIndex(Input, InCurveObjectIdx);
 			if (!HoudiniSplineComponent || HoudiniSplineComponent->IsPendingKill())
 				continue;
 
@@ -2471,7 +2471,7 @@ FHoudiniInputDetails::Helper_CreateCurveWidget(
 			if (!Input || Input->IsPendingKill())
 				continue;
 
-			UHoudiniSplineComponent * HoudiniSplineComponent = GetHoudiniSplineComponentAtIndex(Input, InCurveObjectIdx);
+			UT2HoudiniSplineComponent * HoudiniSplineComponent = GetHoudiniSplineComponentAtIndex(Input, InCurveObjectIdx);
 			if (!HoudiniSplineComponent || HoudiniSplineComponent->IsPendingKill())
 				continue;
 
@@ -2536,7 +2536,7 @@ FHoudiniInputDetails::Helper_CreateCurveWidget(
 			if (!NextInput || NextInput->IsPendingKill())
 				continue;
 
-			UHoudiniAssetComponent * OuterHAC = Cast<UHoudiniAssetComponent>(NextInput->GetOuter());
+			UT2HoudiniAssetComponent * OuterHAC = Cast<UT2HoudiniAssetComponent>(NextInput->GetOuter());
 			if (!OuterHAC || OuterHAC->IsPendingKill())
 				continue;
 
@@ -2558,7 +2558,7 @@ FHoudiniInputDetails::Helper_CreateCurveWidget(
 			if (!HoudiniSplineInputObject || HoudiniSplineInputObject->IsPendingKill())
 				continue;
 
-			UHoudiniSplineComponent* HoudiniSplineComponent = HoudiniSplineInputObject->GetCurveComponent();
+			UT2HoudiniSplineComponent* HoudiniSplineComponent = HoudiniSplineInputObject->GetCurveComponent();
 			if (!HoudiniSplineComponent || HoudiniSplineComponent->IsPendingKill())
 				continue;
 
@@ -2687,7 +2687,7 @@ FHoudiniInputDetails::AddLandscapeInputUI(TSharedRef<SVerticalBox> VerticalBox, 
 
 			CurInput->Modify();
 
-			UHoudiniAssetComponent* HAC = Cast<UHoudiniAssetComponent>(CurInput->GetOuter());
+			UT2HoudiniAssetComponent* HAC = Cast<UT2HoudiniAssetComponent>(CurInput->GetOuter());
 			if (!HAC)
 				continue;
 
@@ -3438,7 +3438,7 @@ FHoudiniInputDetails::Helper_CreateCustomActorPickerWidget(TArray<UHoudiniInput*
 		AActor* OwnerActor = LandscapeProxy->GetOwner();
 		
 		// Get our Actor
-		UHoudiniAssetComponent* MyHAC = Cast<UHoudiniAssetComponent>(InInput->GetOuter());
+		UT2HoudiniAssetComponent* MyHAC = Cast<UT2HoudiniAssetComponent>(InInput->GetOuter());
 		AActor* MyOwner = MyHAC ? MyHAC->GetOwner() : nullptr;
 
 		// TODO: FIX ME!
@@ -3481,13 +3481,13 @@ FHoudiniInputDetails::Helper_CreateCustomActorPickerWidget(TArray<UHoudiniInput*
 			return false;
 
 		// Only return HoudiniAssetActors, but not our HAA
-		if (!Actor->IsA<AHoudiniAssetActor>())
+		if (!Actor->IsA<AT2HoudiniAssetActor>())
 			return false;
 
 		// But not our own Asset Actor
 		if (const USceneComponent* RootComp = Cast<const USceneComponent>(InInput->GetOuter()))
 		{
-			if (RootComp && Cast<AHoudiniAssetActor>(RootComp->GetOwner()) != Actor)
+			if (RootComp && Cast<AT2HoudiniAssetActor>(RootComp->GetOwner()) != Actor)
 				return true;
 		}
 
@@ -3549,7 +3549,7 @@ FHoudiniInputDetails::Helper_CreateCustomActorPickerWidget(TArray<UHoudiniInput*
 		if (!Actor || !Input)
 			return;
 
-		AHoudiniAssetActor* HoudiniAssetActor = Cast<AHoudiniAssetActor>(Actor);
+		AT2HoudiniAssetActor* HoudiniAssetActor = Cast<AT2HoudiniAssetActor>(Actor);
 		if (!HoudiniAssetActor)
 			return;
 
@@ -3559,7 +3559,7 @@ FHoudiniInputDetails::Helper_CreateCustomActorPickerWidget(TArray<UHoudiniInput*
 
 		AssetInputObjectsArray->Empty();
 
-		FName HoudiniAssetActorName = MakeUniqueObjectName(Input->GetOuter(), AHoudiniAssetActor::StaticClass(), TEXT("HoudiniAsset"));
+		FName HoudiniAssetActorName = MakeUniqueObjectName(Input->GetOuter(), AT2HoudiniAssetActor::StaticClass(), TEXT("HoudiniAsset"));
 
 		// Create a Houdini Asset Input Object
 		UHoudiniInputObject* NewInputObject = UHoudiniInputHoudiniAsset::Create(HoudiniAssetActor->GetHoudiniAssetComponent(), Input, HoudiniAssetActorName.ToString());
@@ -3670,7 +3670,7 @@ FHoudiniInputDetails::Helper_CreateHoudiniAssetPickerWidget(TArray<UHoudiniInput
 			return false;
 
 		// Only return HoudiniAssetActors, but not our HAA
-		if (!Actor->IsA<AHoudiniAssetActor>())
+		if (!Actor->IsA<AT2HoudiniAssetActor>())
 			return false;
 
 		// But not our selected Asset Actor
@@ -3680,7 +3680,7 @@ FHoudiniInputDetails::Helper_CreateHoudiniAssetPickerWidget(TArray<UHoudiniInput
 				continue;
 
 			const USceneComponent* RootComp = Cast<const USceneComponent>(NextSelectedInput->GetOuter());
-			if (RootComp && Cast<AHoudiniAssetActor>(RootComp->GetOwner()) == Actor)
+			if (RootComp && Cast<AT2HoudiniAssetActor>(RootComp->GetOwner()) == Actor)
 				return false;
 
 		}
@@ -3702,7 +3702,7 @@ FHoudiniInputDetails::Helper_CreateHoudiniAssetPickerWidget(TArray<UHoudiniInput
 		if (!Actor || Actor->IsPendingKill() || !Input || Input->IsPendingKill())
 			return;
 		
-		AHoudiniAssetActor* HoudiniAssetActor = Cast<AHoudiniAssetActor>(Actor);
+		AT2HoudiniAssetActor* HoudiniAssetActor = Cast<AT2HoudiniAssetActor>(Actor);
 		if (!HoudiniAssetActor)
 			return;
 
@@ -3714,7 +3714,7 @@ FHoudiniInputDetails::Helper_CreateHoudiniAssetPickerWidget(TArray<UHoudiniInput
 		if (!AssetInputObjectsArray)
 			return;
 
-		FName HoudiniAssetActorName = MakeUniqueObjectName(Input->GetOuter(), AHoudiniAssetActor::StaticClass(), TEXT("HoudiniAsset"));
+		FName HoudiniAssetActorName = MakeUniqueObjectName(Input->GetOuter(), AT2HoudiniAssetActor::StaticClass(), TEXT("HoudiniAsset"));
 
 		// Create a Houdini Asset Input Object
 		UHoudiniInputObject* NewInputObject = UHoudiniInputHoudiniAsset::Create(HoudiniAssetActor->GetHoudiniAssetComponent(), Input, HoudiniAssetActorName.ToString());
@@ -3825,7 +3825,7 @@ FHoudiniInputDetails::Helper_CreateLandscapePickerWidget(TArray<UHoudiniInput*>&
 			OwnerActor = RootComponent->GetAttachParent() ? RootComponent->GetAttachParent()->GetOwner() : LandscapeProxy->GetOwner();
 
 		// Get our Actor
-		UHoudiniAssetComponent* MyHAC = Cast<UHoudiniAssetComponent>(InInput->GetOuter());
+		UT2HoudiniAssetComponent* MyHAC = Cast<UT2HoudiniAssetComponent>(InInput->GetOuter());
 		AActor* MyOwner = MyHAC ? MyHAC->GetOwner() : nullptr;
 
 		// IF the landscape is owned by ourself, skip it!
@@ -4003,7 +4003,7 @@ FHoudiniInputDetails::Helper_CreateWorldActorPickerWidget(TArray<UHoudiniInput*>
 			if (!CurActor || CurActor->IsPendingKill())
 			{
 				// See if the input object is a HAC, if it is, get its parent actor
-				UHoudiniAssetComponent* CurHAC = Cast<UHoudiniAssetComponent>(CurInputObject->GetObject());
+				UT2HoudiniAssetComponent* CurHAC = Cast<UT2HoudiniAssetComponent>(CurInputObject->GetObject());
 				if (CurHAC && !CurHAC->IsPendingKill())
 					CurActor = CurHAC->GetOwner();
 			}
@@ -4613,7 +4613,7 @@ FHoudiniInputDetails::AddWorldInputUI(
 						LOCTEXT("HoudiniWorldInputRevertSplineResolution", "Houdini Input: Reverting world input spline resolution to default"),
 						MainInput->GetOuter());
 
-					const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+					const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 					float DefaultSplineResolution = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->MarshallingSplineResolution : 50.0f;
 
 					for (auto CurrentInput : InInputs)

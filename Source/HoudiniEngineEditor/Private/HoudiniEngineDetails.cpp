@@ -28,10 +28,10 @@
 
 #include "HoudiniEngineEditorPrivatePCH.h"
 
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniAssetComponentDetails.h"
-#include "HoudiniAssetActor.h"
-#include "HoudiniAsset.h"
+#include "T2HoudiniAssetActor.h"
+#include "T2HoudiniAsset.h"
 #include "HoudiniParameter.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineRuntime.h"
@@ -107,12 +107,12 @@ SHoudiniAssetLogWidget::Construct(const FArguments & InArgs)
 void 
 FHoudiniEngineDetails::CreateWidget(
 	IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-	TArray<UHoudiniAssetComponent*>& InHACs) 
+	TArray<UT2HoudiniAssetComponent*>& InHACs) 
 {
 	if (InHACs.Num() <= 0)
 		return;
 
-	UHoudiniAssetComponent* MainHAC = InHACs[0];
+	UT2HoudiniAssetComponent* MainHAC = InHACs[0];
 
 	if (!MainHAC || MainHAC->IsPendingKill())
 		return;
@@ -140,12 +140,12 @@ FHoudiniEngineDetails::CreateWidget(
 void 
 FHoudiniEngineDetails::CreateHoudiniEngineIconWidget(
 	IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-	TArray<UHoudiniAssetComponent*>& InHACs) 
+	TArray<UT2HoudiniAssetComponent*>& InHACs) 
 {
 	if (InHACs.Num() <= 0)
 		return;
 
-	UHoudiniAssetComponent* MainHAC = InHACs[0];
+	UT2HoudiniAssetComponent* MainHAC = InHACs[0];
 
 	if (!MainHAC || MainHAC->IsPendingKill())
 		return;
@@ -186,12 +186,12 @@ FHoudiniEngineDetails::CreateHoudiniEngineIconWidget(
 void 
 FHoudiniEngineDetails::CreateGenerateWidgets(
 	IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-	TArray<UHoudiniAssetComponent*>& InHACs)
+	TArray<UT2HoudiniAssetComponent*>& InHACs)
 {
 	if (InHACs.Num() <= 0)
 		return;
 
-	UHoudiniAssetComponent* MainHAC = InHACs[0];
+	UT2HoudiniAssetComponent* MainHAC = InHACs[0];
 
 	if (!MainHAC || MainHAC->IsPendingKill())
 		return;
@@ -554,7 +554,7 @@ FHoudiniEngineDetails::CreateGenerateWidgets(
 }
 
 void
-FHoudiniEngineDetails::OnBakeAfterCookChangedHelper(bool bInState, UHoudiniAssetComponent* InHAC)
+FHoudiniEngineDetails::OnBakeAfterCookChangedHelper(bool bInState, UT2HoudiniAssetComponent* InHAC)
 {
 	if (!IsValid(InHAC))
 		return;
@@ -566,7 +566,7 @@ FHoudiniEngineDetails::OnBakeAfterCookChangedHelper(bool bInState, UHoudiniAsset
 	}
 	else
 	{
-		InHAC->GetOnPostCookBakeDelegate().BindLambda([](UHoudiniAssetComponent* HAC)
+		InHAC->GetOnPostCookBakeDelegate().BindLambda([](UT2HoudiniAssetComponent* HAC)
 		{
 			return FHoudiniEngineBakeUtils::BakeHoudiniAssetComponent(
 				HAC,
@@ -580,12 +580,12 @@ FHoudiniEngineDetails::OnBakeAfterCookChangedHelper(bool bInState, UHoudiniAsset
 void 
 FHoudiniEngineDetails::CreateBakeWidgets(
 	IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-	TArray<UHoudiniAssetComponent*>& InHACs)
+	TArray<UT2HoudiniAssetComponent*>& InHACs)
 {
 	if (InHACs.Num() <= 0)
 		return;
 
-	UHoudiniAssetComponent * MainHAC = InHACs[0];
+	UT2HoudiniAssetComponent * MainHAC = InHACs[0];
 	if (!MainHAC || MainHAC->IsPendingKill())
 		return;
 
@@ -1075,12 +1075,12 @@ FHoudiniEngineDetails::CreateBakeWidgets(
 void 
 FHoudiniEngineDetails::CreateAssetOptionsWidgets(
 	IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-	TArray<UHoudiniAssetComponent*>& InHACs) 
+	TArray<UT2HoudiniAssetComponent*>& InHACs) 
 {
 	if (InHACs.Num() <= 0)
 		return;
 
-	UHoudiniAssetComponent * MainHAC = InHACs[0];
+	UT2HoudiniAssetComponent * MainHAC = InHACs[0];
 	if (!MainHAC || MainHAC->IsPendingKill())
 		return;
 
@@ -1412,12 +1412,12 @@ FHoudiniEngineDetails::CreateAssetOptionsWidgets(
 void 
 FHoudiniEngineDetails::CreateHelpAndDebugWidgets(
 	IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-	TArray<UHoudiniAssetComponent*>& InHACs) 
+	TArray<UT2HoudiniAssetComponent*>& InHACs) 
 {
 	if (InHACs.Num() <= 0)
 		return;
 
-	UHoudiniAssetComponent * MainHAC = InHACs[0];
+	UT2HoudiniAssetComponent * MainHAC = InHACs[0];
 	if (!MainHAC || MainHAC->IsPendingKill())
 		return;
 
@@ -1563,7 +1563,7 @@ FHoudiniEngineDetails::Helper_CreateHoudiniAssetPicker()
 			return false;
 
 		// Only return HoudiniAssetActors, but not our HAA
-		if (!Actor->IsA<AHoudiniAssetActor>())
+		if (!Actor->IsA<AT2HoudiniAssetActor>())
 			return false;
 
 		return true;
@@ -1629,17 +1629,17 @@ FHoudiniEngineDetails::GetHoudiniAssetThumbnailBorder(TSharedPtr< SBorder > Houd
 
 /*
 TSharedRef< SWidget >
-FHoudiniEngineDetails::OnGetHoudiniAssetMenuContent(TArray<UHoudiniAssetComponent*> InHACs)
+FHoudiniEngineDetails::OnGetHoudiniAssetMenuContent(TArray<UT2HoudiniAssetComponent*> InHACs)
 {
 	TArray< const UClass * > AllowedClasses;
-	AllowedClasses.Add(UHoudiniAsset::StaticClass());
+	AllowedClasses.Add(UT2HoudiniAsset::StaticClass());
 
 	TArray< UFactory * > NewAssetFactories;
 
-	UHoudiniAsset * HoudiniAsset = nullptr;
+	UT2HoudiniAsset * HoudiniAsset = nullptr;
 	if (InHACs.Num() > 0)
 	{
-		UHoudiniAssetComponent * HoudiniAssetComponent = InHACs[0];
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = InHACs[0];
 		HoudiniAsset = HoudiniAssetComponent->HoudiniAsset;
 	}
 	
@@ -1649,7 +1649,7 @@ FHoudiniEngineDetails::OnGetHoudiniAssetMenuContent(TArray<UHoudiniAssetComponen
 			return false;
 
 		// Only return HoudiniAssetActors, but not our HAA
-		if (!Actor->IsA<AHoudiniAssetActor>())
+		if (!Actor->IsA<AT2HoudiniAssetActor>())
 			return false;
 
 		return true;
@@ -1668,7 +1668,7 @@ FHoudiniEngineDetails::OnGetHoudiniAssetMenuContent(TArray<UHoudiniAssetComponen
 */
 
 FReply
-FHoudiniEngineDetails::ShowCookLog(TArray<UHoudiniAssetComponent *> InHACS)
+FHoudiniEngineDetails::ShowCookLog(TArray<UT2HoudiniAssetComponent *> InHACS)
 {
 	TSharedPtr< SWindow > ParentWindow;
 	FString CookLog = FHoudiniEngineUtils::GetCookLog(InHACS);
@@ -1701,7 +1701,7 @@ FHoudiniEngineDetails::ShowCookLog(TArray<UHoudiniAssetComponent *> InHACS)
 }
 
 FReply
-FHoudiniEngineDetails::ShowAssetHelp(UHoudiniAssetComponent * InHAC)
+FHoudiniEngineDetails::ShowAssetHelp(UT2HoudiniAssetComponent * InHAC)
 {
 	if (!InHAC)
 		return FReply::Handled();
@@ -1737,7 +1737,7 @@ FHoudiniEngineDetails::ShowAssetHelp(UHoudiniAssetComponent * InHAC)
 }
 
 void 
-FHoudiniEngineDetails::AddHeaderRowForHoudiniAssetComponent(IDetailCategoryBuilder& HoudiniEngineCategoryBuilder, UHoudiniAssetComponent * HoudiniAssetComponent, int32 MenuSection)
+FHoudiniEngineDetails::AddHeaderRowForHoudiniAssetComponent(IDetailCategoryBuilder& HoudiniEngineCategoryBuilder, UT2HoudiniAssetComponent * HoudiniAssetComponent, int32 MenuSection)
 {
 	if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 		return;

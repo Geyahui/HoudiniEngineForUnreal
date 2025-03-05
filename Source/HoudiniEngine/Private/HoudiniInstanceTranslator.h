@@ -39,10 +39,10 @@
 class UStaticMesh;
 class UFoliageType;
 class UHoudiniStaticMesh;
-class UHoudiniInstancedActorComponent;
+class UT2HoudiniInstancedActorComponent;
 
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniInstancedOutputPerSplitAttributes
+struct T2HOUDINIENGINE_API FHoudiniInstancedOutputPerSplitAttributes
 {
 public:
 
@@ -66,7 +66,7 @@ public:
 };
 
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniInstancedOutputPartData
+struct T2HOUDINIENGINE_API FHoudiniInstancedOutputPartData
 {
 public:
 	
@@ -139,7 +139,7 @@ public:
 	void BuildOriginalInstancedTransformsAndObjectArrays();
 };
 
-struct HOUDINIENGINE_API FHoudiniInstanceTranslator
+struct T2HOUDINIENGINE_API FHoudiniInstanceTranslator
 {
 	public:
 
@@ -304,12 +304,12 @@ struct HOUDINIENGINE_API FHoudiniInstanceTranslator
 			const FHoudiniGeoPartObject& InHGPO,
 			TArray<FTransform>& OutInstancerUnrealTransforms);
 
-		// Helper function used to spawn a new Actor for UHoudiniInstancedActorComponent
+		// Helper function used to spawn a new Actor for UT2HoudiniInstancedActorComponent
 		// Relies on editor-only functionalities, so this function is not on the IAC itself
 		static AActor* SpawnInstanceActor(
 			const FTransform& InTransform,
 			ULevel* InSpawnLevel, 
-			UHoudiniInstancedActorComponent* InIAC);
+			UT2HoudiniInstancedActorComponent* InIAC);
 
 		// Helper functions for generic property attributes
 		static bool GetGenericPropertiesAttributes(

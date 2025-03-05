@@ -31,7 +31,7 @@
 #include "HoudiniParameterColor.generated.h"
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniParameterColor : public UHoudiniParameter
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterColor : public UHoudiniParameter
 {
 	GENERATED_UCLASS_BODY()
 

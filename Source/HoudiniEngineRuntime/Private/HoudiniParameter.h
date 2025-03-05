@@ -76,14 +76,14 @@ enum class EHoudiniRampInterpolationType : int8
 };
 
 UCLASS(DefaultToInstanced)
-class HOUDINIENGINERUNTIME_API UHoudiniParameter : public UObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameter : public UObject
 {
 
 public:
 
 	GENERATED_UCLASS_BODY()
 
-	friend class UHoudiniAssetParameter;
+	friend class UT2HoudiniAssetParameter;
 
 	// 
 	static UHoudiniParameter * Create(UObject* Outer, const FString& ParamName);

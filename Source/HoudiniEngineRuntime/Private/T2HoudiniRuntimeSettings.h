@@ -32,12 +32,12 @@
 #include "Engine/AssetUserData.h"
 #include "PhysicsEngine/BodyInstance.h"
 
-#include "HoudiniRuntimeSettings.generated.h"
+#include "T2HoudiniRuntimeSettings.generated.h"
 
 class UFoliageType_InstancedStaticMesh;
 
 UENUM()
-enum EHoudiniRuntimeSettingsSessionType
+enum ET2HoudiniRuntimeSettingsSessionType
 {
 	// In process session.
 	HRSST_InProcess UMETA(Hidden),
@@ -56,7 +56,7 @@ enum EHoudiniRuntimeSettingsSessionType
 
 
 UENUM()
-enum EHoudiniRuntimeSettingsRecomputeFlag
+enum ET2HoudiniRuntimeSettingsRecomputeFlag
 {
 	// Recompute always.
 	HRSRF_Always UMETA(DisplayName = "Always"),
@@ -71,7 +71,7 @@ enum EHoudiniRuntimeSettingsRecomputeFlag
 };
 
 USTRUCT(BlueprintType)
-struct HOUDINIENGINERUNTIME_API FHoudiniStaticMeshGenerationProperties
+struct T2HOUDINIENGINERUNTIME_API FHoudiniStaticMeshGenerationProperties
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -135,14 +135,14 @@ struct HOUDINIENGINERUNTIME_API FHoudiniStaticMeshGenerationProperties
 
 
 UCLASS(config = Engine, defaultconfig)
-class HOUDINIENGINERUNTIME_API UHoudiniRuntimeSettings : public UObject
+class T2HOUDINIENGINERUNTIME_API UT2HoudiniRuntimeSettings : public UObject
 {
 	GENERATED_UCLASS_BODY()
 
 	public:
 
 		// Destructor.
-		virtual ~UHoudiniRuntimeSettings();
+		virtual ~UT2HoudiniRuntimeSettings();
 
 		// 
 		virtual void PostInitProperties() override;
@@ -170,7 +170,7 @@ protected:
 		// Session options.		
 		//-------------------------------------------------------------------------------------------------------------
 		UPROPERTY(GlobalConfig, EditAnywhere, Category = Session)
-		TEnumAsByte<enum EHoudiniRuntimeSettingsSessionType> SessionType;
+		TEnumAsByte<enum ET2HoudiniRuntimeSettingsSessionType> SessionType;
 
 		UPROPERTY(GlobalConfig, EditAnywhere, Category = Session)
 		FString ServerHost;
@@ -396,15 +396,15 @@ protected:
 
 		// Lightmap UV generation
 		UPROPERTY(GlobalConfig, EditAnywhere, Category = "StaticMeshBuildSettings", meta = (DisplayName = "Generate Lightmap UVs"))
-		TEnumAsByte<enum EHoudiniRuntimeSettingsRecomputeFlag> GenerateLightmapUVsFlag;
+		TEnumAsByte<enum ET2HoudiniRuntimeSettingsRecomputeFlag> GenerateLightmapUVsFlag;
 
 		// Normals generation
 		UPROPERTY(GlobalConfig, EditAnywhere, Category = "StaticMeshBuildSettings", meta = (DisplayName = "Recompute Normals"))
-		TEnumAsByte<enum EHoudiniRuntimeSettingsRecomputeFlag> RecomputeNormalsFlag;
+		TEnumAsByte<enum ET2HoudiniRuntimeSettingsRecomputeFlag> RecomputeNormalsFlag;
 
 		// Tangents generation
 		UPROPERTY(GlobalConfig, EditAnywhere, Category = "StaticMeshBuildSettings", meta = (DisplayName = "Recompute Tangents"))
-		TEnumAsByte<enum EHoudiniRuntimeSettingsRecomputeFlag> RecomputeTangentsFlag;
+		TEnumAsByte<enum ET2HoudiniRuntimeSettingsRecomputeFlag> RecomputeTangentsFlag;
 
 		// If true, recomputed tangents and normals will be calculated using MikkT Space.  This method does require properly laid out UVs though otherwise you'll get a degenerate tangent warning
 		UPROPERTY(GlobalConfig, EditAnywhere, Category = "StaticMeshBuildSettings", meta = (DisplayName = "Generate Using MikkT Space"))

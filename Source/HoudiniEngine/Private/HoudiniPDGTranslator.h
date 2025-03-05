@@ -43,7 +43,7 @@ struct FHoudiniLandscapeExtent;
 struct FHoudiniLandscapeReferenceLocation;
 struct FHoudiniLandscapeTileSizeInfo;
 
-struct HOUDINIENGINE_API FHoudiniPDGTranslator
+struct T2HOUDINIENGINE_API FHoudiniPDGTranslator
 {
 	public:
 		// Create/update assets/geometry for all PDG outputs of InWorkResultObject. This will use

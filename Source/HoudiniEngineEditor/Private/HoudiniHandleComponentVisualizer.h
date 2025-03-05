@@ -31,7 +31,7 @@
 #include "Framework/Commands/UICommandList.h"
 
 #include "Components/ActorComponent.h"
-#include "HoudiniHandleComponent.h"
+#include "T2HoudiniHandleComponent.h"
 
 /** Base class for clickable editing proxies. **/
 struct HHoudiniHandleVisProxy : public HComponentVisProxy
@@ -95,7 +95,7 @@ public:
 
 	virtual bool HandleInputKey(FEditorViewportClient* ViewportClient, FViewport* Viewport, FKey Key, EInputEvent Event) override;
 
-	void SetEditedComponent(UHoudiniHandleComponent* InComponent) { EditedComponent = InComponent; };
+	void SetEditedComponent(UT2HoudiniHandleComponent* InComponent) { EditedComponent = InComponent; };
 	void ClearEditedComponent() { EditedComponent = nullptr; };
 
 
@@ -104,7 +104,7 @@ protected:
 	TSharedPtr< FUICommandList > VisualizerActions;
 
 	/** Houdini component which is being edited. **/
-	UHoudiniHandleComponent* EditedComponent;
+	UT2HoudiniHandleComponent* EditedComponent;
 
 	/** Is set to true if we are editing. **/
 	uint32 bEditing : 1;

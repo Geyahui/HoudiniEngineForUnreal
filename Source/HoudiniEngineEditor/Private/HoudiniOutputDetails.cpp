@@ -31,7 +31,7 @@
 #include "HoudiniAssetComponentDetails.h"
 #include "HoudiniMeshTranslator.h"
 #include "HoudiniInstanceTranslator.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniEngine.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineBakeUtils.h"
@@ -40,8 +40,8 @@
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniEngineEditorPrivatePCH.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
-#include "HoudiniAsset.h"
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniAsset.h"
+#include "T2HoudiniSplineComponent.h"
 #include "HoudiniStaticMesh.h"
 #include "HoudiniEngineCommands.h"
 
@@ -182,7 +182,7 @@ FHoudiniOutputDetails::CreateLandscapeOutputWidget_Helper(
 	if (!InOutput || InOutput->IsPendingKill())
 		return;
 
-	UHoudiniAssetComponent * HAC = Cast<UHoudiniAssetComponent>(InOutput->GetOuter());
+	UT2HoudiniAssetComponent * HAC = Cast<UT2HoudiniAssetComponent>(InOutput->GetOuter());
 	if (!HAC || HAC->IsPendingKill())
 		return;
 
@@ -556,7 +556,7 @@ FHoudiniOutputDetails::CreateMeshOutputWidget(
 	if (!InOutput || InOutput->IsPendingKill())
 		return;
 
-	UHoudiniAssetComponent* HAC = Cast<UHoudiniAssetComponent>(InOutput->GetOuter());
+	UT2HoudiniAssetComponent* HAC = Cast<UT2HoudiniAssetComponent>(InOutput->GetOuter());
 	if (!HAC || HAC->IsPendingKill())
 		return;
 
@@ -663,7 +663,7 @@ FHoudiniOutputDetails::CreateCurveWidgets(
 	if (!SplineOutput || SplineOutput->IsPendingKill())
 		return;
 
-	UHoudiniAssetComponent * HAC = Cast<UHoudiniAssetComponent>(InOutput->GetOuter());
+	UT2HoudiniAssetComponent * HAC = Cast<UT2HoudiniAssetComponent>(InOutput->GetOuter());
 	if (!HAC || HAC->IsPendingKill())
 		return;
 
@@ -942,7 +942,7 @@ FHoudiniOutputDetails::CreateStaticMeshAndMaterialWidgets(
 	if (!StaticMesh || StaticMesh->IsPendingKill())
 		return;
 
-	UHoudiniAssetComponent* OwningHAC = Cast<UHoudiniAssetComponent>(InOutput->GetOuter());
+	UT2HoudiniAssetComponent* OwningHAC = Cast<UT2HoudiniAssetComponent>(InOutput->GetOuter());
 	
 	FHoudiniOutputObject* FoundOutputObject = InOutput->GetOutputObjects().Find(OutputIdentifier);
 	FString BakeName = FoundOutputObject ? FoundOutputObject->BakeName : FString();
@@ -1062,7 +1062,7 @@ FHoudiniOutputDetails::CreateStaticMeshAndMaterialWidgets(
 	if ( StaticMesh->Sockets.Num() > 0 )
 		MeshLabel += TEXT("\n(") + FString::FromInt( StaticMesh->Sockets.Num() ) + TEXT(" sockets)");
 
-	UHoudiniAssetComponent* HoudiniAssetComponent = Cast<UHoudiniAssetComponent>(InOutput->GetOuter());
+	UT2HoudiniAssetComponent* HoudiniAssetComponent = Cast<UT2HoudiniAssetComponent>(InOutput->GetOuter());
 	StaticMeshGrp.AddWidgetRow()
 	.NameContent()
 	[
@@ -1423,7 +1423,7 @@ FHoudiniOutputDetails::CreateProxyMeshAndMaterialWidgets(
 		MeshLabel += TEXT("\n(templated)");
 	}
 
-	UHoudiniAssetComponent* HoudiniAssetComponent = Cast<UHoudiniAssetComponent>(InOutput->GetOuter());
+	UT2HoudiniAssetComponent* HoudiniAssetComponent = Cast<UT2HoudiniAssetComponent>(InOutput->GetOuter());
 	StaticMeshGrp.AddWidgetRow()
 	.NameContent()
 	[
@@ -1785,7 +1785,7 @@ FHoudiniOutputDetails::OnThumbnailDoubleClick(
 
 /*
 FReply
-FHoudiniOutputDetails::OnBakeStaticMesh(UStaticMesh * StaticMesh, UHoudiniAssetComponent * HoudiniAssetComponent, FHoudiniGeoPartObject& GeoPartObject)
+FHoudiniOutputDetails::OnBakeStaticMesh(UStaticMesh * StaticMesh, UT2HoudiniAssetComponent * HoudiniAssetComponent, FHoudiniGeoPartObject& GeoPartObject)
 {
 	if (HoudiniAssetComponent && StaticMesh && !HoudiniAssetComponent->IsPendingKill() && !StaticMesh->IsPendingKill())
 	{
@@ -1971,10 +1971,10 @@ FHoudiniOutputDetails::OnResetMaterialInterfaceClicked(
 	bool bViewportNeedsUpdate = false;
 
 	// TODO: Handle me!
-	for (TArray< UHoudiniAssetComponent * >::TIterator
+	for (TArray< UT2HoudiniAssetComponent * >::TIterator
 		IterComponents(HoudiniAssetComponents); IterComponents; ++IterComponents)
 	{
-		UHoudiniAssetComponent * HoudiniAssetComponent = *IterComponents;
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = *IterComponents;
 		if (!HoudiniAssetComponent)
 			continue;
 

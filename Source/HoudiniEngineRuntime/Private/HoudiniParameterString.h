@@ -31,7 +31,7 @@
 #include "HoudiniParameterString.generated.h"
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniParameterString : public UHoudiniParameter
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterString : public UHoudiniParameter
 {
 	GENERATED_UCLASS_BODY()
 

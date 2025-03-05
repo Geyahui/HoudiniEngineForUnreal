@@ -36,7 +36,7 @@
  * The number of vertices and triangles must be known before hand.
  */
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniStaticMesh : public UObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniStaticMesh : public UObject
 {
     GENERATED_BODY()
 

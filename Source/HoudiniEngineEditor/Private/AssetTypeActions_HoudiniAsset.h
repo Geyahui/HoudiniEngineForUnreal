@@ -30,7 +30,7 @@
 
 class UClass;
 class UObject;
-class UHoudiniAsset;
+class UT2HoudiniAsset;
 
 enum class EHoudiniToolType : uint8;
 
@@ -49,36 +49,36 @@ class FAssetTypeActions_HoudiniAsset : public FAssetTypeActions_Base
 
 		virtual bool AssetsActivatedOverride(const TArray<UObject*>& InObjects, EAssetTypeActivationMethod::Type ActivationType) override;
 
-		TSharedRef<FExtender> AddLevelEditorMenuExtenders(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs);
+		TSharedRef<FExtender> AddLevelEditorMenuExtenders(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs);
 
 	protected:
 
 		// Handler for reimport option.
-		void ExecuteReimport(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs);
+		void ExecuteReimport(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs);
 
 		// Handler for rebuild all option
-		void ExecuteRebuildAllInstances(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs);
+		void ExecuteRebuildAllInstances(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs);
 
 		// Handler for find in explorer option
-		void ExecuteFindInExplorer(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs);
+		void ExecuteFindInExplorer(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs);
 
 		// Handler for the open in Houdini option
-		void ExecuteOpenInHoudini(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs);
+		void ExecuteOpenInHoudini(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs);
 
 		// Handler to apply the current hda to the current world selection (single input)
-		void ExecuteApplyOpSingle(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs);
+		void ExecuteApplyOpSingle(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs);
 
 		// Handler to apply the current hda to the current world selection (multi input)
-		void ExecuteApplyOpMulti(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs);
+		void ExecuteApplyOpMulti(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs);
 
 		// Handler to batch apply the current hda to the current world selection
-		void ExecuteApplyBatch(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs );
+		void ExecuteApplyBatch(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs );
 
 		// Handler to instantiate the HDA in the world
-		void ExecuteInstantiate(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs);
+		void ExecuteInstantiate(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs);
 
 		// Handler to instantiate the HDA in the world, actor is placed at the origin
-		void ExecuteInstantiateOrigin(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs);
+		void ExecuteInstantiateOrigin(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs);
 
-		void ExecuteApplyAssetToSelection(TArray<TWeakObjectPtr<UHoudiniAsset>> InHoudiniAssetPtrs, const EHoudiniToolType& InType);
+		void ExecuteApplyAssetToSelection(TArray<TWeakObjectPtr<UT2HoudiniAsset>> InHoudiniAssetPtrs, const EHoudiniToolType& InType);
 };

@@ -24,10 +24,10 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniSplineComponent.h"
 
 #include "HoudiniEngineRuntimePrivatePCH.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniEngineRuntime.h"
 #include "HoudiniEngineRuntimeUtils.h"
 #include "HoudiniInput.h"
@@ -44,7 +44,7 @@
 #include "Serialization/CustomVersion.h"
 
 void
-UHoudiniSplineComponent::Serialize(FArchive& Ar)
+UT2HoudiniSplineComponent::Serialize(FArchive& Ar)
 {
 	int64 InitialOffset = Ar.Tell();
 
@@ -62,11 +62,11 @@ UHoudiniSplineComponent::Serialize(FArchive& Ar)
 	{
 		// Legacy serialization
 		// Either try to convert or skip depending on HOUDINI_ENGINE_ENABLE_BACKWARD_COMPATIBILITY 
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 		bool bEnableBackwardCompatibility = HoudiniRuntimeSettings->bEnableBackwardCompatibility;
 		if (bEnableBackwardCompatibility)
 		{
-			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniSplineComponent : converting v1 object to v2."));
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UT2HoudiniSplineComponent : converting v1 object to v2."));
 
 			Super::Serialize(Ar);
 
@@ -78,7 +78,7 @@ UHoudiniSplineComponent::Serialize(FArchive& Ar)
 		}
 		else
 		{
-			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniSplineComponent : serialization will be skipped."));
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UT2HoudiniSplineComponent : serialization will be skipped."));
 
 			Super::Serialize(Ar);
 
@@ -99,7 +99,7 @@ UHoudiniSplineComponent::Serialize(FArchive& Ar)
 	}
 }
 
-UHoudiniSplineComponent::UHoudiniSplineComponent(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniSplineComponent::UT2HoudiniSplineComponent(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bClosed(false)
 	, bReversed(false)
@@ -136,7 +136,7 @@ UHoudiniSplineComponent::UHoudiniSplineComponent(const FObjectInitializer & Obje
 }
 
 void 
-UHoudiniSplineComponent::Construct(TArray<FVector>& InCurveDisplayPoints, int32 InsertedPoint) 
+UT2HoudiniSplineComponent::Construct(TArray<FVector>& InCurveDisplayPoints, int32 InsertedPoint) 
 {
 	DisplayPoints.Empty();
 	DisplayPointIndexDivider.Empty();
@@ -264,7 +264,7 @@ UHoudiniSplineComponent::Construct(TArray<FVector>& InCurveDisplayPoints, int32 
 
 
 void 
-UHoudiniSplineComponent::CopyHoudiniData(const UHoudiniSplineComponent* OtherHoudiniSplineComponent) 
+UT2HoudiniSplineComponent::CopyHoudiniData(const UT2HoudiniSplineComponent* OtherHoudiniSplineComponent) 
 {
 	if (!OtherHoudiniSplineComponent) 
 		return;
@@ -284,17 +284,17 @@ UHoudiniSplineComponent::CopyHoudiniData(const UHoudiniSplineComponent* OtherHou
 	HoudiniSplineName = OtherHoudiniSplineComponent->HoudiniSplineName;
 }
 
-UHoudiniSplineComponent::~UHoudiniSplineComponent()
+UT2HoudiniSplineComponent::~UT2HoudiniSplineComponent()
 {}
 
 void 
-UHoudiniSplineComponent::AppendPoint(const FTransform& NewPoint)
+UT2HoudiniSplineComponent::AppendPoint(const FTransform& NewPoint)
 {
 	CurvePoints.Add(NewPoint);
 }
 
 void
-UHoudiniSplineComponent::InsertPointAtIndex(const FTransform& NewPoint, const int32& Index)
+UT2HoudiniSplineComponent::InsertPointAtIndex(const FTransform& NewPoint, const int32& Index)
 {
 	check(Index >= 0 && Index < CurvePoints.Num());
 	CurvePoints.Insert(NewPoint, Index);
@@ -303,7 +303,7 @@ UHoudiniSplineComponent::InsertPointAtIndex(const FTransform& NewPoint, const in
 
 
 void
-UHoudiniSplineComponent::RemovePointAtIndex(const int32& Index)
+UT2HoudiniSplineComponent::RemovePointAtIndex(const int32& Index)
 {
 	check(Index >= 0 && Index < CurvePoints.Num());
 	CurvePoints.RemoveAt(Index);
@@ -311,7 +311,7 @@ UHoudiniSplineComponent::RemovePointAtIndex(const int32& Index)
 }
 
 void 
-UHoudiniSplineComponent::SetReversed(const bool& InReversed) 
+UT2HoudiniSplineComponent::SetReversed(const bool& InReversed) 
 {
 	// don't need to do anything if the reversed state doesn't change.
 	if (InReversed == bReversed)
@@ -323,7 +323,7 @@ UHoudiniSplineComponent::SetReversed(const bool& InReversed)
 }
 
 void
-UHoudiniSplineComponent::ReverseCurvePoints() 
+UT2HoudiniSplineComponent::ReverseCurvePoints() 
 {
 	if (CurvePoints.Num() < 2)
 		return;
@@ -332,7 +332,7 @@ UHoudiniSplineComponent::ReverseCurvePoints()
 }
 
 void 
-UHoudiniSplineComponent::EditPointAtindex(const FTransform& NewPoint, const int32& Index) 
+UT2HoudiniSplineComponent::EditPointAtindex(const FTransform& NewPoint, const int32& Index) 
 {
 	if (!CurvePoints.IsValidIndex(Index))
 		return;
@@ -343,33 +343,33 @@ UHoudiniSplineComponent::EditPointAtindex(const FTransform& NewPoint, const int3
 
 #if WITH_EDITOR
 void 
-UHoudiniSplineComponent::PostEditChangeProperty(FPropertyChangedEvent& PeopertyChangedEvent) 
+UT2HoudiniSplineComponent::PostEditChangeProperty(FPropertyChangedEvent& PeopertyChangedEvent) 
 {
 	Super::PostEditChangeProperty(PeopertyChangedEvent);
 
 	FName PropertyName = (PeopertyChangedEvent.Property != nullptr) ? PeopertyChangedEvent.Property->GetFName() : NAME_None;
 
 	// Responses to the uproperty changes
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(UHoudiniSplineComponent, bClosed)) 
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(UT2HoudiniSplineComponent, bClosed)) 
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UPROPERTY Changed : bClosed"));
 		MarkChanged(true);
 	}
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(UHoudiniSplineComponent, bReversed))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(UT2HoudiniSplineComponent, bReversed))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UPROPERTY Changed : bReversed"));
 		ReverseCurvePoints();
 		MarkChanged(true);
 	}
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(UHoudiniSplineComponent, CurveType)) 
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(UT2HoudiniSplineComponent, CurveType)) 
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UPROPERTY Changed : CurveType"));
 		MarkChanged(true);
 	}
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(UHoudiniSplineComponent, CurveMethod)) 
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(UT2HoudiniSplineComponent, CurveMethod)) 
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UPROPERTY Changed : CurveMethod"));
 		MarkChanged(true);
@@ -378,17 +378,17 @@ UHoudiniSplineComponent::PostEditChangeProperty(FPropertyChangedEvent& PeopertyC
 #endif
 
 void
-UHoudiniSplineComponent::PostLoad() 
+UT2HoudiniSplineComponent::PostLoad() 
 {
 	Super::PostLoad();
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::PostLoad()] Component: %s"), *GetPathName());
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::PostLoad()] Component: %s"), *GetPathName());
 
 }
 
 TStructOnScope<FActorComponentInstanceData> 
-UHoudiniSplineComponent::GetComponentInstanceData() const
+UT2HoudiniSplineComponent::GetComponentInstanceData() const
 {
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::GetComponentInstanceData()] Component: %s"), *GetPathName());
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::GetComponentInstanceData()] Component: %s"), *GetPathName());
 	TStructOnScope<FActorComponentInstanceData> ComponentInstanceData = MakeStructOnScope<FActorComponentInstanceData, FHoudiniSplineComponentInstanceData>(this);
 	FHoudiniSplineComponentInstanceData* InstanceData = ComponentInstanceData.Cast<FHoudiniSplineComponentInstanceData>();
 
@@ -408,13 +408,13 @@ UHoudiniSplineComponent::GetComponentInstanceData() const
 }
 
 void 
-UHoudiniSplineComponent::ApplyComponentInstanceData(FHoudiniSplineComponentInstanceData* ComponentInstanceData,
+UT2HoudiniSplineComponent::ApplyComponentInstanceData(FHoudiniSplineComponentInstanceData* ComponentInstanceData,
                                                          const bool bPostUCS)
 {
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::ApplyComponentInstanceData()] Component: %s"), *GetPathName());
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::ApplyComponentInstanceData()] Component: %p"), this);
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::ApplyComponentInstanceData()] IsVisible: %d"), IsVisible());
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::ApplyComponentInstanceData()] bHiddenInGame: %d"), bHiddenInGame);
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::ApplyComponentInstanceData()] Component: %s"), *GetPathName());
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::ApplyComponentInstanceData()] Component: %p"), this);
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::ApplyComponentInstanceData()] IsVisible: %d"), IsVisible());
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::ApplyComponentInstanceData()] bHiddenInGame: %d"), bHiddenInGame);
 
 	check(ComponentInstanceData);
 	
@@ -433,13 +433,13 @@ UHoudiniSplineComponent::ApplyComponentInstanceData(FHoudiniSplineComponentInsta
 }
 
 void 
-UHoudiniSplineComponent::CopyPropertiesFrom(UObject* FromObject)
+UT2HoudiniSplineComponent::CopyPropertiesFrom(UObject* FromObject)
 {
 	// Capture properties that we want to preserve during copy
 	const int32 PrevNodeId = NodeId;
 
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::CopyPropertiesFrom()] BEFORE - IsVisible: %d"), IsVisible());
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::CopyPropertiesFrom()] BEFORE - bHiddenInGame: %d"), bHiddenInGame);
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::CopyPropertiesFrom()] BEFORE - IsVisible: %d"), IsVisible());
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::CopyPropertiesFrom()] BEFORE - bHiddenInGame: %d"), bHiddenInGame);
 
 	UActorComponent* FromComponent = Cast<UActorComponent>(FromObject);
 	check(FromComponent);
@@ -452,7 +452,7 @@ UHoudiniSplineComponent::CopyPropertiesFrom(UObject* FromObject)
 	/*const auto ComponentCopyOptions = ( EditorUtilities::ECopyOptions::Type )(EditorUtilities::ECopyOptions::Default);
 	FHoudiniEngineRuntimeUtils::CopyComponentProperties(FromComponent, this, ComponentCopyOptions);*/
 
-	UHoudiniSplineComponent* FromSplineComponent = Cast<UHoudiniSplineComponent>(FromObject);
+	UT2HoudiniSplineComponent* FromSplineComponent = Cast<UT2HoudiniSplineComponent>(FromObject);
 	if (FromSplineComponent)
 	{
 		CurvePoints = FromSplineComponent->CurvePoints;
@@ -478,8 +478,8 @@ UHoudiniSplineComponent::CopyPropertiesFrom(UObject* FromObject)
 		bNeedsToTriggerUpdate = FromSplineComponent->bNeedsToTriggerUpdate;
 	}
 
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::CopyPropertiesFrom()] AFTER - IsVisible: %d"), IsVisible());
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::CopyPropertiesFrom()] AFTER - bHiddenInGame: %d"), bHiddenInGame);
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::CopyPropertiesFrom()] AFTER - IsVisible: %d"), IsVisible());
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::CopyPropertiesFrom()] AFTER - bHiddenInGame: %d"), bHiddenInGame);
 
 	// Restore properties that we want to preserve
 	NodeId = PrevNodeId;
@@ -487,22 +487,22 @@ UHoudiniSplineComponent::CopyPropertiesFrom(UObject* FromObject)
 
 
 void 
-UHoudiniSplineComponent::OnUnregister()
+UT2HoudiniSplineComponent::OnUnregister()
 {
 	Super::OnUnregister();
 }
 
 void 
-UHoudiniSplineComponent::OnComponentCreated() 
+UT2HoudiniSplineComponent::OnComponentCreated() 
 {
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::OnComponentCreated()] Component: %s"), *GetPathName());
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::OnComponentCreated()] bVisible: %d"), IsVisible());
-	HOUDINI_LOG_DISPLAY(TEXT("[UHoudiniSplineComponent::OnComponentCreated()] bHiddenInGame: %d"), bHiddenInGame);
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::OnComponentCreated()] Component: %s"), *GetPathName());
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::OnComponentCreated()] bVisible: %d"), IsVisible());
+	HOUDINI_LOG_DISPLAY(TEXT("[UT2HoudiniSplineComponent::OnComponentCreated()] bHiddenInGame: %d"), bHiddenInGame);
 	Super::OnComponentCreated();
 }
 
 void 
-UHoudiniSplineComponent::OnComponentDestroyed(bool bDestroyingHierarchy) 
+UT2HoudiniSplineComponent::OnComponentDestroyed(bool bDestroyingHierarchy) 
 {
 	Super::OnComponentDestroyed(bDestroyingHierarchy);
 
@@ -523,7 +523,7 @@ UHoudiniSplineComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 
 #if WITH_EDITOR
 void 
-UHoudiniSplineComponent::PostEditUndo() 
+UT2HoudiniSplineComponent::PostEditUndo() 
 {
 	Super::PostEditUndo();
 	
@@ -549,7 +549,7 @@ UHoudiniSplineComponent::PostEditUndo()
 #endif
 
 void 
-UHoudiniSplineComponent::SetOffset(const float& Offset) 
+UT2HoudiniSplineComponent::SetOffset(const float& Offset) 
 {
 	for (int n = 0; n < CurvePoints.Num(); ++n)
 		CurvePoints[n].AddToTranslation(FVector(0.f, Offset, 0.f));
@@ -559,31 +559,31 @@ UHoudiniSplineComponent::SetOffset(const float& Offset)
 }
 
 void 
-UHoudiniSplineComponent::ResetCurvePoints() 
+UT2HoudiniSplineComponent::ResetCurvePoints() 
 {
 	CurvePoints.Empty();
 }
 
 void
-UHoudiniSplineComponent::ResetDisplayPoints() 
+UT2HoudiniSplineComponent::ResetDisplayPoints() 
 {
 	DisplayPoints.Empty();
 }
 
 void
-UHoudiniSplineComponent::AddCurvePoints(const TArray<FTransform>& Points) 
+UT2HoudiniSplineComponent::AddCurvePoints(const TArray<FTransform>& Points) 
 {
 	CurvePoints.Append(Points);
 }
 
 void 
-UHoudiniSplineComponent::AddDisplayPoints(const TArray<FVector>& Points) 
+UT2HoudiniSplineComponent::AddDisplayPoints(const TArray<FVector>& Points) 
 {
 	DisplayPoints.Append(Points);
 }
 
 bool 
-UHoudiniSplineComponent::NeedsToTriggerUpdate() const 
+UT2HoudiniSplineComponent::NeedsToTriggerUpdate() const 
 {
 	return bNeedsToTriggerUpdate;
 	
@@ -604,12 +604,12 @@ UHoudiniSplineComponent::NeedsToTriggerUpdate() const
 	// return false;
 }
 
-void UHoudiniSplineComponent::SetNeedsToTriggerUpdate(const bool& NeedsToTriggerUpdate)
+void UT2HoudiniSplineComponent::SetNeedsToTriggerUpdate(const bool& NeedsToTriggerUpdate)
 {
 	 bNeedsToTriggerUpdate = NeedsToTriggerUpdate;
 }
 
-void UHoudiniSplineComponent::SetCurveType(const EHoudiniCurveType & NewCurveType)
+void UT2HoudiniSplineComponent::SetCurveType(const EHoudiniCurveType & NewCurveType)
 {
 	CurveType = NewCurveType;
 #if WITH_EDITOR
@@ -618,7 +618,7 @@ void UHoudiniSplineComponent::SetCurveType(const EHoudiniCurveType & NewCurveTyp
 }
 
 void
-UHoudiniSplineComponent::MarkInputObjectChanged() 
+UT2HoudiniSplineComponent::MarkInputObjectChanged() 
 {
 	// if (bIsInputCurve) 
 	// {
@@ -642,21 +642,21 @@ UHoudiniSplineComponent::MarkInputObjectChanged()
 	MarkChanged(true);
 }
 
-bool UHoudiniSplineComponent::HasChanged() const
+bool UT2HoudiniSplineComponent::HasChanged() const
 {
 	return bHasChanged;
 }
 
-void UHoudiniSplineComponent::MarkChanged(const bool& Changed)
+void UT2HoudiniSplineComponent::MarkChanged(const bool& Changed)
 {
 	bHasChanged = Changed;
 	bNeedsToTriggerUpdate = Changed;
 }
 
-// UHoudiniAssetComponent* 
-// UHoudiniSplineComponent::GetParentHAC() 
+// UT2HoudiniAssetComponent* 
+// UT2HoudiniSplineComponent::GetParentHAC() 
 // {
-// 	UHoudiniAssetComponent* ParentHAC = nullptr;
+// 	UT2HoudiniAssetComponent* ParentHAC = nullptr;
 // 	if (bIsInputCurve) 
 // 	{
 // 		if (!InputObject)
@@ -666,7 +666,7 @@ void UHoudiniSplineComponent::MarkChanged(const bool& Changed)
 // 		if (!Input)
 // 			return nullptr;
 //
-// 		ParentHAC = Cast<UHoudiniAssetComponent>(Input->GetOuter());
+// 		ParentHAC = Cast<UT2HoudiniAssetComponent>(Input->GetOuter());
 // 	}
 // 	else
 // 	{
@@ -681,7 +681,7 @@ FHoudiniSplineComponentInstanceData::FHoudiniSplineComponentInstanceData()
 {
 }
 
-FHoudiniSplineComponentInstanceData::FHoudiniSplineComponentInstanceData(const UHoudiniSplineComponent* SourceComponent)
+FHoudiniSplineComponentInstanceData::FHoudiniSplineComponentInstanceData(const UT2HoudiniSplineComponent* SourceComponent)
 	: FActorComponentInstanceData(SourceComponent)
 {
 }

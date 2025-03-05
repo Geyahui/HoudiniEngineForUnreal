@@ -44,7 +44,7 @@
 #include "HoudiniLandscapeTranslator.h"
 #include "HoudiniPDGAssetLink.h"
 #include "HoudiniOutputTranslator.h"
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniSplineComponent.h"
 #include "HoudiniSplineTranslator.h"
 #include "HoudiniTranslatorTypes.h"
 

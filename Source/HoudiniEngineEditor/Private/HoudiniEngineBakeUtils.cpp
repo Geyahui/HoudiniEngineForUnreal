@@ -29,20 +29,20 @@
 #include "HoudiniEngineEditorPrivatePCH.h"
 
 #include "HoudiniEngineUtils.h"
-#include "HoudiniAssetActor.h"
-#include "HoudiniAsset.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetActor.h"
+#include "T2HoudiniAsset.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniOutput.h"
-#include "HoudiniSplineComponent.h"
+#include "T2HoudiniSplineComponent.h"
 #include "HoudiniGeoPartObject.h"
 #include "HoudiniPackageParams.h"
 #include "HoudiniEnginePrivatePCH.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 #include "HoudiniEngineUtils.h"
 #include "UnrealLandscapeTranslator.h"
 #include "HoudiniInstanceTranslator.h"
-#include "HoudiniInstancedActorComponent.h"
-#include "HoudiniMeshSplitInstancerComponent.h"
+#include "T2HoudiniInstancedActorComponent.h"
+#include "T2HoudiniMeshSplitInstancerComponent.h"
 #include "HoudiniPDGAssetLink.h"
 #include "HoudiniStringResolver.h"
 #include "HoudiniEngineCommands.h"
@@ -136,7 +136,7 @@ FHoudiniEngineBakedActor::FHoudiniEngineBakedActor(
 
 bool
 FHoudiniEngineBakeUtils::BakeHoudiniAssetComponent(
-	UHoudiniAssetComponent* InHACToBake,
+	UT2HoudiniAssetComponent* InHACToBake,
 	bool bInReplacePreviousBake,
 	EHoudiniEngineBakeOption InBakeOption,
 	bool bInRemoveHACOutputOnSuccess)
@@ -193,7 +193,7 @@ FHoudiniEngineBakeUtils::BakeHoudiniAssetComponent(
 
 bool 
 FHoudiniEngineBakeUtils::BakeHoudiniActorToActors(
-	UHoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceActors, bool bInReplaceAssets) 
+	UT2HoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceActors, bool bInReplaceAssets) 
 {
 	if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 		return false;
@@ -242,7 +242,7 @@ FHoudiniEngineBakeUtils::BakeHoudiniActorToActors(
 
 bool
 FHoudiniEngineBakeUtils::BakeHoudiniActorToActors(
-	UHoudiniAssetComponent* HoudiniAssetComponent,
+	UT2HoudiniAssetComponent* HoudiniAssetComponent,
 	bool bInReplaceActors,
 	bool bInReplaceAssets,
 	TArray<FHoudiniEngineBakedActor>& OutNewActors, 
@@ -697,7 +697,7 @@ FHoudiniEngineBakeUtils::BakeInstancerOutputToFoliage(
 }
 
 bool 
-FHoudiniEngineBakeUtils::CanHoudiniAssetComponentBakeToFoliage(UHoudiniAssetComponent* HoudiniAssetComponent) 
+FHoudiniEngineBakeUtils::CanHoudiniAssetComponentBakeToFoliage(UT2HoudiniAssetComponent* HoudiniAssetComponent) 
 {
 	if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 		return false;
@@ -727,7 +727,7 @@ FHoudiniEngineBakeUtils::CanHoudiniAssetComponentBakeToFoliage(UHoudiniAssetComp
 }
 
 bool 
-FHoudiniEngineBakeUtils::BakeHoudiniActorToFoliage(UHoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceAssets) 
+FHoudiniEngineBakeUtils::BakeHoudiniActorToFoliage(UT2HoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceAssets) 
 {
 	if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 		return false;
@@ -918,7 +918,7 @@ FHoudiniEngineBakeUtils::BakeInstancerOutputToActors(
 				InFallbackActor,
 				InFallbackWorldOutlinerFolder);
 		}
-		else if (CurrentOutputObject.OutputComponent->IsA<UHoudiniInstancedActorComponent>()
+		else if (CurrentOutputObject.OutputComponent->IsA<UT2HoudiniInstancedActorComponent>()
 				&& (!InInstancerComponentTypesToBake || InInstancerComponentTypesToBake->Contains(EHoudiniInstancerComponentType::InstancedActorComponent)))
 		{
 			BakeInstancerOutputToActors_IAC(
@@ -932,7 +932,7 @@ FHoudiniEngineBakeUtils::BakeInstancerOutputToActors(
 				OutActors,
 				OutPackagesToSave);
 		}
-		else if (CurrentOutputObject.OutputComponent->IsA<UHoudiniMeshSplitInstancerComponent>()
+		else if (CurrentOutputObject.OutputComponent->IsA<UT2HoudiniMeshSplitInstancerComponent>()
 		 		 && (!InInstancerComponentTypesToBake || InInstancerComponentTypesToBake->Contains(EHoudiniInstancerComponentType::MeshSplitInstancerComponent)))
 		{
 			BakeInstancerOutputToActors_MSIC(
@@ -1534,7 +1534,7 @@ FHoudiniEngineBakeUtils::BakeInstancerOutputToActors_IAC(
 	TArray<FHoudiniEngineBakedActor>& OutActors,
 	TArray<UPackage*>& OutPackagesToSave)
 {
-	UHoudiniInstancedActorComponent* InIAC = Cast<UHoudiniInstancedActorComponent>(InOutputObject.OutputComponent);
+	UT2HoudiniInstancedActorComponent* InIAC = Cast<UT2HoudiniInstancedActorComponent>(InOutputObject.OutputComponent);
 	if (!InIAC || InIAC->IsPendingKill())
 		return false;
 
@@ -1700,7 +1700,7 @@ FHoudiniEngineBakeUtils::BakeInstancerOutputToActors_MSIC(
 	AActor* InFallbackActor,
 	const FString& InFallbackWorldOutlinerFolder)
 {
-	UHoudiniMeshSplitInstancerComponent * InMSIC = Cast<UHoudiniMeshSplitInstancerComponent>(InOutputObject.OutputComponent);
+	UT2HoudiniMeshSplitInstancerComponent * InMSIC = Cast<UT2HoudiniMeshSplitInstancerComponent>(InOutputObject.OutputComponent);
 	if (!InMSIC || InMSIC->IsPendingKill())
 		return false;
 
@@ -2377,7 +2377,7 @@ FHoudiniEngineBakeUtils::CopyActorContentsToBlueprint(AActor * InActor, UBluepri
 }
 
 bool 
-FHoudiniEngineBakeUtils::BakeBlueprints(UHoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceAssets) 
+FHoudiniEngineBakeUtils::BakeBlueprints(UT2HoudiniAssetComponent* HoudiniAssetComponent, bool bInReplaceAssets) 
 {
 	FHoudiniEngineOutputStats BakeStats;
 	TArray<UPackage*> PackagesToSave;
@@ -2416,7 +2416,7 @@ FHoudiniEngineBakeUtils::BakeBlueprints(UHoudiniAssetComponent* HoudiniAssetComp
 
 bool 
 FHoudiniEngineBakeUtils::BakeBlueprints(
-	UHoudiniAssetComponent* HoudiniAssetComponent,
+	UT2HoudiniAssetComponent* HoudiniAssetComponent,
 	bool bInReplaceAssets,
 	FHoudiniEngineOutputStats& InBakeStats,
 	TArray<UBlueprint*>& OutBlueprints,
@@ -3333,7 +3333,7 @@ FHoudiniEngineBakeUtils::BakeCurve(
 
 AActor*
 FHoudiniEngineBakeUtils::BakeInputHoudiniCurveToActor(
-	UHoudiniSplineComponent * InHoudiniSplineComponent,
+	UT2HoudiniSplineComponent * InHoudiniSplineComponent,
 	const FHoudiniPackageParams & PackageParams,
 	UWorld* WorldToSpawn,
 	const FTransform & SpawnTransform) 
@@ -3405,7 +3405,7 @@ FHoudiniEngineBakeUtils::BakeInputHoudiniCurveToActor(
 
 UBlueprint* 
 FHoudiniEngineBakeUtils::BakeInputHoudiniCurveToBlueprint(
-	UHoudiniSplineComponent * InHoudiniSplineComponent,
+	UT2HoudiniSplineComponent * InHoudiniSplineComponent,
 	const FHoudiniPackageParams & PackageParams,
 	UWorld* WorldToSpawn,
 	const FTransform & SpawnTransform) 
@@ -3730,7 +3730,7 @@ FHoudiniEngineBakeUtils::DuplicateTextureAndCreatePackage(
 
 
 bool 
-FHoudiniEngineBakeUtils::DeleteBakedHoudiniAssetActor(UHoudiniAssetComponent* HoudiniAssetComponent) 
+FHoudiniEngineBakeUtils::DeleteBakedHoudiniAssetActor(UT2HoudiniAssetComponent* HoudiniAssetComponent) 
 {
 	if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 		return false;
@@ -3807,7 +3807,7 @@ FHoudiniEngineBakeUtils::FindOutputObject(const UObject* InObjectToFind, EHoudin
 }
 
 bool
-FHoudiniEngineBakeUtils::IsObjectTemporary(UObject* InObject, EHoudiniOutputType InOutputType, UHoudiniAssetComponent* InHAC)
+FHoudiniEngineBakeUtils::IsObjectTemporary(UObject* InObject, EHoudiniOutputType InOutputType, UT2HoudiniAssetComponent* InHAC)
 {
 	if (!InObject || InObject->IsPendingKill())
 		return false;
@@ -3852,7 +3852,7 @@ bool FHoudiniEngineBakeUtils::IsObjectTemporary(
 			return true;
 
 		// Also check the default temp folder
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 		if (PathName.StartsWith(HoudiniRuntimeSettings->DefaultTemporaryCookFolder))
 			return true;
 		
@@ -5270,7 +5270,7 @@ FHoudiniEngineBakeUtils::FindExistingActor_Bake(
 
 bool
 FHoudiniEngineBakeUtils::CheckForAndRefineHoudiniProxyMesh(
-	UHoudiniAssetComponent* InHoudiniAssetComponent,
+	UT2HoudiniAssetComponent* InHoudiniAssetComponent,
 	bool bInReplacePreviousBake,
 	EHoudiniEngineBakeOption InBakeOption,
 	bool bInRemoveHACOutputOnSuccess,
@@ -5292,7 +5292,7 @@ FHoudiniEngineBakeUtils::CheckForAndRefineHoudiniProxyMesh(
 		if (bCookedDataAvailable)
 		{
 			// Cook data is available, refine the mesh
-			AHoudiniAssetActor* HoudiniActor = Cast<AHoudiniAssetActor>(InHoudiniAssetComponent->GetOwner());
+			AT2HoudiniAssetActor* HoudiniActor = Cast<AT2HoudiniAssetActor>(InHoudiniAssetComponent->GetOwner());
 			if (IsValid(HoudiniActor))
 			{
 				FHoudiniEngineCommands::RefineHoudiniProxyMeshActorArrayToStaticMeshes({ HoudiniActor });
@@ -5305,7 +5305,7 @@ FHoudiniEngineBakeUtils::CheckForAndRefineHoudiniProxyMesh(
 			// Only
 			if (!InHoudiniAssetComponent->IsBakeAfterNextCookEnabled() || !InHoudiniAssetComponent->GetOnPostCookBakeDelegate().IsBound())
 			{
-				InHoudiniAssetComponent->GetOnPostCookBakeDelegate().BindLambda([bInReplacePreviousBake, InBakeOption, bInRemoveHACOutputOnSuccess](UHoudiniAssetComponent* InHAC) {
+				InHoudiniAssetComponent->GetOnPostCookBakeDelegate().BindLambda([bInReplacePreviousBake, InBakeOption, bInRemoveHACOutputOnSuccess](UT2HoudiniAssetComponent* InHAC) {
                     return FHoudiniEngineBakeUtils::BakeHoudiniAssetComponent(InHAC, bInReplacePreviousBake, InBakeOption, bInRemoveHACOutputOnSuccess);
                 });
 			}

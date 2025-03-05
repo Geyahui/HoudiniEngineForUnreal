@@ -43,11 +43,11 @@ using System;
 using System.IO;
 using Tools.DotNETCommon;
 
-public class HoudiniEngine : ModuleRules
+public class T2HoudiniEngine : ModuleRules
 {
     private string GetHFSPath()
     {
-        string HoudiniVersion = "18.5.499";
+        string HoudiniVersion = "20.5.445";
         bool bIsRelease = true;
         string HFSPath = "C:/cygwin/home/prisms/builder-new/Nightly18.5CMake/dev/hfs";
         string RegistryPath = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Side Effects Software";
@@ -226,11 +226,12 @@ public class HoudiniEngine : ModuleRules
         return "";
     }
 
-    public HoudiniEngine( ReadOnlyTargetRules Target ) : base( Target )
+    public T2HoudiniEngine( ReadOnlyTargetRules Target ) : base( Target )
     {
         bPrecompile = true;
         PCHUsage = PCHUsageMode.NoSharedPCHs;
         PrivatePCHHeaderFile = "Private/HoudiniEnginePrivatePCH.h";
+        OptimizeCode = CodeOptimization.Never;
 
         // Check if we are compiling on unsupported platforms.
         if ( Target.Platform != UnrealTargetPlatform.Win64 &&
@@ -288,7 +289,7 @@ public class HoudiniEngine : ModuleRules
                 "Core",
                 "CoreUObject",
                 "Engine",
-                "HoudiniEngineRuntime",
+                "T2HoudiniEngineRuntime",
                 "RenderCore",
                 "InputCore",
                 "RHI",

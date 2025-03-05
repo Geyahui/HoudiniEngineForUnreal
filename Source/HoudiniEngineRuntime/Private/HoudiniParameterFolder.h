@@ -43,7 +43,7 @@ enum class EHoudiniFolderParameterType : uint8
 };
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniParameterFolder : public UHoudiniParameter
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterFolder : public UHoudiniParameter
 {
 	GENERATED_UCLASS_BODY()
 

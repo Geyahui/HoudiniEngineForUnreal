@@ -26,8 +26,8 @@
 
 #include "HoudiniAssetBroker.h"
 
-#include "HoudiniAssetComponent.h"
-#include "HoudiniAsset.h"
+#include "T2HoudiniAssetComponent.h"
+#include "T2HoudiniAsset.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
@@ -39,15 +39,15 @@ FHoudiniAssetBroker::~FHoudiniAssetBroker()
 UClass *
 FHoudiniAssetBroker::GetSupportedAssetClass()
 {
-	return UHoudiniAsset::StaticClass();
+	return UT2HoudiniAsset::StaticClass();
 }
 
 bool
 FHoudiniAssetBroker::AssignAssetToComponent(UActorComponent * InComponent, UObject * InAsset)
 {
-	if (UHoudiniAssetComponent * HoudiniAssetComponent = Cast< UHoudiniAssetComponent >(InComponent))
+	if (UT2HoudiniAssetComponent * HoudiniAssetComponent = Cast< UT2HoudiniAssetComponent >(InComponent))
 	{
-		UHoudiniAsset * HoudiniAsset = Cast< UHoudiniAsset >(InAsset);
+		UT2HoudiniAsset * HoudiniAsset = Cast< UT2HoudiniAsset >(InAsset);
 		if (HoudiniAsset || !InAsset)
 		{
 			HoudiniAssetComponent->SetHoudiniAsset(HoudiniAsset);
@@ -61,7 +61,7 @@ FHoudiniAssetBroker::AssignAssetToComponent(UActorComponent * InComponent, UObje
 UObject *
 FHoudiniAssetBroker::GetAssetFromComponent(UActorComponent * InComponent)
 {
-	if (UHoudiniAssetComponent * HoudiniAssetComponent = Cast< UHoudiniAssetComponent >(InComponent))
+	if (UT2HoudiniAssetComponent * HoudiniAssetComponent = Cast< UT2HoudiniAssetComponent >(InComponent))
 	{
 		return HoudiniAssetComponent->GetHoudiniAsset();
 	}

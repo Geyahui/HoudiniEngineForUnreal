@@ -49,7 +49,7 @@ enum class EHoudiniEngineTaskState : uint8
 	Aborted
 };
 
-struct HOUDINIENGINE_API FHoudiniEngineTaskInfo
+struct T2HOUDINIENGINE_API FHoudiniEngineTaskInfo
 {
 	// Constructors.
 	FHoudiniEngineTaskInfo();

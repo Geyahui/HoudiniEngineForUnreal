@@ -28,11 +28,11 @@
 
 #include "Components/SceneComponent.h"
 
-#include "HoudiniInstancedActorComponent.generated.h"
+#include "T2HoudiniInstancedActorComponent.generated.h"
 
 
 UCLASS()//( config = Engine )
-class HOUDINIENGINERUNTIME_API UHoudiniInstancedActorComponent : public USceneComponent
+class T2HOUDINIENGINERUNTIME_API UT2HoudiniInstancedActorComponent : public USceneComponent
 {
 	GENERATED_UCLASS_BODY()
 

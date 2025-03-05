@@ -35,7 +35,7 @@ class UHoudiniStaticMesh;
 class UBillboardComponent;
 
 UCLASS(EditInlineNew, ClassGroup = "Houdini Engine | Rendering")
-class HOUDINIENGINERUNTIME_API UHoudiniStaticMeshComponent : public UMeshComponent
+class T2HOUDINIENGINERUNTIME_API UHoudiniStaticMeshComponent : public UMeshComponent
 {
 	GENERATED_BODY()
 

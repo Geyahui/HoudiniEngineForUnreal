@@ -50,7 +50,7 @@ enum class EHoudiniRampPointConstructStatus : uint8
 };
 
 UCLASS(DefaultToInstanced)
-class HOUDINIENGINERUNTIME_API UHoudiniParameterRampModificationEvent : public UObject 
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterRampModificationEvent : public UObject 
 {
 	GENERATED_BODY()
 public:
@@ -104,7 +104,7 @@ public:
 };
 
 UCLASS(DefaultToInstanced)
-class HOUDINIENGINERUNTIME_API UHoudiniParameterRampFloatPoint : public UObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterRampFloatPoint : public UObject
 {
 	GENERATED_BODY()
 
@@ -155,7 +155,7 @@ public:
 };
 
 UCLASS(DefaultToInstanced)
-class HOUDINIENGINERUNTIME_API UHoudiniParameterRampColorPoint : public UObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterRampColorPoint : public UObject
 {
 	GENERATED_BODY()
 
@@ -205,7 +205,7 @@ public:
 
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniParameterRampFloat : public UHoudiniParameterMultiParm
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterRampFloat : public UHoudiniParameterMultiParm
 {
 	GENERATED_UCLASS_BODY()
 
@@ -266,7 +266,7 @@ public:
 
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniParameterRampColor : public UHoudiniParameterMultiParm
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterRampColor : public UHoudiniParameterMultiParm
 {
 	GENERATED_UCLASS_BODY()
 

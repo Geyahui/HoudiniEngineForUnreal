@@ -24,13 +24,13 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "HoudiniAssetActor.h"
-#include "HoudiniAsset.h"
+#include "T2HoudiniAssetActor.h"
+#include "T2HoudiniAsset.h"
 #include "HoudiniPDGAssetLink.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE
 
-AHoudiniAssetActor::AHoudiniAssetActor(const FObjectInitializer & ObjectInitializer)
+AT2HoudiniAssetActor::AT2HoudiniAssetActor(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	SetCanBeDamaged(false);
@@ -39,15 +39,15 @@ AHoudiniAssetActor::AHoudiniAssetActor(const FObjectInitializer & ObjectInitiali
 
 	// Create Houdini component and attach it to a root component.
 	HoudiniAssetComponent =
-		ObjectInitializer.CreateDefaultSubobject< UHoudiniAssetComponent >(this, TEXT("HoudiniAssetComponent"));
+		ObjectInitializer.CreateDefaultSubobject< UT2HoudiniAssetComponent >(this, TEXT("HoudiniAssetComponent"));
 
 	//HoudiniAssetComponent->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
 
 	RootComponent = HoudiniAssetComponent;
 }
 
-UHoudiniAssetComponent *
-AHoudiniAssetActor::GetHoudiniAssetComponent() const
+UT2HoudiniAssetComponent *
+AT2HoudiniAssetActor::GetHoudiniAssetComponent() const
 {
 	return HoudiniAssetComponent;
 }
@@ -55,13 +55,13 @@ AHoudiniAssetActor::GetHoudiniAssetComponent() const
 /*
 #if WITH_EDITOR
 bool
-AHoudiniAssetActor::ShouldImport(FString * ActorPropString, bool IsMovingLevel)
+AT2HoudiniAssetActor::ShouldImport(FString * ActorPropString, bool IsMovingLevel)
 {
 	if (!ActorPropString)
 		return false;
 
 	// Locate actor which is being copied in clipboard string.
-	AHoudiniAssetActor * CopiedActor = FHoudiniEngineUtils::LocateClipboardActor(this, *ActorPropString);
+	AT2HoudiniAssetActor * CopiedActor = FHoudiniEngineUtils::LocateClipboardActor(this, *ActorPropString);
 
 	// We no longer need clipboard string and can empty it. This seems to avoid occasional crash bug in UE4 which
 	// happens on copy / paste.
@@ -74,7 +74,7 @@ AHoudiniAssetActor::ShouldImport(FString * ActorPropString, bool IsMovingLevel)
 	}
 
 	// Get Houdini component of an actor which is being copied.
-	UHoudiniAssetComponent * CopiedActorHoudiniAssetComponent = CopiedActor->HoudiniAssetComponent;
+	UT2HoudiniAssetComponent * CopiedActorHoudiniAssetComponent = CopiedActor->HoudiniAssetComponent;
 	if (!CopiedActorHoudiniAssetComponent || CopiedActorHoudiniAssetComponent->IsPendingKill())
 		return false;
 
@@ -96,13 +96,13 @@ AHoudiniAssetActor::ShouldImport(FString * ActorPropString, bool IsMovingLevel)
 */
 #if WITH_EDITOR
 bool
-AHoudiniAssetActor::GetReferencedContentObjects(TArray< UObject * >& Objects) const
+AT2HoudiniAssetActor::GetReferencedContentObjects(TArray< UObject * >& Objects) const
 {
 	Super::GetReferencedContentObjects(Objects);
 
 	if (HoudiniAssetComponent && !HoudiniAssetComponent->IsPendingKill())
 	{
-		UHoudiniAsset* HoudiniAsset = HoudiniAssetComponent->GetHoudiniAsset();
+		UT2HoudiniAsset* HoudiniAsset = HoudiniAssetComponent->GetHoudiniAsset();
 		if (HoudiniAsset && !HoudiniAsset->IsPendingKill())
 			Objects.AddUnique(HoudiniAsset);
 	}
@@ -113,7 +113,7 @@ AHoudiniAssetActor::GetReferencedContentObjects(TArray< UObject * >& Objects) co
 
 #if WITH_EDITOR
 void
-AHoudiniAssetActor::PostEditChangeProperty(FPropertyChangedEvent & PropertyChangedEvent)
+AT2HoudiniAssetActor::PostEditChangeProperty(FPropertyChangedEvent & PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -137,7 +137,7 @@ AHoudiniAssetActor::PostEditChangeProperty(FPropertyChangedEvent & PropertyChang
 
 
 bool
-AHoudiniAssetActor::IsUsedForPreview() const
+AT2HoudiniAssetActor::IsUsedForPreview() const
 {
 	return HasAnyFlags(RF_Transient);
 }

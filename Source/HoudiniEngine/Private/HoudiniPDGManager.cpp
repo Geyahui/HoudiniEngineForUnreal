@@ -35,7 +35,7 @@
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineString.h"
 #include "HoudiniEngineRuntime.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniPDGAssetLink.h"
 #include "HoudiniPackageParams.h"
 
@@ -60,7 +60,7 @@ FHoudiniPDGManager::~FHoudiniPDGManager()
 }
 
 bool
-FHoudiniPDGManager::InitializePDGAssetLink(UHoudiniAssetComponent* InHAC)
+FHoudiniPDGManager::InitializePDGAssetLink(UT2HoudiniAssetComponent* InHAC)
 {
 	if (!InHAC || InHAC->IsPendingKill())
 		return false;
@@ -134,7 +134,7 @@ FHoudiniPDGManager::InitializePDGAssetLink(UHoudiniAssetComponent* InHAC)
 	// If the commandlet is enabled, check if we have started and established communication with the commandlet yet
 	// if not, try to start the commandlet
 	bool bCommandletIsEnabled = false;
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	if (IsValid(HoudiniRuntimeSettings))
 	{
 		bCommandletIsEnabled = HoudiniRuntimeSettings->bPDGAsyncCommandletImportEnabled;
@@ -161,7 +161,7 @@ FHoudiniPDGManager::UpdatePDGAssetLink(UHoudiniPDGAssetLink* PDGAssetLink)
 	// If the PDG Asset link is inactive, indicate that our HDA must be instantiated
 	if (PDGAssetLink->LinkState == EPDGLinkState::Inactive)
 	{
-		UHoudiniAssetComponent* ParentHAC = Cast<UHoudiniAssetComponent>(PDGAssetLink->GetOuter());
+		UT2HoudiniAssetComponent* ParentHAC = Cast<UT2HoudiniAssetComponent>(PDGAssetLink->GetOuter());
 		if(!ParentHAC)
 		{
 			// No valid parent HAC, error!
@@ -187,7 +187,7 @@ FHoudiniPDGManager::UpdatePDGAssetLink(UHoudiniPDGAssetLink* PDGAssetLink)
 
 	if (PDGAssetLink->LinkState != EPDGLinkState::Linked)
 	{
-		UHoudiniAssetComponent* ParentHAC = Cast<UHoudiniAssetComponent>(PDGAssetLink->GetOuter());
+		UT2HoudiniAssetComponent* ParentHAC = Cast<UT2HoudiniAssetComponent>(PDGAssetLink->GetOuter());
 		int32 AssetId = ParentHAC->GetAssetId();
 		if (AssetId < 0)
 			return false;
@@ -1318,7 +1318,7 @@ FHoudiniPDGManager::RefreshPDGAssetLinkUI(UHoudiniPDGAssetLink* InAssetLink)
 	// else, just update the workitemtally
 	InAssetLink->UpdateWorkItemTally();
 
-	UHoudiniAssetComponent* HAC = Cast<UHoudiniAssetComponent>(InAssetLink->GetOuter());
+	UT2HoudiniAssetComponent* HAC = Cast<UT2HoudiniAssetComponent>(InAssetLink->GetOuter());
 	if (!HAC || HAC->IsPendingKill())
 		return;
 	
@@ -1651,7 +1651,7 @@ FHoudiniPDGManager::ProcessWorkItemResults()
 
 		// AActor* ParentActor = nullptr;
 		UObject* AssetLinkParent = AssetLink->GetOuter();
-		UHoudiniAssetComponent* HAC = AssetLinkParent != nullptr ? Cast<UHoudiniAssetComponent>(AssetLinkParent) : nullptr;
+		UT2HoudiniAssetComponent* HAC = AssetLinkParent != nullptr ? Cast<UT2HoudiniAssetComponent>(AssetLinkParent) : nullptr;
 		if (HAC)
 		{
 			PackageParams.OuterPackage = HAC->GetComponentLevel();
@@ -1846,7 +1846,7 @@ void FHoudiniPDGManager::HandleImportBGEOResultMessage(
 
 		// Set package params outer
 		UObject* AssetLinkParent = AssetLink->GetOuter();
-		UHoudiniAssetComponent* HAC = AssetLinkParent != nullptr ? Cast<UHoudiniAssetComponent>(AssetLinkParent) : nullptr;
+		UT2HoudiniAssetComponent* HAC = AssetLinkParent != nullptr ? Cast<UT2HoudiniAssetComponent>(AssetLinkParent) : nullptr;
 		if (HAC)
 		{
 			PackageParams.OuterPackage = HAC->GetComponentLevel();

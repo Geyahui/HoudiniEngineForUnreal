@@ -34,7 +34,7 @@
 class UHoudiniInput;
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniParameterOperatorPath
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterOperatorPath
 	: public UHoudiniParameter
 {
 	GENERATED_UCLASS_BODY()

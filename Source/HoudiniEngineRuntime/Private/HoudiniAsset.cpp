@@ -24,13 +24,13 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "HoudiniAsset.h"
+#include "T2HoudiniAsset.h"
 #include "HoudiniPluginSerializationVersion.h"
 
 #include "Misc/Paths.h"
 #include "HAL/UnrealMemory.h"
 
-UHoudiniAsset::UHoudiniAsset(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAsset::UT2HoudiniAsset(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 	, AssetFileName(TEXT(""))
 	, AssetBytesCount(0)	
@@ -40,7 +40,7 @@ UHoudiniAsset::UHoudiniAsset(const FObjectInitializer & ObjectInitializer)
 {}
 
 void
-UHoudiniAsset::CreateAsset(const uint8 * BufferStart, const uint8 * BufferEnd, const FString & InFileName)
+UT2HoudiniAsset::CreateAsset(const uint8 * BufferStart, const uint8 * BufferEnd, const FString & InFileName)
 {
 	AssetFileName = InFileName;
 
@@ -83,7 +83,7 @@ UHoudiniAsset::CreateAsset(const uint8 * BufferStart, const uint8 * BufferEnd, c
 }
 
 void
-UHoudiniAsset::FinishDestroy()
+UT2HoudiniAsset::FinishDestroy()
 {
 	// Release buffer which was used to store raw OTL data.
 	AssetBytes.Empty();
@@ -91,25 +91,25 @@ UHoudiniAsset::FinishDestroy()
 }
 
 const uint8 *
-UHoudiniAsset::GetAssetBytes() const
+UT2HoudiniAsset::GetAssetBytes() const
 {
 	return AssetBytes.GetData();
 }
 
 const FString &
-UHoudiniAsset::GetAssetFileName() const
+UT2HoudiniAsset::GetAssetFileName() const
 {
 	return AssetFileName;
 }
 
 uint32
-UHoudiniAsset::GetAssetBytesCount() const
+UT2HoudiniAsset::GetAssetBytesCount() const
 {
 	return AssetBytesCount;
 }
 
 void
-UHoudiniAsset::Serialize(FArchive & Ar)
+UT2HoudiniAsset::Serialize(FArchive & Ar)
 {
 	// Serializes our UProperties
 	Super::Serialize(Ar);
@@ -125,7 +125,7 @@ UHoudiniAsset::Serialize(FArchive & Ar)
 }
 
 void
-UHoudiniAsset::SerializeLegacy(FArchive & Ar)
+UT2HoudiniAsset::SerializeLegacy(FArchive & Ar)
 {
 	uint32 FileFormatVersion;
 	Ar << FileFormatVersion;
@@ -161,7 +161,7 @@ UHoudiniAsset::SerializeLegacy(FArchive & Ar)
 }
 
 void
-UHoudiniAsset::GetAssetRegistryTags(TArray< FAssetRegistryTag > & OutTags) const
+UT2HoudiniAsset::GetAssetRegistryTags(TArray< FAssetRegistryTag > & OutTags) const
 {
 	// Filename
 	OutTags.Add(FAssetRegistryTag("FileName", AssetFileName, FAssetRegistryTag::TT_Alphabetical));
@@ -182,19 +182,19 @@ UHoudiniAsset::GetAssetRegistryTags(TArray< FAssetRegistryTag > & OutTags) const
 }
 
 bool
-UHoudiniAsset::IsAssetLimitedCommercial() const
+UT2HoudiniAsset::IsAssetLimitedCommercial() const
 {
 	return bAssetLimitedCommercial;
 }
 
 bool
-UHoudiniAsset::IsAssetNonCommercial() const
+UT2HoudiniAsset::IsAssetNonCommercial() const
 {
 	return bAssetNonCommercial;
 }
 
 bool
-UHoudiniAsset::IsExpandedHDA() const
+UT2HoudiniAsset::IsExpandedHDA() const
 {
 	return bAssetExpanded;
 }

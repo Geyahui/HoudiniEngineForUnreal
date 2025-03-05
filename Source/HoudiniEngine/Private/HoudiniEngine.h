@@ -29,14 +29,14 @@
 #include "HAPI/HAPI_Common.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniEngineTaskInfo.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 
 #include "Modules/ModuleInterface.h"
 
 class FRunnableThread;
 class FHoudiniEngineScheduler;
 class FHoudiniEngineManager;
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 class UStaticMesh;
 class UMaterial;
 
@@ -59,7 +59,7 @@ enum class EHoudiniSessionStatus : int8
 };
 
 // Not using the IHoudiniEngine interface for now
-class HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
+class T2HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
 {
 	public:
 
@@ -91,7 +91,7 @@ class HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
 			HAPI_Session*& SessionPtr,
 			const bool& StartAutomaticServer,
 			const float& AutomaticServerTimeout,
-			const EHoudiniRuntimeSettingsSessionType& SessionType,
+			const ET2HoudiniRuntimeSettingsSessionType& SessionType,
 			const FString& ServerPipeName,
 			const int32& ServerPort,
 			const FString& ServerHost);
@@ -101,7 +101,7 @@ class HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
 
 		// Creates a session sync session
 		bool SessionSyncConnect(
-			const EHoudiniRuntimeSettingsSessionType& SessionType,
+			const ET2HoudiniRuntimeSettingsSessionType& SessionType,
 			const FString& ServerPipeName,
 			const FString& ServerHost,
 			const int32& ServerPort);
@@ -111,9 +111,9 @@ class HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
 		// Stops, then creates a new session
 		bool RestartSession();
 		// Creates a session, start HARS
-		bool CreateSession(const EHoudiniRuntimeSettingsSessionType& SessionType, FName OverrideServerPipeName=NAME_None);
+		bool CreateSession(const ET2HoudiniRuntimeSettingsSessionType& SessionType, FName OverrideServerPipeName=NAME_None);
 		// Connect to an existing HE session
-		bool ConnectSession(const EHoudiniRuntimeSettingsSessionType& SessionType);
+		bool ConnectSession(const ET2HoudiniRuntimeSettingsSessionType& SessionType);
 
 		// Starts the HoudiniEngineManager ticking
 		void StartTicking();
@@ -146,7 +146,7 @@ class HOUDINIENGINE_API FHoudiniEngine : public IModuleInterface
 		// Remove task info.
 		virtual bool RetrieveTaskInfo(const FGuid& InHapiGUID, FHoudiniEngineTaskInfo & OutTaskInfo);
 		// Register asset to the manager
-		//virtual void AddHoudiniAssetComponent(UHoudiniAssetComponent* HAC);
+		//virtual void AddT2HoudiniAssetComponent(UT2HoudiniAssetComponent* HAC);
 
 		// Indicates whether or not cooking is currently enabled
 		bool IsCookingEnabled() const;

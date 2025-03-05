@@ -30,7 +30,7 @@
 #include "HoudiniGeoPartObject.h"
 #include "HoudiniOutput.h"
 #include "HoudiniPackageParams.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
@@ -69,7 +69,7 @@ enum class EHoudiniSplitType : uint8
 	InvisibleSimpleCollider
 };
 
-struct HOUDINIENGINE_API FHoudiniMeshTranslator
+struct T2HOUDINIENGINE_API FHoudiniMeshTranslator
 {
 	public:
 

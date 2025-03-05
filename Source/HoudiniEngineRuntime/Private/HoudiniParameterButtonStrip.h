@@ -31,7 +31,7 @@
 #include "HoudiniParameterButtonStrip.generated.h"
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniParameterButtonStrip : public UHoudiniParameter
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterButtonStrip : public UHoudiniParameter
 {
 	GENERATED_UCLASS_BODY()
 

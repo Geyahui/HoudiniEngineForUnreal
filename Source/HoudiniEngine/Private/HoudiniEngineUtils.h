@@ -40,8 +40,8 @@
 
 class FString;
 class UStaticMesh;
-class UHoudiniAsset;
-class UHoudiniAssetComponent;
+class UT2HoudiniAsset;
+class UT2HoudiniAssetComponent;
 
 struct FHoudiniPartInfo;
 struct FHoudiniMeshSocket;
@@ -54,7 +54,7 @@ enum class EHoudiniCurveType : int8;
 enum class EHoudiniCurveMethod : int8;
 enum class EHoudiniInstancerType : uint8;
 
-struct HOUDINIENGINE_API FHoudiniEngineUtils
+struct T2HOUDINIENGINE_API FHoudiniEngineUtils
 {
 	friend struct FUnrealMeshTranslator;
 
@@ -91,12 +91,12 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 		// Return the errors, warning and messages on a specified node
 		static const FString GetNodeErrorsWarningsAndMessages(const HAPI_NodeId& InNodeId);
 
-		static const FString GetCookLog(TArray<UHoudiniAssetComponent*>& InHACs);
+		static const FString GetCookLog(TArray<UT2HoudiniAssetComponent*>& InHACs);
 
-		static const FString GetAssetHelp(UHoudiniAssetComponent* HoudiniAssetComponent);
+		static const FString GetAssetHelp(UT2HoudiniAssetComponent* HoudiniAssetComponent);
 
 		// Updates the Object transform of a Houdini Asset Component
-		static bool UploadHACTransform(UHoudiniAssetComponent* HAC);
+		static bool UploadHACTransform(UT2HoudiniAssetComponent* HAC);
 
 		// Convert FString to std::string
 		static void ConvertUnrealString(const FString & UnrealString, std::string& String);
@@ -245,8 +245,8 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 		static bool DestroyHoudiniAsset(const HAPI_NodeId& AssetId);
 
 		// Loads an HDA file and returns its AssetLibraryId
-		static bool LoadHoudiniAsset(
-			UHoudiniAsset * HoudiniAsset,
+		static bool LoadT2HoudiniAsset(
+			UT2HoudiniAsset * HoudiniAsset,
 			HAPI_AssetLibraryId & OutAssetLibraryId);
 		
 		// Returns the name of the available subassets in a loaded HDA
@@ -267,7 +267,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 		static bool HapiSetAssetTransform(const HAPI_NodeId& AssetNodeId, const FTransform & Transform);
 
 		// TODO: Move me somewhere else
-		static void AssignUniqueActorLabelIfNeeded(UHoudiniAssetComponent* HAC);
+		static void AssignUniqueActorLabelIfNeeded(UT2HoudiniAssetComponent* HAC);
 
 		// Triggers an update the details panel
 		// Will use an AsyncTask if we're not in the game thread
@@ -280,7 +280,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 		static void UpdateEditorProperties(TArray<UObject*> InObjectsToUpdate, const bool& InForceFullUpdate);
 
 		// Triggers an update the details panel
-		static void UpdateBlueprintEditor(UHoudiniAssetComponent* HAC);
+		static void UpdateBlueprintEditor(UT2HoudiniAssetComponent* HAC);
 
 		// Check if the Houdini asset component is being cooked
 		static bool IsHoudiniAssetComponentCooking(UObject* InObj);
@@ -354,13 +354,13 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 			UPackage* Package, UObject* Object, const FString& Key, const FString& Value);
 
 		// Adds the HoudiniLogo mesh to a Houdini Asset Component
-		static bool AddHoudiniLogoToComponent(UHoudiniAssetComponent* HAC);
+		static bool AddHoudiniLogoToComponent(UT2HoudiniAssetComponent* HAC);
 
 		// Removes the default Houdini logo mesh from a HAC
-		static bool RemoveHoudiniLogoFromComponent(UHoudiniAssetComponent* HAC);
+		static bool RemoveHoudiniLogoFromComponent(UT2HoudiniAssetComponent* HAC);
 
 		// Indicates if a HAC has the Houdini logo mesh
-		static bool HasHoudiniLogo(UHoudiniAssetComponent* HAC);
+		static bool HasHoudiniLogo(UT2HoudiniAssetComponent* HAC);
 
 		// 
 		static HAPI_PartInfo ToHAPIPartInfo(const FHoudiniPartInfo& InHPartInfo);
@@ -623,7 +623,7 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 	public:
 
 		static bool IsOuterHoudiniAssetComponent(UObject* Obj);
-		static UHoudiniAssetComponent* GetOuterHoudiniAssetComponent(UObject* Obj);
+		static UT2HoudiniAssetComponent* GetOuterHoudiniAssetComponent(UObject* Obj);
 
 	protected:
 		
@@ -643,6 +643,6 @@ struct HOUDINIENGINE_API FHoudiniEngineUtils
 		static void UpdateEditorProperties_Internal(TArray<UObject*> ObjectsToUpdate, const bool& bInForceFullUpdate);
 
 		// Trigger an update of the Blueprint Editor on the game thread
-		static void UpdateBlueprintEditor_Internal(UHoudiniAssetComponent* HAC);
+		static void UpdateBlueprintEditor_Internal(UT2HoudiniAssetComponent* HAC);
 
 };

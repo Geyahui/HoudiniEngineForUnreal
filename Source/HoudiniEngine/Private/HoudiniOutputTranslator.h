@@ -31,7 +31,7 @@
 #include "CoreMinimal.h"
 
 class UHoudiniOutput;
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 
 struct FHoudiniObjectInfo;
 struct FHoudiniGeoInfo;
@@ -44,23 +44,23 @@ enum class EHoudiniGeoType : uint8;
 enum class EHoudiniPartType : uint8;
 enum class EHoudiniCurveType : int8;
 
-struct HOUDINIENGINE_API FHoudiniOutputTranslator
+struct T2HOUDINIENGINE_API FHoudiniOutputTranslator
 {
 	// 
 	static bool UpdateOutputs(
-		UHoudiniAssetComponent* HAC,
+		UT2HoudiniAssetComponent* HAC,
 		const bool& bInForceUpdate,
 		bool& bOutHasHoudiniStaticMeshOutput);
 
 	//
-	static bool BuildStaticMeshesOnHoudiniProxyMeshOutputs(UHoudiniAssetComponent* HAC, bool bInDestroyProxies=false);
+	static bool BuildStaticMeshesOnHoudiniProxyMeshOutputs(UT2HoudiniAssetComponent* HAC, bool bInDestroyProxies=false);
 
 	//
-	static bool UpdateLoadedOutputs(UHoudiniAssetComponent* HAC);
+	static bool UpdateLoadedOutputs(UT2HoudiniAssetComponent* HAC);
 
 	//
 	static bool UploadChangedEditableOutput(
-		UHoudiniAssetComponent* HAC,
+		UT2HoudiniAssetComponent* HAC,
 		const bool& bInForceUpdate);
 	//
 	static bool BuildAllOutputs(
@@ -71,7 +71,7 @@ struct HOUDINIENGINE_API FHoudiniOutputTranslator
 		const bool& InOutputTemplatedGeos);
 
 	static bool UpdateChangedOutputs(
-		UHoudiniAssetComponent* HAC);
+		UT2HoudiniAssetComponent* HAC);
 
 	// Helpers functions used to convert HAPI types
 	static EHoudiniGeoType ConvertHapiGeoType(const HAPI_GeoType& InType);
@@ -95,10 +95,10 @@ struct HOUDINIENGINE_API FHoudiniOutputTranslator
 	 * @param   OutputsPendingClear	Any outputs that is "pending" clear. These outputs should typically be cleared AFTER the new outputs have been fully processed.
 	 * @param   bForceClearAll	Setting this flag will force outputs to be cleared here and not take into account outputs requested a deferred clear.
 	 */
-	static void ClearAndRemoveOutputs(UHoudiniAssetComponent *InHAC, TArray<UHoudiniOutput*>& OutputsPendingClear, bool bForceClearAll = false);
+	static void ClearAndRemoveOutputs(UT2HoudiniAssetComponent *InHAC, TArray<UHoudiniOutput*>& OutputsPendingClear, bool bForceClearAll = false);
 	// Helper to clear an individual UHoudiniOutput
 	static void ClearOutput(UHoudiniOutput* Output);
 
 	static bool GetCustomPartNameFromAttribute(const HAPI_NodeId & NodeId, const HAPI_PartId & PartId, FString & OutCustomPartName);
-	static void GetTempFolderFromAttribute(UHoudiniAssetComponent * HAC);
+	static void GetTempFolderFromAttribute(UT2HoudiniAssetComponent * HAC);
 };

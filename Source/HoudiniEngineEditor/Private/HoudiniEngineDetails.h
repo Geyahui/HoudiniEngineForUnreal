@@ -37,7 +37,7 @@
 #include "Widgets/Input/SButton.h"
 
 class IDetailCategoryBuilder;
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 class UHoudiniPDGAssetLink;
 class FMenuBuilder;
 class SBorder;
@@ -63,19 +63,19 @@ class FHoudiniEngineDetails : public TSharedFromThis<FHoudiniEngineDetails>
 public:
 	static void CreateWidget(
 		IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-		TArray<UHoudiniAssetComponent*>& InHACs);
+		TArray<UT2HoudiniAssetComponent*>& InHACs);
 
 	static void CreateHoudiniEngineIconWidget(
 		IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-		TArray<UHoudiniAssetComponent*>& InHACs);
+		TArray<UT2HoudiniAssetComponent*>& InHACs);
 
 	static void CreateGenerateWidgets(
 			IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-			TArray<UHoudiniAssetComponent*>& InHACs);
+			TArray<UT2HoudiniAssetComponent*>& InHACs);
 
 	static void CreateBakeWidgets(
 		IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-		TArray<UHoudiniAssetComponent*>& InHACs);
+		TArray<UT2HoudiniAssetComponent*>& InHACs);
 
 	static void CreatePDGBakeWidgets(
 		IDetailCategoryBuilder& InPDGCategory,
@@ -83,26 +83,26 @@ public:
 
 	static void CreateAssetOptionsWidgets(
 		IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-		TArray<UHoudiniAssetComponent*>& InHACs);
+		TArray<UT2HoudiniAssetComponent*>& InHACs);
 
 	static void CreateHelpAndDebugWidgets(
 		IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-		TArray<UHoudiniAssetComponent*>& InHACs);
+		TArray<UT2HoudiniAssetComponent*>& InHACs);
 
-	static FReply ShowCookLog(TArray<UHoudiniAssetComponent *> InHACS);
+	static FReply ShowCookLog(TArray<UT2HoudiniAssetComponent *> InHACS);
 
-	static FReply ShowAssetHelp(UHoudiniAssetComponent * InHAC);
+	static FReply ShowAssetHelp(UT2HoudiniAssetComponent * InHAC);
 
 	static FMenuBuilder Helper_CreateHoudiniAssetPicker();
 
 	const FSlateBrush * GetHoudiniAssetThumbnailBorder(TSharedPtr< SBorder > HoudiniAssetThumbnailBorder) const;
 
 	/** Construct drop down menu content for Houdini asset. **/
-	//static TSharedRef< SWidget > OnGetHoudiniAssetMenuContent(TArray<UHoudiniAssetComponent*> InHACs);
+	//static TSharedRef< SWidget > OnGetHoudiniAssetMenuContent(TArray<UT2HoudiniAssetComponent*> InHACs);
 
 	static void AddHeaderRowForHoudiniAssetComponent(
 		IDetailCategoryBuilder& HoudiniEngineCategoryBuilder,
-		UHoudiniAssetComponent* HoudiniAssetComponent,
+		UT2HoudiniAssetComponent* HoudiniAssetComponent,
 		int32 MenuSection);
 
 	static void AddHeaderRowForHoudiniPDGAssetLink(
@@ -117,6 +117,6 @@ public:
 		TFunction<const FSlateBrush*(SButton* InExpanderArrow)>& InGetExpanderBrush);
 
 	// Helper for binding/unbinding the post cook bake delegate
-	static void OnBakeAfterCookChangedHelper(bool bInState, UHoudiniAssetComponent* InHAC);
+	static void OnBakeAfterCookChangedHelper(bool bInState, UT2HoudiniAssetComponent* InHAC);
 };
 

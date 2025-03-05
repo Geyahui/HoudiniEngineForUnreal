@@ -47,7 +47,7 @@ class TSubclassOf;
 struct FBox;
 
 
-struct HOUDINIENGINERUNTIME_API FHoudiniEngineRuntimeUtils
+struct T2HOUDINIENGINERUNTIME_API FHoudiniEngineRuntimeUtils
 {
 	public:
 

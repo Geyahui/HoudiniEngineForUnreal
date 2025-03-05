@@ -32,7 +32,7 @@
 class ALandscapeProxy;
 class UHoudiniInputLandscape;
 
-struct HOUDINIENGINE_API FUnrealLandscapeTranslator 
+struct T2HOUDINIENGINE_API FUnrealLandscapeTranslator 
 {
 	public:
 

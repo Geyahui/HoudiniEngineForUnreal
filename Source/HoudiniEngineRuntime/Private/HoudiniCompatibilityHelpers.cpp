@@ -50,10 +50,10 @@
 #include "HoudiniParameterFile.h"
 #include "HoudiniParameterOperatorPath.h"
 
-#include "HoudiniAssetComponent.h"
-#include "HoudiniInstancedActorComponent.h"
-#include "HoudiniMeshSplitInstancerComponent.h"
-#include "HoudiniHandleComponent.h"
+#include "T2HoudiniAssetComponent.h"
+#include "T2HoudiniInstancedActorComponent.h"
+#include "T2HoudiniMeshSplitInstancerComponent.h"
+#include "T2HoudiniHandleComponent.h"
 
 #include "Engine/StaticMesh.h"
 #include "Components/SplineComponent.h"
@@ -151,9 +151,9 @@ UHoudiniAssetComponent_V1::Serialize(FArchive & Ar)
 	//SerializeParameters(Ar);
 	{
 		// We have to make sure that parameter are NOT saaved with an empty name, as this will cause UE to crash on load
-		for (TMap<int, UHoudiniAssetParameter * >::TIterator IterParams(Parameters); IterParams; ++IterParams)
+		for (TMap<int, UT2HoudiniAssetParameter * >::TIterator IterParams(Parameters); IterParams; ++IterParams)
 		{
-			UHoudiniAssetParameter * HoudiniAssetParameter = IterParams.Value();
+			UT2HoudiniAssetParameter * HoudiniAssetParameter = IterParams.Value();
 			if (!HoudiniAssetParameter || HoudiniAssetParameter->IsPendingKill())
 				continue;
 
@@ -179,9 +179,9 @@ UHoudiniAssetComponent_V1::Serialize(FArchive & Ar)
 			ParameterByName.Empty();
 
 			// Otherwise if we are loading an older serialization format, we can reconstruct parameters name map.
-			for (TMap<int, UHoudiniAssetParameter *>::TIterator IterParams(Parameters); IterParams; ++IterParams)
+			for (TMap<int, UT2HoudiniAssetParameter *>::TIterator IterParams(Parameters); IterParams; ++IterParams)
 			{
-				UHoudiniAssetParameter * HoudiniAssetParameter = IterParams.Value();
+				UT2HoudiniAssetParameter * HoudiniAssetParameter = IterParams.Value();
 				if (HoudiniAssetParameter && !HoudiniAssetParameter->IsPendingKill())
 					ParameterByName.Add(HoudiniAssetParameter->ParameterName, HoudiniAssetParameter);
 			}
@@ -461,12 +461,12 @@ FHoudiniGeoPartObject_V1::ConvertLegacyData()
 	return NewHGPO;
 }
 
-UHoudiniAssetInput::UHoudiniAssetInput(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetInput::UT2HoudiniAssetInput(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 void
-UHoudiniAssetInput::Serialize(FArchive & Ar)
+UT2HoudiniAssetInput::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -564,7 +564,7 @@ UHoudiniAssetInput::Serialize(FArchive & Ar)
 }
 
 UHoudiniInput*
-UHoudiniAssetInput::ConvertLegacyInput(UObject* InOuter)
+UT2HoudiniAssetInput::ConvertLegacyInput(UObject* InOuter)
 {
 	UHoudiniInput* Input = NewObject<UHoudiniInput>(
 		InOuter, UHoudiniInput::StaticClass(), FName(*ParameterLabel), RF_Transactional);
@@ -666,7 +666,7 @@ UHoudiniAssetInput::ConvertLegacyInput(UObject* InOuter)
 		{
 			// Find the V2 HAC that matches the V1_HAC pointed by InputAssetComponent
 			// We can simply use the v1's HAC outer for that
-			UHoudiniAssetComponent* InputHAC = Cast<UHoudiniAssetComponent>(InputAssetComponent->GetOuter());
+			UT2HoudiniAssetComponent* InputHAC = Cast<UT2HoudiniAssetComponent>(InputAssetComponent->GetOuter());
 			if (InputHAC && !InputHAC->IsPendingKill())
 			{
 				// Create a new InputObject wrapper
@@ -934,13 +934,13 @@ UHoudiniHandleComponent_V1::UHoudiniHandleComponent_V1(const FObjectInitializer 
 {
 }
 
-UHoudiniAssetInstanceInput::UHoudiniAssetInstanceInput(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetInstanceInput::UT2HoudiniAssetInstanceInput(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetInstanceInput::Serialize(FArchive& Ar)
+UT2HoudiniAssetInstanceInput::Serialize(FArchive& Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -958,13 +958,13 @@ UHoudiniAssetInstanceInput::Serialize(FArchive& Ar)
 	Ar << InstanceInputFields;
 }
 
-UHoudiniAssetInstanceInputField::UHoudiniAssetInstanceInputField(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetInstanceInputField::UT2HoudiniAssetInstanceInputField(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetInstanceInputField::Serialize(FArchive& Ar)
+UT2HoudiniAssetInstanceInputField::Serialize(FArchive& Ar)
 {
 	// Call base implementation first.
 	Super::Serialize(Ar);
@@ -1027,17 +1027,17 @@ UHoudiniHandleComponent_V1::Serialize(FArchive & Ar)
 }
 
 /*
-UHoudiniHandleComponent*
+UT2HoudiniHandleComponent*
 UHoudiniHandleComponent_V1::ConvertLegacyData(UObject* Outer)
 {
-	UHoudiniHandleComponent* NewHandle = nullptr;
+	UT2HoudiniHandleComponent* NewHandle = nullptr;
 
 	return NewHandle;
 }
 */
 
 bool
-UHoudiniHandleComponent_V1::UpdateFromLegacyData(UHoudiniHandleComponent* NewHC)
+UHoudiniHandleComponent_V1::UpdateFromLegacyData(UT2HoudiniHandleComponent* NewHC)
 {
 	if (!NewHC || NewHC->IsPendingKill())
 		return false;
@@ -1096,11 +1096,11 @@ UHoudiniSplineComponent_V1::Serialize(FArchive & Ar)
 	Ar << bClosedCurve;
 }
 
-UHoudiniSplineComponent*
+UT2HoudiniSplineComponent*
 UHoudiniSplineComponent_V1::ConvertLegacyData(UObject* Outer)
 {
-	UHoudiniSplineComponent* NewSpline = NewObject<UHoudiniSplineComponent>(
-		GetOuter(), UHoudiniSplineComponent::StaticClass());
+	UT2HoudiniSplineComponent* NewSpline = NewObject<UT2HoudiniSplineComponent>(
+		GetOuter(), UT2HoudiniSplineComponent::StaticClass());
 
 	UpdateFromLegacyData(NewSpline);
 
@@ -1108,7 +1108,7 @@ UHoudiniSplineComponent_V1::ConvertLegacyData(UObject* Outer)
 }
 
 bool
-UHoudiniSplineComponent_V1::UpdateFromLegacyData(UHoudiniSplineComponent* NewSpline)
+UHoudiniSplineComponent_V1::UpdateFromLegacyData(UT2HoudiniSplineComponent* NewSpline)
 {
 	if (!NewSpline || NewSpline->IsPendingKill())
 		return false;
@@ -1159,7 +1159,7 @@ UHoudiniSplineComponent_V1::UpdateFromLegacyData(UHoudiniSplineComponent* NewSpl
 	}		
 
 	// Create a default Houdini spline input if a null pointer is passed in.
-	FName HoudiniSplineName = MakeUniqueObjectName(GetOuter(), UHoudiniSplineComponent::StaticClass(), TEXT("Houdini Spline"));
+	FName HoudiniSplineName = MakeUniqueObjectName(GetOuter(), UT2HoudiniSplineComponent::StaticClass(), TEXT("Houdini Spline"));
 	NewSpline->SetHoudiniSplineName(HoudiniSplineName.ToString());
 
 	//NewSpline->bHasChanged;
@@ -1171,13 +1171,13 @@ UHoudiniSplineComponent_V1::UpdateFromLegacyData(UHoudiniSplineComponent* NewSpl
 	return true;
 }
 
-UHoudiniAssetParameter::UHoudiniAssetParameter(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameter::UT2HoudiniAssetParameter(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetParameter::Serialize(FArchive & Ar)
+UT2HoudiniAssetParameter::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -1234,13 +1234,13 @@ UHoudiniAssetParameter::Serialize(FArchive & Ar)
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameter::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameter::ConvertLegacyData(UObject* Outer)
 {
 	return UHoudiniParameter::Create(Outer, ParameterName);
 }
 
 void
-UHoudiniAssetParameter::CopyLegacyParameterData(UHoudiniParameter* InNewParm)
+UT2HoudiniAssetParameter::CopyLegacyParameterData(UHoudiniParameter* InNewParm)
 {
 	if (!InNewParm || InNewParm->IsPendingKill())
 		return;
@@ -1275,13 +1275,13 @@ UHoudiniAssetParameter::CopyLegacyParameterData(UHoudiniParameter* InNewParm)
 	InNewParm->bAutoUpdate = true;
 }
 
-UHoudiniAssetParameterChoice::UHoudiniAssetParameterChoice(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterChoice::UT2HoudiniAssetParameterChoice(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetParameterChoice::Serialize(FArchive & Ar)
+UT2HoudiniAssetParameterChoice::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -1323,7 +1323,7 @@ UHoudiniAssetParameterChoice::Serialize(FArchive & Ar)
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameterChoice::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterChoice::ConvertLegacyData(UObject* Outer)
 {
 	UHoudiniParameterChoice* Parm = nullptr;
 	if (bStringChoiceList)
@@ -1360,25 +1360,25 @@ UHoudiniAssetParameterChoice::ConvertLegacyData(UObject* Outer)
 	return Parm;
 }
 
-UHoudiniAssetParameterButton::UHoudiniAssetParameterButton(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterButton::UT2HoudiniAssetParameterButton(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 UHoudiniParameter* 
-UHoudiniAssetParameterButton::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterButton::ConvertLegacyData(UObject* Outer)
 {
 	// Button strips where not supported in v1, just create a normal button
 	return UHoudiniParameterButton::Create(Outer, ParameterName);
 }
 
-UHoudiniAssetParameterColor::UHoudiniAssetParameterColor(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterColor::UT2HoudiniAssetParameterColor(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetParameterColor::Serialize(FArchive & Ar)
+UT2HoudiniAssetParameterColor::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -1392,7 +1392,7 @@ UHoudiniAssetParameterColor::Serialize(FArchive & Ar)
 }
 
 UHoudiniParameter* 
-UHoudiniAssetParameterColor::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterColor::ConvertLegacyData(UObject* Outer)
 {
 	UHoudiniParameterColor* Parm = UHoudiniParameterColor::Create(Outer, ParameterName);
 	Parm->SetColorValue(Color);
@@ -1405,13 +1405,13 @@ UHoudiniAssetParameterColor::ConvertLegacyData(UObject* Outer)
 	return Parm;
 }
 
-UHoudiniAssetParameterFile::UHoudiniAssetParameterFile(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterFile::UT2HoudiniAssetParameterFile(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetParameterFile::Serialize(FArchive & Ar)
+UT2HoudiniAssetParameterFile::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -1426,7 +1426,7 @@ UHoudiniAssetParameterFile::Serialize(FArchive & Ar)
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameterFile::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterFile::ConvertLegacyData(UObject* Outer)
 {
 	UHoudiniParameterFile* Parm = UHoudiniParameterFile::Create(Outer, ParameterName);
 	
@@ -1443,13 +1443,13 @@ UHoudiniAssetParameterFile::ConvertLegacyData(UObject* Outer)
 	return Parm;
 }
 
-UHoudiniAssetParameterFloat::UHoudiniAssetParameterFloat(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterFloat::UT2HoudiniAssetParameterFloat(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetParameterFloat::Serialize(FArchive & Ar)
+UT2HoudiniAssetParameterFloat::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -1472,7 +1472,7 @@ UHoudiniAssetParameterFloat::Serialize(FArchive & Ar)
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameterFloat::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterFloat::ConvertLegacyData(UObject* Outer)
 {
 	UHoudiniParameterFloat* Parm = UHoudiniParameterFloat::Create(Outer, ParameterName);
 
@@ -1499,35 +1499,35 @@ UHoudiniAssetParameterFloat::ConvertLegacyData(UObject* Outer)
 	return Parm;
 }
 
-UHoudiniAssetParameterFolder::UHoudiniAssetParameterFolder(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterFolder::UT2HoudiniAssetParameterFolder(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 UHoudiniParameter* 
-UHoudiniAssetParameterFolder::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterFolder::ConvertLegacyData(UObject* Outer)
 {
 	return UHoudiniParameterFolder::Create(Outer, ParameterName);
 }
 
-UHoudiniAssetParameterFolderList::UHoudiniAssetParameterFolderList(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterFolderList::UT2HoudiniAssetParameterFolderList(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameterFolderList::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterFolderList::ConvertLegacyData(UObject* Outer)
 {
 	return UHoudiniParameterFolderList::Create(Outer, ParameterName);
 }
 
-UHoudiniAssetParameterInt::UHoudiniAssetParameterInt(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterInt::UT2HoudiniAssetParameterInt(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetParameterInt::Serialize(FArchive & Ar)
+UT2HoudiniAssetParameterInt::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -1547,7 +1547,7 @@ UHoudiniAssetParameterInt::Serialize(FArchive & Ar)
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameterInt::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterInt::ConvertLegacyData(UObject* Outer)
 {
 	UHoudiniParameterInt* Parm = UHoudiniParameterInt::Create(Outer, ParameterName);
 
@@ -1572,24 +1572,24 @@ UHoudiniAssetParameterInt::ConvertLegacyData(UObject* Outer)
 	return Parm;
 }
 
-UHoudiniAssetParameterLabel::UHoudiniAssetParameterLabel(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterLabel::UT2HoudiniAssetParameterLabel(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameterLabel::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterLabel::ConvertLegacyData(UObject* Outer)
 {
 	return UHoudiniParameterLabel::Create(Outer, ParameterName);
 }
 
-UHoudiniAssetParameterMultiparm::UHoudiniAssetParameterMultiparm(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterMultiparm::UT2HoudiniAssetParameterMultiparm(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetParameterMultiparm::Serialize(FArchive & Ar)
+UT2HoudiniAssetParameterMultiparm::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -1602,7 +1602,7 @@ UHoudiniAssetParameterMultiparm::Serialize(FArchive & Ar)
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameterMultiparm::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterMultiparm::ConvertLegacyData(UObject* Outer)
 {
 	UHoudiniParameterMultiParm* Parm = UHoudiniParameterMultiParm::Create(Outer, ParameterName);
 
@@ -1622,13 +1622,13 @@ UHoudiniAssetParameterMultiparm::ConvertLegacyData(UObject* Outer)
 	return Parm;
 }
 
-UHoudiniAssetParameterRamp::UHoudiniAssetParameterRamp(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterRamp::UT2HoudiniAssetParameterRamp(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetParameterRamp::Serialize(FArchive & Ar)
+UT2HoudiniAssetParameterRamp::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -1645,7 +1645,7 @@ UHoudiniAssetParameterRamp::Serialize(FArchive & Ar)
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameterRamp::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterRamp::ConvertLegacyData(UObject* Outer)
 {
 	if (bIsFloatRamp)
 	{
@@ -1667,24 +1667,24 @@ UHoudiniAssetParameterRamp::ConvertLegacyData(UObject* Outer)
 	}	
 }
 
-UHoudiniAssetParameterSeparator::UHoudiniAssetParameterSeparator(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterSeparator::UT2HoudiniAssetParameterSeparator(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameterSeparator::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterSeparator::ConvertLegacyData(UObject* Outer)
 {
 	return UHoudiniParameterSeparator::Create(Outer, ParameterName);
 }
 
-UHoudiniAssetParameterString::UHoudiniAssetParameterString(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterString::UT2HoudiniAssetParameterString(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetParameterString::Serialize(FArchive & Ar)
+UT2HoudiniAssetParameterString::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -1695,7 +1695,7 @@ UHoudiniAssetParameterString::Serialize(FArchive & Ar)
 }
 
 UHoudiniParameter*
-UHoudiniAssetParameterString::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterString::ConvertLegacyData(UObject* Outer)
 {
 	UHoudiniParameterString* Parm = UHoudiniParameterString::Create(Outer, ParameterName);
 
@@ -1713,13 +1713,13 @@ UHoudiniAssetParameterString::ConvertLegacyData(UObject* Outer)
 	return Parm;
 }
 
-UHoudiniAssetParameterToggle::UHoudiniAssetParameterToggle(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetParameterToggle::UT2HoudiniAssetParameterToggle(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniAssetParameterToggle::Serialize(FArchive & Ar)
+UT2HoudiniAssetParameterToggle::Serialize(FArchive & Ar)
 {
 	// Call base implementation.
 	Super::Serialize(Ar);
@@ -1730,7 +1730,7 @@ UHoudiniAssetParameterToggle::Serialize(FArchive & Ar)
 }
 
 UHoudiniParameter* 
-UHoudiniAssetParameterToggle::ConvertLegacyData(UObject* Outer)
+UT2HoudiniAssetParameterToggle::ConvertLegacyData(UObject* Outer)
 {
 	UHoudiniParameterToggle* Parm = UHoudiniParameterToggle::Create(Outer, ParameterName);
 
@@ -1744,13 +1744,13 @@ UHoudiniAssetParameterToggle::ConvertLegacyData(UObject* Outer)
 	return Parm;
 }
 
-UHoudiniMeshSplitInstancerComponent_V1::UHoudiniMeshSplitInstancerComponent_V1(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniMeshSplitInstancerComponent_V1::UT2HoudiniMeshSplitInstancerComponent_V1(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
 void
-UHoudiniMeshSplitInstancerComponent_V1::Serialize(FArchive & Ar)
+UT2HoudiniMeshSplitInstancerComponent_V1::Serialize(FArchive & Ar)
 {
 	//Super::Serialize(Ar);
 	Ar.UsingCustomVersion(FHoudiniCustomSerializationVersion::GUID);
@@ -1761,7 +1761,7 @@ UHoudiniMeshSplitInstancerComponent_V1::Serialize(FArchive & Ar)
 }
 
 bool
-UHoudiniMeshSplitInstancerComponent_V1::UpdateFromLegacyData(UHoudiniMeshSplitInstancerComponent* NewMSIC)
+UT2HoudiniMeshSplitInstancerComponent_V1::UpdateFromLegacyData(UT2HoudiniMeshSplitInstancerComponent* NewMSIC)
 {
 	if (!NewMSIC || NewMSIC->IsPendingKill())
 		return false;
@@ -1789,7 +1789,7 @@ UHoudiniInstancedActorComponent_V1::Serialize(FArchive & Ar)
 }
 
 bool
-UHoudiniInstancedActorComponent_V1::UpdateFromLegacyData(UHoudiniInstancedActorComponent* NewIAC)
+UHoudiniInstancedActorComponent_V1::UpdateFromLegacyData(UT2HoudiniInstancedActorComponent* NewIAC)
 {
 	if (!NewIAC || NewIAC->IsPendingKill())
 		return false;

@@ -24,14 +24,14 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "HoudiniHandleComponent.h"
+#include "T2HoudiniHandleComponent.h"
 
 #include "HoudiniEngineRuntimePrivatePCH.h"
 
 #include "HoudiniParameter.h"
 #include "HoudiniParameterFloat.h"
 #include "HoudiniParameterChoice.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 
 #include "HoudiniPluginSerializationVersion.h"
 #include "HoudiniCompatibilityHelpers.h"
@@ -40,7 +40,7 @@
 #include "Serialization/CustomVersion.h"
 
 void
-UHoudiniHandleComponent::Serialize(FArchive& Ar)
+UT2HoudiniHandleComponent::Serialize(FArchive& Ar)
 {
 	int64 InitialOffset = Ar.Tell();
 	Ar.UsingCustomVersion(FHoudiniCustomSerializationVersion::GUID);
@@ -57,12 +57,12 @@ UHoudiniHandleComponent::Serialize(FArchive& Ar)
 
 	if (bLegacyComponent)
 	{
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 		bool bEnableBackwardCompatibility = HoudiniRuntimeSettings->bEnableBackwardCompatibility;
 
 		if (bEnableBackwardCompatibility)
 		{
-			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniHandleComponent : converting v1 object to v2."));
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UT2HoudiniHandleComponent : converting v1 object to v2."));
 
 			Super::Serialize(Ar);
 
@@ -72,7 +72,7 @@ UHoudiniHandleComponent::Serialize(FArchive& Ar)
 		}
 		else
 		{
-			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniHandleComponent : serialized data will be skipped."));
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UT2HoudiniHandleComponent : serialized data will be skipped."));
 
 			Super::Serialize(Ar);
 
@@ -97,7 +97,7 @@ UHoudiniHandleParameter::UHoudiniHandleParameter(const FObjectInitializer & Obje
 	:Super(ObjectInitializer)
 {};
 
-UHoudiniHandleComponent::UHoudiniHandleComponent(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniHandleComponent::UT2HoudiniHandleComponent(const FObjectInitializer & ObjectInitializer)
 	:Super(ObjectInitializer) 
 {};
 
@@ -202,7 +202,7 @@ UHoudiniHandleParameter::operator=(float Value)
 }
 
 void 
-UHoudiniHandleComponent::InitializeHandleParameters() 
+UT2HoudiniHandleComponent::InitializeHandleParameters() 
 {
 	if (XformParms.Num() < int32(EXformParameter::COUNT)) 
 	{
@@ -226,7 +226,7 @@ UHoudiniHandleComponent::InitializeHandleParameters()
 }
 
 bool 
-UHoudiniHandleComponent::CheckHandleValid() const
+UT2HoudiniHandleComponent::CheckHandleValid() const
 {
 	if (XformParms.Num() < int32(EXformParameter::COUNT))
 		return false;
@@ -247,7 +247,7 @@ UHoudiniHandleComponent::CheckHandleValid() const
 }
 
 FBox
-UHoudiniHandleComponent::GetBounds() const 
+UT2HoudiniHandleComponent::GetBounds() const 
 {
 	FBox BoxBounds(ForceInitToZero);
 	return BoxBounds + GetComponentLocation();

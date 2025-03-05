@@ -52,7 +52,7 @@ enum class EPackageReplaceMode : int8
 };
 
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniPackageParams
+struct T2HOUDINIENGINE_API FHoudiniPackageParams
 {
 public:
 	GENERATED_BODY();

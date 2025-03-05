@@ -29,16 +29,16 @@
 #include "CoreMinimal.h"
 #include "DetailWidgetRow.h"
 
-class UHoudiniHandleComponent;
+class UT2HoudiniHandleComponent;
 class IDetailCategoryBuilder;
-enum class EHoudiniHandleType : uint8;
+enum class ET2HoudiniHandleType : uint8;
 
 class FHoudiniHandleDetails : public TSharedFromThis<FHoudiniHandleDetails> 
 {
 public:
-	static void CreateWidget(IDetailCategoryBuilder & HouHandleCategory, TArray<UHoudiniHandleComponent*> &InHandles);
+	static void CreateWidget(IDetailCategoryBuilder & HouHandleCategory, TArray<UT2HoudiniHandleComponent*> &InHandles);
 
 	static void CreateNameWidget(FDetailWidgetRow& Row);
 
-	static FString GetHandleTypeString(const EHoudiniHandleType& HandleType);
+	static FString GetHandleTypeString(const ET2HoudiniHandleType& HandleType);
 };

@@ -155,7 +155,7 @@ struct FHBspPointsGridItem
 // The 3D space is divided into a grid with a given granularity.
 // Points are considered to have a given radius (threshold) and are added to the grid cube they fall in, and to up to seven neighbours if they overlap.
 UCLASS()
-class HOUDINIENGINE_API UHBspPointsGrid : public UObject
+class T2HOUDINIENGINE_API UHBspPointsGrid : public UObject
 {
 	GENERATED_BODY()
 protected:

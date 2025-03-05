@@ -1028,7 +1028,7 @@ UHoudiniAssetBlueprintComponent::GetPreviewActor() const
 }
 #endif
 
-UHoudiniAssetComponent*
+UT2HoudiniAssetComponent*
 UHoudiniAssetBlueprintComponent::GetCachedTemplate() const
 {
 	return CachedTemplateComponent.Get();
@@ -1868,7 +1868,7 @@ UHoudiniAssetBlueprintComponent::OnHoudiniAssetChanged()
 }
 
 void 
-UHoudiniAssetBlueprintComponent::RegisterHoudiniComponent(UHoudiniAssetComponent *InComponent)
+UHoudiniAssetBlueprintComponent::RegisterHoudiniComponent(UT2HoudiniAssetComponent *InComponent)
 {
 	// We only want to register this component if it is the preview actor for the Blueprint editor. 
 #if WITH_EDITOR
@@ -1954,7 +1954,7 @@ UHoudiniAssetBlueprintComponent::SetToggleValueAt(FString Name, bool Value, int 
 	Parameter->SetValueAt(Value, Index);
 }
 
-//void UHoudiniAssetBlueprintComponent::OnPostCookHandler(UHoudiniAssetComponent* InComponent)
+//void UHoudiniAssetBlueprintComponent::OnPostCookHandler(UT2HoudiniAssetComponent* InComponent)
 //{
 //
 //	// Before this component handles any translation, we need to make sure that it still belongs to the editor actor.
@@ -1970,7 +1970,7 @@ UHoudiniAssetBlueprintComponent::SetToggleValueAt(FString Name, bool Value, int 
 //}
 
 void 
-UHoudiniAssetBlueprintComponent::OnTemplateParametersChangedHandler(UHoudiniAssetComponent* InComponentTemplate)
+UHoudiniAssetBlueprintComponent::OnTemplateParametersChangedHandler(UT2HoudiniAssetComponent* InComponentTemplate)
 {	
 	if (!(AssetState == EHoudiniAssetState::None || AssetState == EHoudiniAssetState::NeedInstantiation || AssetState == EHoudiniAssetState::NeedRebuild))
 		// Don't process parameter changes since we're already cooking -- it is going to break things badly if we do.
@@ -2049,7 +2049,7 @@ UHoudiniAssetBlueprintComponent::InvalidateData()
 	}
 }
 
-//void UHoudiniAssetBlueprintComponent::OnTemplateHoudiniAssetChangedHandler(UHoudiniAssetComponent* InComponentTemplate)
+//void UHoudiniAssetBlueprintComponent::OnTemplateHoudiniAssetChangedHandler(UT2HoudiniAssetComponent* InComponentTemplate)
 //{
 //
 //	UHoudiniAssetBlueprintComponent* ComponentTemplate = Cast<UHoudiniAssetBlueprintComponent>(InComponentTemplate);
@@ -2215,7 +2215,7 @@ UHoudiniAssetBlueprintComponent::FindComponentInstanceInActor(const AActor* InAc
 }
 
 
-//void UHoudiniAssetBlueprintComponent::OnOutputProcessingCompletedHandler(UHoudiniAssetComponent* InComponent)
+//void UHoudiniAssetBlueprintComponent::OnOutputProcessingCompletedHandler(UT2HoudiniAssetComponent* InComponent)
 //{
 //
 //	UHoudiniAssetBlueprintComponent* TemplateComponent = Cast<UHoudiniAssetBlueprintComponent>(InComponent);

@@ -24,7 +24,7 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 
 
 #include "HoudiniEngineRuntime.h"
@@ -55,7 +55,7 @@ FHoudiniStaticMeshGenerationProperties::FHoudiniStaticMeshGenerationProperties()
 }
 
 
-UHoudiniRuntimeSettings::UHoudiniRuntimeSettings( const FObjectInitializer & ObjectInitializer )
+UT2HoudiniRuntimeSettings::UT2HoudiniRuntimeSettings( const FObjectInitializer & ObjectInitializer )
 	: Super( ObjectInitializer )
 {
 	// Session options.
@@ -149,12 +149,12 @@ UHoudiniRuntimeSettings::UHoudiniRuntimeSettings( const FObjectInitializer & Obj
 	bAutomaticLegacyHDARebuild = false;
 }
 
-UHoudiniRuntimeSettings::~UHoudiniRuntimeSettings()
+UT2HoudiniRuntimeSettings::~UT2HoudiniRuntimeSettings()
 {}
 
 
 FProperty *
-UHoudiniRuntimeSettings::LocateProperty(const FString & PropertyName) const
+UT2HoudiniRuntimeSettings::LocateProperty(const FString & PropertyName) const
 {
 	for (TFieldIterator< FProperty > PropIt(GetClass()); PropIt; ++PropIt)
 	{
@@ -169,7 +169,7 @@ UHoudiniRuntimeSettings::LocateProperty(const FString & PropertyName) const
 
 
 void
-UHoudiniRuntimeSettings::SetPropertyReadOnly(const FString & PropertyName, bool bReadOnly)
+UT2HoudiniRuntimeSettings::SetPropertyReadOnly(const FString & PropertyName, bool bReadOnly)
 {
 	FProperty * Property = LocateProperty(PropertyName);
 	if (Property)
@@ -183,7 +183,7 @@ UHoudiniRuntimeSettings::SetPropertyReadOnly(const FString & PropertyName, bool 
 
 
 void
-UHoudiniRuntimeSettings::PostInitProperties()
+UT2HoudiniRuntimeSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
 
@@ -263,7 +263,7 @@ UHoudiniRuntimeSettings::PostInitProperties()
 #if WITH_EDITOR
 
 void
-UHoudiniRuntimeSettings::PostEditChangeProperty(struct FPropertyChangedEvent & PropertyChangedEvent)
+UT2HoudiniRuntimeSettings::PostEditChangeProperty(struct FPropertyChangedEvent & PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -361,7 +361,7 @@ UHoudiniRuntimeSettings::PostEditChangeProperty(struct FPropertyChangedEvent & P
 
 
 void
-UHoudiniRuntimeSettings::UpdateSessionUI()
+UT2HoudiniRuntimeSettings::UpdateSessionUI()
 {
 	SetPropertyReadOnly(TEXT("ServerHost"), true);
 	SetPropertyReadOnly(TEXT("ServerPort"), true);

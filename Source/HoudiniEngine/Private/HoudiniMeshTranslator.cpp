@@ -35,7 +35,7 @@
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniMaterialTranslator.h"
-#include "HoudiniAssetActor.h"
+#include "T2HoudiniAssetActor.h"
 
 #include "HoudiniStaticMesh.h"
 #include "HoudiniStaticMeshComponent.h"
@@ -902,8 +902,8 @@ FHoudiniMeshTranslator::UpdatePartNormalsIfNeeded()
 	TRACE_CPUPROFILER_EVENT_SCOPE(TEXT("FHoudiniMeshTranslator::UpdatePartNormalsIfNeeded"));
 
 	// No need to read the normals if we want unreal to recompute them after
-	const UHoudiniRuntimeSettings* HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
-	bool bReadNormals = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->RecomputeNormalsFlag != EHoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always : true;
+	const UT2HoudiniRuntimeSettings* HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
+	bool bReadNormals = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->RecomputeNormalsFlag != ET2HoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always : true;
 	if (!bReadNormals)
 		return true;
 
@@ -1716,8 +1716,8 @@ FHoudiniMeshTranslator::CreateStaticMesh_RawMesh()
 			//--------------------------------------------------------------------------------------------------------------------- 
 
 			// No need to read the tangents if we want unreal to recompute them after					
-			const UHoudiniRuntimeSettings* HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
-			bool bReadTangents = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->RecomputeTangentsFlag != EHoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always : true;
+			const UT2HoudiniRuntimeSettings* HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
+			bool bReadTangents = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->RecomputeTangentsFlag != ET2HoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always : true;
 			if (bReadTangents)
 			{
 				// Extract this part's Tangents if needed
@@ -1744,7 +1744,7 @@ FHoudiniMeshTranslator::CreateStaticMesh_RawMesh()
 				if (WedgeTangentUCount != WedgeNormalCount || WedgeTangentVCount != WedgeNormalCount)
 					bGenerateTangents = true;
 
-				if (bGenerateTangents && (HoudiniRuntimeSettings->RecomputeTangentsFlag == EHoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always))
+				if (bGenerateTangents && (HoudiniRuntimeSettings->RecomputeTangentsFlag == ET2HoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always))
 				{
 					// No need to generate tangents if we want unreal to recompute them after
 					bGenerateTangents = false;
@@ -3286,8 +3286,8 @@ FHoudiniMeshTranslator::CreateStaticMesh_MeshDescription()
 			TVertexInstanceAttributesRef<FVector> VertexInstanceNormals = MeshDescription->VertexInstanceAttributes().GetAttributesRef<FVector>(MeshAttribute::VertexInstance::Normal);
 
 			// No need to read the tangents if we want unreal to recompute them after
-			const UHoudiniRuntimeSettings* HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
-			bool bReadTangents = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->RecomputeTangentsFlag != EHoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always : true;
+			const UT2HoudiniRuntimeSettings* HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
+			bool bReadTangents = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->RecomputeTangentsFlag != ET2HoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always : true;
 
 			// Extract the tangents
 			TArray<float> SplitTangentU;
@@ -3314,7 +3314,7 @@ FHoudiniMeshTranslator::CreateStaticMesh_MeshDescription()
 				if (SplitTangentU.Num() != NormalCount || SplitTangentV.Num() != NormalCount)
 					bGenerateTangents = true;
 
-				if (bGenerateTangents && (HoudiniRuntimeSettings->RecomputeTangentsFlag == EHoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always))
+				if (bGenerateTangents && (HoudiniRuntimeSettings->RecomputeTangentsFlag == ET2HoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always))
 				{
 					// No need to generate tangents if we want unreal to recompute them after
 					bGenerateTangents = false;
@@ -4176,8 +4176,8 @@ FHoudiniMeshTranslator::CreateHoudiniStaticMesh()
 			int32 TangentUCount = 0;
 			int32 TangentVCount = 0;
 			// No need to read the tangents if we want unreal to recompute them after		
-			const UHoudiniRuntimeSettings* HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
-			bool bReadTangents = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->RecomputeTangentsFlag != EHoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always : true;
+			const UT2HoudiniRuntimeSettings* HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
+			bool bReadTangents = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->RecomputeTangentsFlag != ET2HoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always : true;
 
 			bool bGenerateTangents = bReadTangents;
 			if (bReadTangents)
@@ -4207,7 +4207,7 @@ FHoudiniMeshTranslator::CreateHoudiniStaticMesh()
 					bGenerateTangents = true;
 				}
 
-				if (bGenerateTangents && (HoudiniRuntimeSettings->RecomputeTangentsFlag == EHoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always))
+				if (bGenerateTangents && (HoudiniRuntimeSettings->RecomputeTangentsFlag == ET2HoudiniRuntimeSettingsRecomputeFlag::HRSRF_Always))
 				{
 					// No need to generate tangents if we want unreal to recompute them after
 					bGenerateTangents = false;
@@ -6222,7 +6222,7 @@ FHoudiniMeshTranslator::AddActorsToMeshSocket(UStaticMeshSocket * Socket, UStati
 	bool bUseDefaultActor = true;
 	// Get from the Houdini runtime setting if use default object when the reference is invalid
 	// true by default if fail to access HoudiniRuntimeSettings
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 	if (HoudiniRuntimeSettings) 
 	{
 		bUseDefaultActor = HoudiniRuntimeSettings->bShowDefaultMesh;
@@ -6341,7 +6341,7 @@ FHoudiniMeshTranslator::SetMeshBuildSettings(
 	const bool& bHasTangents, 
 	const bool& bHasLightmapUVSet)
 {
-	const UHoudiniRuntimeSettings* HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings* HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	OutMeshBuildSettings.bRemoveDegenerates = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->bRemoveDegenerates : true;
 	OutMeshBuildSettings.bUseMikkTSpace = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->bUseMikkTSpace : true;
 	OutMeshBuildSettings.bBuildAdjacencyBuffer = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->bBuildAdjacencyBuffer : false;
@@ -6358,7 +6358,7 @@ FHoudiniMeshTranslator::SetMeshBuildSettings(
 	OutMeshBuildSettings.DistanceFieldResolutionScale = HoudiniRuntimeSettings ? HoudiniRuntimeSettings->DistanceFieldResolutionScale : 2.0f;
 
 	// Recomputing normals.
-	EHoudiniRuntimeSettingsRecomputeFlag RecomputeNormalFlag = HoudiniRuntimeSettings ? (EHoudiniRuntimeSettingsRecomputeFlag)HoudiniRuntimeSettings->RecomputeNormalsFlag : HRSRF_OnlyIfMissing;
+	ET2HoudiniRuntimeSettingsRecomputeFlag RecomputeNormalFlag = HoudiniRuntimeSettings ? (ET2HoudiniRuntimeSettingsRecomputeFlag)HoudiniRuntimeSettings->RecomputeNormalsFlag : HRSRF_OnlyIfMissing;
 	switch (RecomputeNormalFlag)
 	{
 		case HRSRF_Always:
@@ -6382,7 +6382,7 @@ FHoudiniMeshTranslator::SetMeshBuildSettings(
 	}
 
 	// Recomputing tangents.
-	EHoudiniRuntimeSettingsRecomputeFlag RecomputeTangentFlag = HoudiniRuntimeSettings ? (EHoudiniRuntimeSettingsRecomputeFlag)HoudiniRuntimeSettings->RecomputeTangentsFlag : HRSRF_OnlyIfMissing;
+	ET2HoudiniRuntimeSettingsRecomputeFlag RecomputeTangentFlag = HoudiniRuntimeSettings ? (ET2HoudiniRuntimeSettingsRecomputeFlag)HoudiniRuntimeSettings->RecomputeTangentsFlag : HRSRF_OnlyIfMissing;
 	switch (RecomputeTangentFlag)
 	{
 		case HRSRF_Always:
@@ -6406,7 +6406,7 @@ FHoudiniMeshTranslator::SetMeshBuildSettings(
 	}
 
 	// Lightmap UV generation.
-	EHoudiniRuntimeSettingsRecomputeFlag GenerateLightmapUVFlag = HoudiniRuntimeSettings ? (EHoudiniRuntimeSettingsRecomputeFlag)HoudiniRuntimeSettings->RecomputeTangentsFlag : HRSRF_OnlyIfMissing;
+	ET2HoudiniRuntimeSettingsRecomputeFlag GenerateLightmapUVFlag = HoudiniRuntimeSettings ? (ET2HoudiniRuntimeSettingsRecomputeFlag)HoudiniRuntimeSettings->RecomputeTangentsFlag : HRSRF_OnlyIfMissing;
 	switch (GenerateLightmapUVFlag)
 	{
 		case HRSRF_Always:

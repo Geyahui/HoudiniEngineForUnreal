@@ -27,7 +27,7 @@
 #include "HoudiniHandleDetails.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
 #include "HoudiniEngineEditorPrivatePCH.h"
-#include "HoudiniHandleComponent.h"
+#include "T2HoudiniHandleComponent.h"
 #include "HoudiniHandleTranslator.h"
 #include "HoudiniHandleComponentVisualizer.h"
 
@@ -43,13 +43,13 @@
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE
 
 void
-FHoudiniHandleDetails::CreateWidget(IDetailCategoryBuilder & HouHandleCategory, TArray<UHoudiniHandleComponent*> &InHandles)
+FHoudiniHandleDetails::CreateWidget(IDetailCategoryBuilder & HouHandleCategory, TArray<UT2HoudiniHandleComponent*> &InHandles)
 {
 
 	if (InHandles.Num() <= 0)
 		return;
 
-	UHoudiniHandleComponent* MainHandle = InHandles[0];
+	UT2HoudiniHandleComponent* MainHandle = InHandles[0];
 
 	if (!MainHandle || MainHandle->IsPendingKill())
 		return;
@@ -314,7 +314,7 @@ FHoudiniHandleDetails::CreateWidget(IDetailCategoryBuilder & HouHandleCategory, 
 		if (!MainHandle)
 			return;
 
-		TSharedPtr<FComponentVisualizer> Visualizer = GUnrealEd->FindComponentVisualizer(UHoudiniHandleComponent::StaticClass()->GetFName());
+		TSharedPtr<FComponentVisualizer> Visualizer = GUnrealEd->FindComponentVisualizer(UT2HoudiniHandleComponent::StaticClass()->GetFName());
 		TSharedPtr<FHoudiniHandleComponentVisualizer> HandleVisualizer = StaticCastSharedPtr<FHoudiniHandleComponentVisualizer>(Visualizer);
 
 		if (HandleVisualizer.IsValid())
@@ -328,7 +328,7 @@ FHoudiniHandleDetails::CreateWidget(IDetailCategoryBuilder & HouHandleCategory, 
 		if (!MainHandle)
 			return;
 
-		TSharedPtr<FComponentVisualizer> Visualizer = GUnrealEd->FindComponentVisualizer(UHoudiniHandleComponent::StaticClass()->GetFName());
+		TSharedPtr<FComponentVisualizer> Visualizer = GUnrealEd->FindComponentVisualizer(UT2HoudiniHandleComponent::StaticClass()->GetFName());
 		TSharedPtr<FHoudiniHandleComponentVisualizer> HandleVisualizer = StaticCastSharedPtr<FHoudiniHandleComponentVisualizer>(Visualizer);
 
 		if (HandleVisualizer.IsValid())
@@ -376,15 +376,15 @@ FHoudiniHandleDetails::CreateNameWidget(FDetailWidgetRow& Row)
 }
 
 FString 
-FHoudiniHandleDetails::GetHandleTypeString(const EHoudiniHandleType& HandleType) 
+FHoudiniHandleDetails::GetHandleTypeString(const ET2HoudiniHandleType& HandleType) 
 {
 	switch (HandleType) 
 	{
-	case EHoudiniHandleType::Bounder:
+	case ET2HoudiniHandleType::Bounder:
 		return FString("Bounder");
-	case EHoudiniHandleType::Xform:
+	case ET2HoudiniHandleType::Xform:
 		return FString("Xform");
-	case EHoudiniHandleType::Unsupported:
+	case ET2HoudiniHandleType::Unsupported:
 		return FString("Unsupported");
 
 	default:

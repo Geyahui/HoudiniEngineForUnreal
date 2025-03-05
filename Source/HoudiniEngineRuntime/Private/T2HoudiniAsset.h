@@ -27,12 +27,13 @@
 #pragma once
 
 #include "UObject/Object.h"
-#include "HoudiniAsset.generated.h"
+#include "T2HoudiniAsset.generated.h"
+
 
 class UAssetImportData;
 
 UCLASS(BlueprintType, EditInlineNew, config = Engine)
-class HOUDINIENGINERUNTIME_API UHoudiniAsset : public UObject
+class T2HOUDINIENGINERUNTIME_API UT2HoudiniAsset : public UObject
 {
 	GENERATED_UCLASS_BODY()
 

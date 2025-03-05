@@ -33,9 +33,9 @@
 #include "Components/SceneComponent.h"
 #include "HoudiniGeoPartObject.h"
 
-#include "HoudiniSplineComponent.generated.h"
+#include "T2HoudiniSplineComponent.generated.h"
 
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 
 enum class EHoudiniCurveType : int8;
 
@@ -44,13 +44,13 @@ enum class EHoudiniCurveMethod : int8;
 class UHoudiniInputObject;
 
 UCLASS(Blueprintable, BlueprintType, EditInlineNew, config = Engine, meta = (BlueprintSpawnableComponent))
-class HOUDINIENGINERUNTIME_API UHoudiniSplineComponent : public USceneComponent, public IHoudiniEngineCopyPropertiesInterface
+class T2HOUDINIENGINERUNTIME_API UT2HoudiniSplineComponent : public USceneComponent, public IHoudiniEngineCopyPropertiesInterface
 {
 	GENERATED_UCLASS_BODY()
 
 	friend class UHoudiniSplineComponent_V1;
 
-	virtual ~UHoudiniSplineComponent();
+	virtual ~UT2HoudiniSplineComponent();
 
 	virtual void Serialize(FArchive & Ar) override;
 
@@ -58,7 +58,7 @@ class HOUDINIENGINERUNTIME_API UHoudiniSplineComponent : public USceneComponent,
 
 		void Construct(TArray<FVector>& InCurveDisplayPoints, int32 InsertedPoint = -1);
 
-		void CopyHoudiniData(const UHoudiniSplineComponent* OtherHoudiniSplineComponent);
+		void CopyHoudiniData(const UT2HoudiniSplineComponent* OtherHoudiniSplineComponent);
 
 		void ResetCurvePoints();
 
@@ -76,7 +76,7 @@ class HOUDINIENGINERUNTIME_API UHoudiniSplineComponent : public USceneComponent,
 
 		void EditPointAtindex(const FTransform& NewPoint, const int32& Index);
 
-		// UHoudiniAssetComponent* GetParentHAC();
+		// UT2HoudiniAssetComponent* GetParentHAC();
 
 		void MarkModified(const bool & InModified) { bHasChanged = InModified; };
 
@@ -265,14 +265,14 @@ struct FHoudiniSplineComponentInstanceData : public FActorComponentInstanceData
 public:
 
 	FHoudiniSplineComponentInstanceData();
-	FHoudiniSplineComponentInstanceData(const UHoudiniSplineComponent* SourceComponent);
+	FHoudiniSplineComponentInstanceData(const UT2HoudiniSplineComponent* SourceComponent);
 	
 	virtual ~FHoudiniSplineComponentInstanceData() = default;
 
 	virtual void ApplyToComponent(UActorComponent* Component, const ECacheApplyPhase CacheApplyPhase) override
 	{
 		Super::ApplyToComponent(Component, CacheApplyPhase);
-		CastChecked<UHoudiniSplineComponent>(Component)->ApplyComponentInstanceData(this, (CacheApplyPhase == ECacheApplyPhase::PostUserConstructionScript));
+		CastChecked<UT2HoudiniSplineComponent>(Component)->ApplyComponentInstanceData(this, (CacheApplyPhase == ECacheApplyPhase::PostUserConstructionScript));
 	}
 
 	// Persist all the required properties for being able to recook the HoudiniAsset from its existing state.

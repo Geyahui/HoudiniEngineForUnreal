@@ -41,7 +41,7 @@
 
 // Message used to find/discover running commandlets
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniPDGImportBGEODiscoverMessage
+struct T2HOUDINIENGINE_API FHoudiniPDGImportBGEODiscoverMessage
 {
 public:
 	GENERATED_BODY();
@@ -56,7 +56,7 @@ public:
 };
 
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniPDGImportBGEOMessage
+struct T2HOUDINIENGINE_API FHoudiniPDGImportBGEOMessage
 {
 public:
 	GENERATED_BODY();
@@ -117,7 +117,7 @@ enum class EHoudiniPDGImportBGEOResult : uint8
 };
 
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniGenericAttributes
+struct T2HOUDINIENGINE_API FHoudiniGenericAttributes
 {
 public:
 	GENERATED_BODY()
@@ -131,7 +131,7 @@ public:
 };
 
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniPDGImportNodeOutputObject
+struct T2HOUDINIENGINE_API FHoudiniPDGImportNodeOutputObject
 {
 public:
 	GENERATED_BODY();
@@ -150,7 +150,7 @@ public:
 };
 
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniPDGImportNodeOutput
+struct T2HOUDINIENGINE_API FHoudiniPDGImportNodeOutput
 {
 public:
 	GENERATED_BODY();
@@ -166,7 +166,7 @@ public:
 };
 
 USTRUCT()
-struct HOUDINIENGINE_API FHoudiniPDGImportBGEOResultMessage : public FHoudiniPDGImportBGEOMessage
+struct T2HOUDINIENGINE_API FHoudiniPDGImportBGEOResultMessage : public FHoudiniPDGImportBGEOMessage
 {
 public:
 	GENERATED_BODY();

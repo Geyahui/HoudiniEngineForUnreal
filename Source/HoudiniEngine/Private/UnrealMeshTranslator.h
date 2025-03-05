@@ -41,7 +41,7 @@ struct FStaticMeshLODResources;
 struct FMeshDescription;
 struct FKConvexElem;
 
-struct HOUDINIENGINE_API FUnrealMeshTranslator
+struct T2HOUDINIENGINE_API FUnrealMeshTranslator
 {
 	public:
 

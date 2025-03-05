@@ -29,7 +29,7 @@
 #include "CoreMinimal.h"
 #include "UObject/Class.h"
 
-struct HOUDINIENGINE_API FHoudiniEngineOutputStats
+struct T2HOUDINIENGINE_API FHoudiniEngineOutputStats
 {
 	FHoudiniEngineOutputStats();
 	

@@ -32,7 +32,7 @@
 
 #include "MessageEndpoint.h"
 
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 class UHoudiniPDGAssetLink;
 class UTOPNetwork;
 class UTOPNode;
@@ -41,7 +41,7 @@ class FSocket;
 enum class EPDGNodeState : uint8;
 
 // BGEO commandlet status
-enum class HOUDINIENGINE_API EHoudiniBGEOCommandletStatus : uint8
+enum class T2HOUDINIENGINE_API EHoudiniBGEOCommandletStatus : uint8
 {
 	// PDG manager has not tried to start the commandlet
 	NotStarted,
@@ -55,7 +55,7 @@ enum class HOUDINIENGINE_API EHoudiniBGEOCommandletStatus : uint8
 	Crashed
 };
 
-struct HOUDINIENGINE_API FHoudiniPDGManager
+struct T2HOUDINIENGINE_API FHoudiniPDGManager
 {
 
 public:
@@ -66,7 +66,7 @@ public:
 	
 	// Initialize the PDG Asset Link for a HoudiniAssetComponent
 	// returns true if the HAC uses a PDG asset, and a PDGAssetLink was successfully created
-	bool InitializePDGAssetLink(UHoudiniAssetComponent* InHAC);
+	bool InitializePDGAssetLink(UT2HoudiniAssetComponent* InHAC);
 
 	// Updates an existing PDG AssetLink
 	static bool UpdatePDGAssetLink(UHoudiniPDGAssetLink* PDGAssetLink);

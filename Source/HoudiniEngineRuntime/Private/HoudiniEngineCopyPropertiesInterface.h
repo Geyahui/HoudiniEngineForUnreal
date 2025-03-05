@@ -40,7 +40,7 @@ class UHoudiniEngineCopyPropertiesInterface : public UInterface
 	GENERATED_BODY()
 };
 
-class HOUDINIENGINERUNTIME_API IHoudiniEngineCopyPropertiesInterface
+class T2HOUDINIENGINERUNTIME_API IHoudiniEngineCopyPropertiesInterface
 {
 	GENERATED_BODY()
 

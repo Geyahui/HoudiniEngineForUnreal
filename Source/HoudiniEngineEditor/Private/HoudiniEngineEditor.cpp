@@ -30,13 +30,13 @@
 
 #include "HoudiniEngineEditorUtils.h"
 #include "HoudiniEngineStyle.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 #include "HoudiniEngine.h"
-#include "HoudiniAsset.h"
+#include "T2HoudiniAsset.h"
 #include "HoudiniAssetBroker.h"
-#include "HoudiniAssetActorFactory.h"
-#include "HoudiniAssetActor.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetActorFactory.h"
+#include "T2HoudiniAssetActor.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniAssetComponentDetails.h"
 #include "HoudiniInput.h"
 #include "HoudiniOutput.h"
@@ -72,7 +72,8 @@
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
-IMPLEMENT_MODULE(FHoudiniEngineEditor, HoudiniEngineEditor);
+
+IMPLEMENT_MODULE(FHoudiniEngineEditor, T2HoudiniEngineEditor);
 DEFINE_LOG_CATEGORY(LogHoudiniEngineEditor);
 
 FHoudiniEngineEditor *
@@ -207,11 +208,11 @@ FHoudiniEngineEditor::RegisterDetails()
 
 	// Register details presenter for our component type and runtime settings.
 	PropertyModule.RegisterCustomClassLayout(
-		TEXT("HoudiniAssetComponent"),
+		TEXT("T2HoudiniAssetComponent"),
 		FOnGetDetailCustomizationInstance::CreateStatic(&FHoudiniAssetComponentDetails::MakeInstance));
 
 	PropertyModule.RegisterCustomClassLayout(
-		TEXT("HoudiniRuntimeSettings"),
+		TEXT("T2HoudiniRuntimeSettings"),
 		FOnGetDetailCustomizationInstance::CreateStatic(&FHoudiniRuntimeSettingsDetails::MakeInstance));
 }
 
@@ -223,8 +224,8 @@ FHoudiniEngineEditor::UnregisterDetails()
 		FPropertyEditorModule & PropertyModule =
 			FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
-		PropertyModule.UnregisterCustomClassLayout(TEXT("HoudiniAssetComponent"));
-		PropertyModule.UnregisterCustomClassLayout(TEXT("HoudiniRuntimeSettings"));
+		PropertyModule.UnregisterCustomClassLayout(TEXT("T2HoudiniAssetComponent"));
+		PropertyModule.UnregisterCustomClassLayout(TEXT("T2HoudiniRuntimeSettings"));
 	}
 }
 
@@ -237,7 +238,7 @@ FHoudiniEngineEditor::RegisterComponentVisualizers()
 		SplineComponentVisualizer = MakeShareable<FComponentVisualizer>(new FHoudiniSplineComponentVisualizer);
 		if (SplineComponentVisualizer.IsValid()) 
 		{
-			GUnrealEd->RegisterComponentVisualizer(UHoudiniSplineComponent::StaticClass()->GetFName(), SplineComponentVisualizer);
+			GUnrealEd->RegisterComponentVisualizer(UT2HoudiniSplineComponent::StaticClass()->GetFName(), SplineComponentVisualizer);
 			SplineComponentVisualizer->OnRegister();
 		}
 
@@ -245,7 +246,7 @@ FHoudiniEngineEditor::RegisterComponentVisualizers()
 		HandleComponentVisualizer = MakeShareable<FComponentVisualizer>(new FHoudiniHandleComponentVisualizer);
 		if (HandleComponentVisualizer.IsValid())
 		{
-			GUnrealEd->RegisterComponentVisualizer(UHoudiniHandleComponent::StaticClass()->GetFName(), HandleComponentVisualizer);
+			GUnrealEd->RegisterComponentVisualizer(UT2HoudiniHandleComponent::StaticClass()->GetFName(), HandleComponentVisualizer);
 			HandleComponentVisualizer->OnRegister();
 		}
 	}
@@ -258,11 +259,11 @@ FHoudiniEngineEditor::UnregisterComponentVisualizers()
 	{
 		// Unregister Houdini spline visualizer
 		if(SplineComponentVisualizer.IsValid())
-			GUnrealEd->UnregisterComponentVisualizer(UHoudiniSplineComponent::StaticClass()->GetFName());
+			GUnrealEd->UnregisterComponentVisualizer(UT2HoudiniSplineComponent::StaticClass()->GetFName());
 
 		// Unregister Houdini handle visualizer
 		if (HandleComponentVisualizer.IsValid())
-			GUnrealEd->UnregisterComponentVisualizer(UHoudiniHandleComponent::StaticClass()->GetFName());
+			GUnrealEd->UnregisterComponentVisualizer(UT2HoudiniHandleComponent::StaticClass()->GetFName());
 	}
 }
 
@@ -301,7 +302,7 @@ FHoudiniEngineEditor::RegisterAssetBrokers()
 {
 	// Create and register broker for Houdini asset.
 	HoudiniAssetBroker = MakeShareable(new FHoudiniAssetBroker());
-	FComponentAssetBrokerage::RegisterBroker( HoudiniAssetBroker, UHoudiniAssetComponent::StaticClass(), true, true );
+	FComponentAssetBrokerage::RegisterBroker( HoudiniAssetBroker, UT2HoudiniAssetComponent::StaticClass(), true, true );
 }
 
 void
@@ -319,8 +320,8 @@ FHoudiniEngineEditor::RegisterActorFactories()
 {
 	if (GEditor)
 	{
-		UHoudiniAssetActorFactory * HoudiniAssetActorFactory =
-			NewObject< UHoudiniAssetActorFactory >(GetTransientPackage(), UHoudiniAssetActorFactory::StaticClass());
+		UT2HoudiniAssetActorFactory * HoudiniAssetActorFactory =
+			NewObject< UT2HoudiniAssetActorFactory >(GetTransientPackage(), UT2HoudiniAssetActorFactory::StaticClass());
 
 		GEditor->ActorFactories.Add(HoudiniAssetActorFactory);
 	}
@@ -365,28 +366,28 @@ FHoudiniEngineEditor::BindMenuCommands()
 		Commands._CloseSessionSync,
 		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::CloseSessionSync(); }),
 		FCanExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::IsSessionSyncProcessValid(); }));
-
+	
 	HEngineCommands->MapAction(
 		Commands._ViewportSyncNone,
 		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::SetViewportSync(0); }),
 		FCanExecuteAction::CreateLambda([]() { return true; }),
 		FIsActionChecked::CreateLambda([]() { return (FHoudiniEngineCommands::GetViewportSync() == 0); })
 	);
-
+	
 	HEngineCommands->MapAction(
 		Commands._ViewportSyncHoudini,
 		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::SetViewportSync(1); }),
 		FCanExecuteAction::CreateLambda([]() { return true; }),
 		FIsActionChecked::CreateLambda([]() { return (FHoudiniEngineCommands::GetViewportSync() == 1); })
 	);
-
+	
 	HEngineCommands->MapAction(
 		Commands._ViewportSyncUnreal,
 		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::SetViewportSync(2); }),
 		FCanExecuteAction::CreateLambda([]() { return true; }),
 		FIsActionChecked::CreateLambda([]() { return (FHoudiniEngineCommands::GetViewportSync() == 2); })
 	);
-
+	
 	HEngineCommands->MapAction(
 		Commands._ViewportSyncBoth,
 		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::SetViewportSync(3); }),
@@ -401,7 +402,7 @@ FHoudiniEngineEditor::BindMenuCommands()
 		FCanExecuteAction::CreateLambda([]() { return true; }),
 		FIsActionChecked::CreateLambda([]() { return FHoudiniEngineCommands::IsPDGCommandletEnabled(); })
 	);
-
+	
 	HEngineCommands->MapAction(
 		Commands._StartPDGCommandlet,
 		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::StartPDGCommandlet(); }),
@@ -410,7 +411,7 @@ FHoudiniEngineEditor::BindMenuCommands()
 			return FHoudiniEngineCommands::IsPDGCommandletEnabled() && !FHoudiniEngineCommands::IsPDGCommandletRunningOrConnected();
 		})
 	);
-
+	
 	HEngineCommands->MapAction(
 		Commands._StopPDGCommandlet,
 		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::StopPDGCommandlet(); }),
@@ -422,14 +423,14 @@ FHoudiniEngineEditor::BindMenuCommands()
 		Commands._InstallInfo,
 		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::ShowInstallInfo(); }),
 		FCanExecuteAction::CreateLambda([]() { return false; }));
-
+	
 	HEngineCommands->MapAction(
 		Commands._PluginSettings,
 		FExecuteAction::CreateLambda([]() { return FHoudiniEngineCommands::ShowPluginSettings(); }),
 		FCanExecuteAction::CreateLambda([]() { return true; }));
-
+	
 	// Files
-
+	
 	HEngineCommands->MapAction(
 		Commands._OpenInHoudini,
 		FExecuteAction::CreateLambda([](){ return FHoudiniEngineCommands::OpenInHoudini(); }),
@@ -522,12 +523,12 @@ FHoudiniEngineEditor::ExtendMenu()
 {
 	if (IsRunningCommandlet())
 		return;
-
+	
 	// We need to add/bind the UI Commands to their functions first
 	BindMenuCommands();
-
+	
 	MainMenuExtender = MakeShareable(new FExtender);
-
+	
 	// Extend File menu, we will add Houdini section.
 	MainMenuExtender->AddMenuExtension(
 		"FileLoadAndSave", 
@@ -540,7 +541,7 @@ FHoudiniEngineEditor::ExtendMenu()
 		EExtensionHook::After,
 		HEngineCommands,
 		FMenuBarExtensionDelegate::CreateRaw(this, &FHoudiniEngineEditor::AddHoudiniEditorMenu));
-
+	
 	// Add our menu extender
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MainMenuExtender);
@@ -549,7 +550,7 @@ FHoudiniEngineEditor::ExtendMenu()
 void
 FHoudiniEngineEditor::AddHoudiniFileMenuExtension(FMenuBuilder & MenuBuilder)
 {
-	MenuBuilder.BeginSection("Houdini", LOCTEXT("HoudiniLabel", "Houdini Engine"));
+	MenuBuilder.BeginSection("T2Houdini", LOCTEXT("T2HoudiniLabel", "Houdini Engine"));
 
 	// Icons used by the commands are defined in the HoudiniEngineStyle
 	MenuBuilder.AddMenuEntry(FHoudiniEngineCommands::Get()._OpenInHoudini);
@@ -569,12 +570,12 @@ FHoudiniEngineEditor::AddHoudiniEditorMenu(FMenuBarBuilder& MenuBarBuilder)
 {
 	// View
 	MenuBarBuilder.AddPullDownMenu(
-		LOCTEXT("HoudiniLabel", "Houdini Engine"),
+		LOCTEXT("T2HoudiniLabel", "Houdini Engine"),
 		LOCTEXT("HoudiniMenu_ToolTip", "Open the Houdini Engine menu"),
 		FNewMenuDelegate::CreateRaw(this, &FHoudiniEngineEditor::AddHoudiniMainMenuExtension),
 		"View");
-}
 
+}
 void
 FHoudiniEngineEditor::AddHoudiniMainMenuExtension(FMenuBuilder & MenuBuilder)
 {
@@ -694,7 +695,7 @@ FHoudiniEngineEditor::RegisterPlacementModeExtensions()
 {
 	// Load custom houdini tools
 	/*
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 	check(HoudiniRuntimeSettings);
 
 	if (HoudiniRuntimeSettings->bHidePlacementModeHoudiniTools)
@@ -1074,17 +1075,17 @@ FHoudiniEngineEditor::GetLevelViewportContextMenuExtender(const TSharedRef<FUICo
 	TSharedRef<FExtender> Extender = MakeShareable(new FExtender);
 
 	// Build an array of the HoudiniAssets corresponding to the selected actors
-	TArray< TWeakObjectPtr< UHoudiniAsset > > HoudiniAssets;
-	TArray< TWeakObjectPtr< AHoudiniAssetActor > > HoudiniAssetActors;
+	TArray< TWeakObjectPtr< UT2HoudiniAsset > > HoudiniAssets;
+	TArray< TWeakObjectPtr< AT2HoudiniAssetActor > > HoudiniAssetActors;
 	for (auto CurrentActor : InActors)
 	{
-		AHoudiniAssetActor * HoudiniAssetActor = Cast<AHoudiniAssetActor>(CurrentActor);
+		AT2HoudiniAssetActor * HoudiniAssetActor = Cast<AT2HoudiniAssetActor>(CurrentActor);
 		if (!HoudiniAssetActor || HoudiniAssetActor->IsPendingKill())
 			continue;
 
 		HoudiniAssetActors.Add(HoudiniAssetActor);
 
-		UHoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+		UT2HoudiniAssetComponent* HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
 		if (!HoudiniAssetComponent || HoudiniAssetComponent->IsPendingKill())
 			continue;
 
@@ -1479,15 +1480,15 @@ FHoudiniEngineEditor::HandleOnDeleteActorsBegin()
 	if (!GEditor)
 		return;
 	
-	TArray<AHoudiniAssetActor*> AssetActorsWithTempPDGOutput;
+	TArray<AT2HoudiniAssetActor*> AssetActorsWithTempPDGOutput;
 	// Iterate over all selected actors
 	for(FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
 	{
 		AActor* SelectedActor = Cast<AActor>(*It);
 		if (IsValid(SelectedActor))
 		{
-			// If the class is a AHoudiniAssetActor check if it has temporary PDG outputs
-			AHoudiniAssetActor* AssetActor = Cast<AHoudiniAssetActor>(SelectedActor);
+			// If the class is a AT2HoudiniAssetActor check if it has temporary PDG outputs
+			AT2HoudiniAssetActor* AssetActor = Cast<AT2HoudiniAssetActor>(SelectedActor);
 			if (IsValid(AssetActor))
 			{
 				UHoudiniPDGAssetLink* AssetLink = AssetActor->GetPDGAssetLink();
@@ -1514,7 +1515,7 @@ FHoudiniEngineEditor::HandleOnDeleteActorsBegin()
 			&DialogTitle);
 
 		const bool bKeepAssetLinkActors = (Choice == EAppReturnType::No);
-		for (AHoudiniAssetActor* AssetActor : AssetActorsWithTempPDGOutput)
+		for (AT2HoudiniAssetActor* AssetActor : AssetActorsWithTempPDGOutput)
 		{
 			if (bKeepAssetLinkActors)
 			{

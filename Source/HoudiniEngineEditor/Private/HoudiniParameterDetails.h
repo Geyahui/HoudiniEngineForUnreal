@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 
 #include "CoreMinimal.h"
 
@@ -43,7 +43,7 @@
 
 #include "HoudiniParameterDetails.generated.h"
 
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 class UHoudiniParameter;
 class UHoudiniParameterFloat; 
 class UHoudiniParameterInt;
@@ -297,7 +297,7 @@ class UHoudiniColorRampCurve : public UCurveLinearColor
 
 
 //class FHoudiniParameterDetails : public TSharedFromThis<FHoudiniParameterDetails>, public TNumericUnitTypeInterface<float>, public TNumericUnitTypeInterface<int32>
-class FHoudiniParameterDetails : public TSharedFromThis<FHoudiniParameterDetails>
+class FHoudiniParameterDetails : public TSharedFromThis<FHoudiniParameterDetails, ESPMode::NotThreadSafe>
 {
 	public:
 		void CreateWidget(

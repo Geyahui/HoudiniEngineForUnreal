@@ -24,30 +24,30 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "HoudiniAssetActorFactory.h"
+#include "T2HoudiniAssetActorFactory.h"
 
 #include "HoudiniEngineEditorPrivatePCH.h"
 
 #include "HoudiniEngine.h"
 #include "HoudiniEngineRuntime.h"
-#include "HoudiniAsset.h"
-#include "HoudiniAssetActor.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAsset.h"
+#include "T2HoudiniAssetActor.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniEngineUtils.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
-UHoudiniAssetActorFactory::UHoudiniAssetActorFactory(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetActorFactory::UT2HoudiniAssetActorFactory(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	DisplayName = LOCTEXT("HoudiniAssetDisplayName", "Houdini Engine Asset");
-	NewActorClass = AHoudiniAssetActor::StaticClass();
+	NewActorClass = AT2HoudiniAssetActor::StaticClass();
 }
 
 bool
-UHoudiniAssetActorFactory::CanCreateActorFrom(const FAssetData & AssetData, FText & OutErrorMsg)
+UT2HoudiniAssetActorFactory::CanCreateActorFrom(const FAssetData & AssetData, FText & OutErrorMsg)
 {
-	if (!AssetData.IsValid() || !AssetData.GetClass()->IsChildOf(UHoudiniAsset::StaticClass()))
+	if (!AssetData.IsValid() || !AssetData.GetClass()->IsChildOf(UT2HoudiniAsset::StaticClass()))
 	{
 		OutErrorMsg = NSLOCTEXT("CanCreateActor", "NoHoudiniAsset", "A valid Houdini Engine asset must be specified.");
 		return false;
@@ -57,25 +57,25 @@ UHoudiniAssetActorFactory::CanCreateActorFrom(const FAssetData & AssetData, FTex
 }
 
 UObject *
-UHoudiniAssetActorFactory::GetAssetFromActorInstance(AActor * Instance)
+UT2HoudiniAssetActorFactory::GetAssetFromActorInstance(AActor * Instance)
 {
 	check(Instance->IsA(NewActorClass));
-	AHoudiniAssetActor * HoudiniAssetActor = CastChecked< AHoudiniAssetActor >(Instance);
+	AT2HoudiniAssetActor * HoudiniAssetActor = CastChecked< AT2HoudiniAssetActor >(Instance);
 
 	check(HoudiniAssetActor->GetHoudiniAssetComponent());
 	return HoudiniAssetActor->GetHoudiniAssetComponent()->HoudiniAsset;
 }
 
 void
-UHoudiniAssetActorFactory::PostSpawnActor(UObject * Asset, AActor * NewActor)
+UT2HoudiniAssetActorFactory::PostSpawnActor(UObject * Asset, AActor * NewActor)
 {
 	HOUDINI_LOG_MESSAGE(TEXT("PostSpawnActor %s, supplied Asset = 0x%0.8p"), *NewActor->GetName(), Asset);
 
-	UHoudiniAsset * HoudiniAsset = CastChecked<UHoudiniAsset>(Asset);
+	UT2HoudiniAsset * HoudiniAsset = CastChecked<UT2HoudiniAsset>(Asset);
 	if (HoudiniAsset)
 	{
-		AHoudiniAssetActor * HoudiniAssetActor = CastChecked< AHoudiniAssetActor >(NewActor);
-		UHoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+		AT2HoudiniAssetActor * HoudiniAssetActor = CastChecked< AT2HoudiniAssetActor >(NewActor);
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
 		check(HoudiniAssetComponent);
 
 		//HoudiniAssetComponent->UnregisterComponent();
@@ -93,15 +93,15 @@ UHoudiniAssetActorFactory::PostSpawnActor(UObject * Asset, AActor * NewActor)
 }
 
 void
-UHoudiniAssetActorFactory::PostCreateBlueprint(UObject * Asset, AActor * CDO)
+UT2HoudiniAssetActorFactory::PostCreateBlueprint(UObject * Asset, AActor * CDO)
 {
 	HOUDINI_LOG_MESSAGE(TEXT("PostCreateBlueprint, supplied Asset = 0x%0.8p"), Asset);
 
-	UHoudiniAsset * HoudiniAsset = CastChecked<UHoudiniAsset>(Asset);
+	UT2HoudiniAsset * HoudiniAsset = CastChecked<UT2HoudiniAsset>(Asset);
 	if (HoudiniAsset)
 	{
-		AHoudiniAssetActor * HoudiniAssetActor = CastChecked< AHoudiniAssetActor >(CDO);
-		UHoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
+		AT2HoudiniAssetActor * HoudiniAssetActor = CastChecked< AT2HoudiniAssetActor >(CDO);
+		UT2HoudiniAssetComponent * HoudiniAssetComponent = HoudiniAssetActor->GetHoudiniAssetComponent();
 		check(HoudiniAssetComponent);
 
 		FHoudiniEngineUtils::AddHoudiniLogoToComponent(HoudiniAssetComponent);

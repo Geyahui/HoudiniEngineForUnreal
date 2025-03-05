@@ -30,7 +30,7 @@ class ALandscape;
 
 // Used to cache data to use as a reference point during landscape construction
 // The very first tile will calculate landscape 
-struct HOUDINIENGINERUNTIME_API FHoudiniLandscapeTileSizeInfo
+struct T2HOUDINIENGINERUNTIME_API FHoudiniLandscapeTileSizeInfo
 {
 	FHoudiniLandscapeTileSizeInfo();
 	bool bIsCached;
@@ -45,7 +45,7 @@ struct HOUDINIENGINERUNTIME_API FHoudiniLandscapeTileSizeInfo
 // Used to cache the extent of the landscape so that it doesn't have to be recalculated
 // for each landscape tile.
 // The very first tile will calculate landscape 
-struct HOUDINIENGINERUNTIME_API FHoudiniLandscapeExtent
+struct T2HOUDINIENGINERUNTIME_API FHoudiniLandscapeExtent
 {
 	FHoudiniLandscapeExtent();
 	bool bIsCached;
@@ -59,7 +59,7 @@ struct HOUDINIENGINERUNTIME_API FHoudiniLandscapeExtent
 // Used to cache data to use as a reference point during landscape construction
 // The very first tile will calculate a reference point as well as a component-space location.
 // Every subsequent tile can then derive a component-space location from this location. 
-struct HOUDINIENGINERUNTIME_API FHoudiniLandscapeReferenceLocation
+struct T2HOUDINIENGINERUNTIME_API FHoudiniLandscapeReferenceLocation
 {
 	FHoudiniLandscapeReferenceLocation();
 	

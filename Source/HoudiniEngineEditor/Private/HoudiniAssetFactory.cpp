@@ -24,10 +24,10 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "HoudiniAssetFactory.h"
+#include "T2HoudiniAssetFactory.h"
 
 #include "HoudiniEngineEditorPrivatePCH.h"
-#include "HoudiniAsset.h"
+#include "T2HoudiniAsset.h"
 
 #include "EditorFramework/AssetImportData.h"
 #include "Misc/FileHelper.h"
@@ -35,11 +35,11 @@
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
-UHoudiniAssetFactory::UHoudiniAssetFactory(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetFactory::UT2HoudiniAssetFactory(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	// This factory is responsible for manufacturing HoudiniEngine assets.
-	SupportedClass = UHoudiniAsset::StaticClass();
+	SupportedClass = UT2HoudiniAsset::StaticClass();
 
 	// This factory does not manufacture new objects from scratch.
 	bCreateNew = false;
@@ -62,21 +62,39 @@ UHoudiniAssetFactory::UHoudiniAssetFactory(const FObjectInitializer & ObjectInit
 	Formats.Add(TEXT("hdanc;Houdini Engine Non-Commercial Asset"));
 	Formats.Add(TEXT("hdalibrary;Houdini Engine Expanded Asset"));
 }
+bool UT2HoudiniAssetFactory::FactoryCanImport(const FString& Filename)
+{
+	// 1. 首先调用父类方法，确认后缀匹配
+	// if (!Super::FactoryCanImport(Filename)) {
+	// 	return false;
+	// }
+
+	// // 2. 读取文件内容，检查特殊标记
+	// FString FileContent;
+	// if (FFileHelper::LoadFileToString(FileContent, *Filename)) {
+	// 	// 检查是否存在插件A的标记（例如 JSON 中的 "generator": "PluginA"）
+	// 	if (FileContent.Contains(TEXT("\"generator\": \"PluginA\""))) {
+	// 		return true;
+	// 	}
+	// }
+
+	return true;
+}
 
 bool
-UHoudiniAssetFactory::DoesSupportClass(UClass * Class)
+UT2HoudiniAssetFactory::DoesSupportClass(UClass * Class)
 {
 	return Class == SupportedClass;
 }
 
 FText
-UHoudiniAssetFactory::GetDisplayName() const
+UT2HoudiniAssetFactory::GetDisplayName() const
 {
 	return LOCTEXT("HoudiniAssetFactoryDescription", "Houdini Engine Asset");
 }
 
 UObject *
-UHoudiniAssetFactory::FactoryCreateBinary(
+UT2HoudiniAssetFactory::FactoryCreateBinary(
 	UClass * InClass, UObject* InParent, FName InName, EObjectFlags Flags,
 	UObject * Context, const TCHAR * Type, const uint8 *& Buffer,
 	const uint8 * BufferEnd, FFeedbackContext * Warn )
@@ -85,7 +103,7 @@ UHoudiniAssetFactory::FactoryCreateBinary(
 	GEditor->GetEditorSubsystem<UImportSubsystem>()->BroadcastAssetPreImport(this, InClass, InParent, InName, Type);
 
 	// Create a new asset.
-	UHoudiniAsset * HoudiniAsset = NewObject< UHoudiniAsset >(InParent, InName, Flags);
+	UT2HoudiniAsset * HoudiniAsset = NewObject< UT2HoudiniAsset >(InParent, InName, Flags);
 	HoudiniAsset->CreateAsset(Buffer, BufferEnd, UFactory::GetCurrentFilename());
 
 	// Create reimport information.
@@ -105,7 +123,7 @@ UHoudiniAssetFactory::FactoryCreateBinary(
 }
 
 UObject*
-UHoudiniAssetFactory::FactoryCreateFile(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, const FString& Filename, const TCHAR* Parms, FFeedbackContext* Warn, bool& bOutOperationCanceled)
+UT2HoudiniAssetFactory::FactoryCreateFile(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, const FString& Filename, const TCHAR* Parms, FFeedbackContext* Warn, bool& bOutOperationCanceled)
 {
 	// "houdini.hdalibrary" files (expanded hda / hda folder) need a special treatment,
 	// but ".hda" files can be loaded normally
@@ -150,9 +168,9 @@ UHoudiniAssetFactory::FactoryCreateFile(UClass* InClass, UObject* InParent, FNam
 }
 
 bool
-UHoudiniAssetFactory::CanReimport(UObject * Obj, TArray< FString > & OutFilenames)
+UT2HoudiniAssetFactory::CanReimport(UObject * Obj, TArray< FString > & OutFilenames)
 {
-	UHoudiniAsset * HoudiniAsset = Cast<UHoudiniAsset>(Obj);
+	UT2HoudiniAsset * HoudiniAsset = Cast<UT2HoudiniAsset>(Obj);
 	if (HoudiniAsset)
 	{
 		UAssetImportData * AssetImportData = HoudiniAsset->AssetImportData;
@@ -168,17 +186,17 @@ UHoudiniAssetFactory::CanReimport(UObject * Obj, TArray< FString > & OutFilename
 }
 
 void
-UHoudiniAssetFactory::SetReimportPaths(UObject * Obj, const TArray< FString > & NewReimportPaths)
+UT2HoudiniAssetFactory::SetReimportPaths(UObject * Obj, const TArray< FString > & NewReimportPaths)
 {
-	UHoudiniAsset * HoudiniAsset = Cast< UHoudiniAsset >(Obj);
+	UT2HoudiniAsset * HoudiniAsset = Cast< UT2HoudiniAsset >(Obj);
 	if (HoudiniAsset && (1 == NewReimportPaths.Num()))
 		HoudiniAsset->AssetImportData->UpdateFilenameOnly(NewReimportPaths[0]);
 }
 
 EReimportResult::Type
-UHoudiniAssetFactory::Reimport(UObject * Obj)
+UT2HoudiniAssetFactory::Reimport(UObject * Obj)
 {
-	UHoudiniAsset * HoudiniAsset = Cast< UHoudiniAsset >(Obj);
+	UT2HoudiniAsset * HoudiniAsset = Cast< UT2HoudiniAsset >(Obj);
 	if (HoudiniAsset && HoudiniAsset->AssetImportData)
 	{
 		// Make sure file is valid and exists.

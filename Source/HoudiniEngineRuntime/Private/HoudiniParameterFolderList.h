@@ -33,7 +33,7 @@
 class UHoudiniParameterFolder;
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniParameterFolderList : public UHoudiniParameter
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterFolderList : public UHoudiniParameter
 {
 	GENERATED_UCLASS_BODY()
 

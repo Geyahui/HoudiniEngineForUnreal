@@ -28,7 +28,7 @@
 #include "HAL/PlatformProcess.h"
 
 
-struct HOUDINIENGINE_API FHoudiniApi
+struct T2HOUDINIENGINE_API FHoudiniApi
 {
 public:
 
@@ -72,7 +72,7 @@ public:
 	typedef HAPI_Result (*CreateInProcessSessionFuncPtr)(HAPI_Session * session);
 	typedef HAPI_Result (*CreateInputNodeFuncPtr)(const HAPI_Session * session, HAPI_NodeId * node_id, const char * name);
 	typedef HAPI_Result (*CreateNodeFuncPtr)(const HAPI_Session * session, HAPI_NodeId parent_node_id, const char * operator_name, const char * node_label, HAPI_Bool cook_on_creation, HAPI_NodeId * new_node_id);
-	typedef HAPI_Result (*CreateThriftNamedPipeSessionFuncPtr)(HAPI_Session * session, const char * pipe_name);
+	typedef HAPI_Result (*CreateThriftNamedPipeSessionFuncPtr)(HAPI_Session * session, const char * pipe_name,const HAPI_SessionInfo * session_info);
 	typedef HAPI_Result (*CreateThriftSocketSessionFuncPtr)(HAPI_Session * session, const char * host_name, int port);
 	typedef HAPI_Result (*CreateWorkitemFuncPtr)(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId * workitem_id, const char * name, int index);
 	typedef HAPI_CurveInfo (*CurveInfo_CreateFuncPtr)();
@@ -287,6 +287,8 @@ public:
 	typedef HAPI_Result (*SaveGeoToMemoryFuncPtr)(const HAPI_Session * session, HAPI_NodeId node_id, char * buffer, int length);
 	typedef HAPI_Result (*SaveHIPFileFuncPtr)(const HAPI_Session * session, const char * file_path, HAPI_Bool lock_nodes);
 	typedef HAPI_Result (*SaveNodeToFileFuncPtr)(const HAPI_Session * session, HAPI_NodeId node_id, const char * file_name);
+	typedef HAPI_SessionInfo (*SessionInfo_CreateFuncPtr)();
+	typedef void (*SessionInfo_InitFuncPtr)(HAPI_SessionInfo * in);
 	typedef HAPI_SessionSyncInfo (*SessionSyncInfo_CreateFuncPtr)();
 	typedef HAPI_Result (*SetAnimCurveFuncPtr)(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_ParmId parm_id, int parm_index, const HAPI_Keyframe * curve_keyframes_array, int keyframe_count);
 	typedef HAPI_Result (*SetAttributeFloat64DataFuncPtr)(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const double * data_array, int start, int length);
@@ -333,7 +335,7 @@ public:
 	typedef HAPI_Result (*SetWorkitemFloatDataFuncPtr)(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, const char * data_name, const float * values_array, int length);
 	typedef HAPI_Result (*SetWorkitemIntDataFuncPtr)(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, const char * data_name, const int * values_array, int length);
 	typedef HAPI_Result (*SetWorkitemStringDataFuncPtr)(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, const char * data_name, int data_index, const char * value);
-	typedef HAPI_Result (*StartThriftNamedPipeServerFuncPtr)(const HAPI_ThriftServerOptions * options, const char * pipe_name, HAPI_ProcessId * process_id);
+	typedef HAPI_Result (*StartThriftNamedPipeServerFuncPtr)(const HAPI_ThriftServerOptions * options, const char * pipe_name, HAPI_ProcessId * process_id,const char * log_file);
 	typedef HAPI_Result (*StartThriftSocketServerFuncPtr)(const HAPI_ThriftServerOptions * options, int port, HAPI_ProcessId * process_id);
 	typedef HAPI_ThriftServerOptions (*ThriftServerOptions_CreateFuncPtr)();
 	typedef void (*ThriftServerOptions_InitFuncPtr)(HAPI_ThriftServerOptions * in);
@@ -600,6 +602,7 @@ public:
 	static SaveGeoToMemoryFuncPtr SaveGeoToMemory;
 	static SaveHIPFileFuncPtr SaveHIPFile;
 	static SaveNodeToFileFuncPtr SaveNodeToFile;
+	static SessionInfo_InitFuncPtr SessionInfo_Init;
 	static SessionSyncInfo_CreateFuncPtr SessionSyncInfo_Create;
 	static SetAnimCurveFuncPtr SetAnimCurve;
 	static SetAttributeFloat64DataFuncPtr SetAttributeFloat64Data;
@@ -698,7 +701,7 @@ public:
 	static HAPI_Result CreateInProcessSessionEmptyStub(HAPI_Session * session);
 	static HAPI_Result CreateInputNodeEmptyStub(const HAPI_Session * session, HAPI_NodeId * node_id, const char * name);
 	static HAPI_Result CreateNodeEmptyStub(const HAPI_Session * session, HAPI_NodeId parent_node_id, const char * operator_name, const char * node_label, HAPI_Bool cook_on_creation, HAPI_NodeId * new_node_id);
-	static HAPI_Result CreateThriftNamedPipeSessionEmptyStub(HAPI_Session * session, const char * pipe_name);
+	static HAPI_Result CreateThriftNamedPipeSessionEmptyStub(HAPI_Session * session, const char * pipe_name,const HAPI_SessionInfo * session_info);
 	static HAPI_Result CreateThriftSocketSessionEmptyStub(HAPI_Session * session, const char * host_name, int port);
 	static HAPI_Result CreateWorkitemEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId * workitem_id, const char * name, int index);
 	static HAPI_CurveInfo CurveInfo_CreateEmptyStub();
@@ -913,6 +916,7 @@ public:
 	static HAPI_Result SaveGeoToMemoryEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, char * buffer, int length);
 	static HAPI_Result SaveHIPFileEmptyStub(const HAPI_Session * session, const char * file_path, HAPI_Bool lock_nodes);
 	static HAPI_Result SaveNodeToFileEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, const char * file_name);
+	static void SessionInfo_InitEmptyStub(HAPI_SessionInfo * in);
 	static HAPI_SessionSyncInfo SessionSyncInfo_CreateEmptyStub();
 	static HAPI_Result SetAnimCurveEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_ParmId parm_id, int parm_index, const HAPI_Keyframe * curve_keyframes_array, int keyframe_count);
 	static HAPI_Result SetAttributeFloat64DataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PartId part_id, const char * name, const HAPI_AttributeInfo * attr_info, const double * data_array, int start, int length);
@@ -959,7 +963,7 @@ public:
 	static HAPI_Result SetWorkitemFloatDataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, const char * data_name, const float * values_array, int length);
 	static HAPI_Result SetWorkitemIntDataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, const char * data_name, const int * values_array, int length);
 	static HAPI_Result SetWorkitemStringDataEmptyStub(const HAPI_Session * session, HAPI_NodeId node_id, HAPI_PDG_WorkitemId workitem_id, const char * data_name, int data_index, const char * value);
-	static HAPI_Result StartThriftNamedPipeServerEmptyStub(const HAPI_ThriftServerOptions * options, const char * pipe_name, HAPI_ProcessId * process_id);
+	static HAPI_Result StartThriftNamedPipeServerEmptyStub(const HAPI_ThriftServerOptions * options, const char * pipe_name, HAPI_ProcessId * process_id,const char * log_file);
 	static HAPI_Result StartThriftSocketServerEmptyStub(const HAPI_ThriftServerOptions * options, int port, HAPI_ProcessId * process_id);
 	static HAPI_ThriftServerOptions ThriftServerOptions_CreateEmptyStub();
 	static void ThriftServerOptions_InitEmptyStub(HAPI_ThriftServerOptions * in);

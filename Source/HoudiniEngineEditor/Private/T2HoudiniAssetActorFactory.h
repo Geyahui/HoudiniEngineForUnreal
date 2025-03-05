@@ -27,17 +27,17 @@
 #pragma once
 
 #include "ActorFactories/ActorFactory.h"
-#include "HoudiniAssetActorFactory.generated.h"
+#include "T2HoudiniAssetActorFactory.generated.h"
 
 class FText;
 class AActor;
 class UObject;
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 
 struct FAssetData;
 
 UCLASS(config = Editor)
-class UHoudiniAssetActorFactory : public UActorFactory
+class UT2HoudiniAssetActorFactory : public UActorFactory
 {
 	GENERATED_UCLASS_BODY()
 
@@ -54,5 +54,5 @@ public:
 	virtual void PostCreateBlueprint(UObject * Asset, AActor * CDO) override;
 
 protected:
-	bool AddHoudiniLogoToComponent(UHoudiniAssetComponent* HAC);
+	bool AddHoudiniLogoToComponent(UT2HoudiniAssetComponent* HAC);
 };

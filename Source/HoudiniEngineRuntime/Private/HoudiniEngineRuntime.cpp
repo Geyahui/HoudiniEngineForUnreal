@@ -26,15 +26,15 @@
 
 #include "HoudiniEngineRuntime.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 
 #include "Modules/ModuleManager.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
-IMPLEMENT_MODULE(FHoudiniEngineRuntime, HoudiniEngineRuntime);
+IMPLEMENT_MODULE(FHoudiniEngineRuntime, T2HoudiniEngineRuntime);
 DEFINE_LOG_CATEGORY(LogHoudiniEngineRuntime);
 
 FHoudiniEngineRuntime *
@@ -87,7 +87,7 @@ FHoudiniEngineRuntime::GetRegisteredHoudiniComponentCount()
 }
 
 
-UHoudiniAssetComponent*
+UT2HoudiniAssetComponent*
 FHoudiniEngineRuntime::GetRegisteredHoudiniComponentAt(const int32& Index)
 {
 	if (!IsInitialized())
@@ -98,7 +98,7 @@ FHoudiniEngineRuntime::GetRegisteredHoudiniComponentAt(const int32& Index)
 	if (!RegisteredHoudiniComponents.IsValidIndex(Index))
 		return nullptr;	
 
-	TWeakObjectPtr<UHoudiniAssetComponent> Ptr = RegisteredHoudiniComponents[Index];
+	TWeakObjectPtr<UT2HoudiniAssetComponent> Ptr = RegisteredHoudiniComponents[Index];
 	if (!Ptr.IsValid())
 		return nullptr;
 
@@ -116,14 +116,14 @@ FHoudiniEngineRuntime::CleanUpRegisteredHoudiniComponents()
 	FScopeLock ScopeLock(&CriticalSection);
 	for (int Idx = RegisteredHoudiniComponents.Num() - 1; Idx >= 0; Idx--)
 	{
-		TWeakObjectPtr<UHoudiniAssetComponent> Ptr = RegisteredHoudiniComponents[Idx];
+		TWeakObjectPtr<UT2HoudiniAssetComponent> Ptr = RegisteredHoudiniComponents[Idx];
 		if ( !Ptr.IsValid() || Ptr.IsStale() )
 		{
 			UnRegisterHoudiniComponent(Idx);
 			continue;
 		}
 
-		UHoudiniAssetComponent* CurrentHAC = Ptr.Get();
+		UT2HoudiniAssetComponent* CurrentHAC = Ptr.Get();
 		if (!CurrentHAC || CurrentHAC->IsPendingKill())
 		{
 			UnRegisterHoudiniComponent(Idx);
@@ -134,7 +134,7 @@ FHoudiniEngineRuntime::CleanUpRegisteredHoudiniComponents()
 
 
 bool
-FHoudiniEngineRuntime::IsComponentRegistered(UHoudiniAssetComponent* HAC) const
+FHoudiniEngineRuntime::IsComponentRegistered(UT2HoudiniAssetComponent* HAC) const
 {
 	// No need for duplicates
 	if (HAC && RegisteredHoudiniComponents.Find(HAC) != INDEX_NONE)
@@ -145,7 +145,7 @@ FHoudiniEngineRuntime::IsComponentRegistered(UHoudiniAssetComponent* HAC) const
 
 
 void
-FHoudiniEngineRuntime::RegisterHoudiniComponent(UHoudiniAssetComponent* HAC, bool bAllowArchetype)
+FHoudiniEngineRuntime::RegisterHoudiniComponent(UT2HoudiniAssetComponent* HAC, bool bAllowArchetype)
 {
 	if (!FHoudiniEngineRuntime::IsInitialized())
 		return;
@@ -196,7 +196,7 @@ FHoudiniEngineRuntime::MarkNodeIdAsPendingDelete(const int32& InNodeId, bool bDe
 
 
 void
-FHoudiniEngineRuntime::UnRegisterHoudiniComponent(UHoudiniAssetComponent* HAC)
+FHoudiniEngineRuntime::UnRegisterHoudiniComponent(UT2HoudiniAssetComponent* HAC)
 {
 	if (!IsInitialized())
 		return;
@@ -226,10 +226,10 @@ FHoudiniEngineRuntime::UnRegisterHoudiniComponent(const int32& ValidIndex)
 
 	FScopeLock ScopeLock(&CriticalSection);
 
-	TWeakObjectPtr<UHoudiniAssetComponent> Ptr = RegisteredHoudiniComponents[ValidIndex];
+	TWeakObjectPtr<UT2HoudiniAssetComponent> Ptr = RegisteredHoudiniComponents[ValidIndex];
 	if (Ptr.IsValid(true, false))
 	{
-		UHoudiniAssetComponent* HAC = Ptr.Get();
+		UT2HoudiniAssetComponent* HAC = Ptr.Get();
 		if (HAC && HAC->CanDeleteHoudiniNodes())
 		{
 			MarkNodeIdAsPendingDelete(HAC->GetAssetId(), true);
@@ -300,7 +300,7 @@ FString
 FHoudiniEngineRuntime::GetDefaultTemporaryCookFolder() const
 {
 	// Get Runtime settings to get the Temp Cook Folder
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	if (!HoudiniRuntimeSettings)
 		return HAPI_UNREAL_DEFAULT_TEMP_COOK_FOLDER;
 
@@ -312,7 +312,7 @@ FString
 FHoudiniEngineRuntime::GetDefaultBakeFolder() const
 {
 	// Get Runtime settings to get the default bake Folder
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	if (!HoudiniRuntimeSettings)
 		return HAPI_UNREAL_DEFAULT_BAKE_FOLDER;
 

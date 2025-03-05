@@ -32,7 +32,7 @@
 #include "HoudiniPDGManager.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
-#include "HoudiniAssetActor.h"
+#include "T2HoudiniAssetActor.h"
 #include "HoudiniEngine.h"
 #include "HoudiniEngineBakeUtils.h"
 #include "HoudiniEngineCommands.h"
@@ -623,7 +623,7 @@ FHoudiniPDGDetails::AddPDGCommandletStatus(
             SNew(STextBlock)
             .Visibility_Lambda([]()
             {
-            	const UHoudiniRuntimeSettings* Settings = GetDefault<UHoudiniRuntimeSettings>();
+            	const UT2HoudiniRuntimeSettings* Settings = GetDefault<UT2HoudiniRuntimeSettings>();
             	if (IsValid(Settings))
             	{
             		return FHoudiniEngineCommands::IsPDGCommandletEnabled() ? EVisibility::Visible : EVisibility::Collapsed;

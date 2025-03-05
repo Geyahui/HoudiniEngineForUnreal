@@ -41,7 +41,7 @@ enum class EHoudiniMultiParmModificationType : uint8
 };
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniParameterMultiParm : public UHoudiniParameter
+class T2HOUDINIENGINERUNTIME_API UHoudiniParameterMultiParm : public UHoudiniParameter
 {
 	GENERATED_UCLASS_BODY()
 

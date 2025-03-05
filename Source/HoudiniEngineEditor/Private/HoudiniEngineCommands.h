@@ -32,8 +32,8 @@
 #include "Misc/SlowTask.h"
 #include "Delegates/IDelegateInstance.h"
 
-class UHoudiniAssetComponent;
-class AHoudiniAssetActor;
+class UT2HoudiniAssetComponent;
+class AT2HoudiniAssetActor;
 struct FSlowTask;
 
 // Class containing commands for Houdini Engine actions
@@ -43,7 +43,7 @@ public:
 	FHoudiniEngineCommands()
 		: TCommands<FHoudiniEngineCommands>
 		(
-			TEXT("HoudiniEngine"), // Context name for fast lookup
+			TEXT("T2HoudiniEngine"), // Context name for fast lookup
 			NSLOCTEXT("Contexts", "HoudiniEngine", "Houdini Engine Plugin"), // Localized context name for displaying
 			NAME_None, // Parent context name. 
 			FHoudiniEngineStyle::GetStyleSetName() // Icon Style Set
@@ -138,7 +138,7 @@ public:
 	static void RefineHoudiniProxyMeshesToStaticMeshes(bool bOnlySelectedActors, bool bSilent=false, bool bRefineAll=true, bool bOnPreSaveWorld=false, UWorld *PreSaveWorld=nullptr, bool bOnPrePIEBeginPlay=false);
 
 	// Refine all proxy meshes on UHoudiniAssetCompoments of InActorsToRefine.
-	static void RefineHoudiniProxyMeshActorArrayToStaticMeshes(const TArray<AHoudiniAssetActor*>& InActorsToRefine, bool bSilent=false);
+	static void RefineHoudiniProxyMeshActorArrayToStaticMeshes(const TArray<AT2HoudiniAssetActor*>& InActorsToRefine, bool bSilent=false);
 
 	static void StartPDGCommandlet();
 
@@ -229,12 +229,12 @@ public:
 protected:
 
 	// Triage a HoudiniAssetComponent with UHoudiniStaticMesh as needing cooking or if a UStaticMesh can be immediately built
-	static void TriageHoudiniAssetComponentsForProxyMeshRefinement(UHoudiniAssetComponent* InHAC, bool bRefineAll, bool bOnPreSaveWorld, UWorld *OnPreSaveWorld, bool bOnPreBeginPIE, TArray<UHoudiniAssetComponent*> &OutToRefine, TArray<UHoudiniAssetComponent*> &OutToCook, TArray<UHoudiniAssetComponent*> &OutSkipped);
+	static void TriageHoudiniAssetComponentsForProxyMeshRefinement(UT2HoudiniAssetComponent* InHAC, bool bRefineAll, bool bOnPreSaveWorld, UWorld *OnPreSaveWorld, bool bOnPreBeginPIE, TArray<UT2HoudiniAssetComponent*> &OutToRefine, TArray<UT2HoudiniAssetComponent*> &OutToCook, TArray<UT2HoudiniAssetComponent*> &OutSkipped);
 
 	static void RefineTriagedHoudiniProxyMesehesToStaticMeshes(
-		const TArray<UHoudiniAssetComponent*>& InComponentsToRefine,
-		const TArray<UHoudiniAssetComponent*>& InComponentsToCook,
-		const TArray<UHoudiniAssetComponent*>& InSkippedComponents,
+		const TArray<UT2HoudiniAssetComponent*>& InComponentsToRefine,
+		const TArray<UT2HoudiniAssetComponent*>& InComponentsToCook,
+		const TArray<UT2HoudiniAssetComponent*>& InSkippedComponents,
 		bool bInSilent=false,
 		bool bInRefineAll=true,
 		bool bInOnPreSaveWorld=false,
@@ -243,14 +243,14 @@ protected:
 
 	// Called in a background thread by RefineHoudiniProxyMeshesToStaticMeshes when some components need to be cooked to generate UStaticMeshes. Checks and waits for
 	// cooking of each component to complete, and then calls RefineHoudiniProxyMeshesToStaticMeshesNotifyDone on the main thread.
-	static void RefineHoudiniProxyMeshesToStaticMeshesWithCookInBackgroundThread(const TArray<UHoudiniAssetComponent*> &InComponentsToCook, TSharedPtr<FSlowTask, ESPMode::ThreadSafe> InTaskProgress, const uint32 InNumComponentsToProcess, const uint32 InNumSkippedComponents, bool bInOnPreSaveWorld, UWorld *InOnPreSaveWorld, const TArray<UHoudiniAssetComponent*> &InSuccessfulComponents);
+	static void RefineHoudiniProxyMeshesToStaticMeshesWithCookInBackgroundThread(const TArray<UT2HoudiniAssetComponent*> &InComponentsToCook, TSharedPtr<FSlowTask, ESPMode::ThreadSafe> InTaskProgress, const uint32 InNumComponentsToProcess, const uint32 InNumSkippedComponents, bool bInOnPreSaveWorld, UWorld *InOnPreSaveWorld, const TArray<UT2HoudiniAssetComponent*> &InSuccessfulComponents);
 
 	// Display a notification / end/close progress dialog, when refining mesh proxies to static meshes is complete
-	static void RefineHoudiniProxyMeshesToStaticMeshesNotifyDone(uint32 InNumTotalComponents, uint32 InNumSkippedComponents, uint32 InNumFailedToCook, FSlowTask *InTaskProgress, bool bCancelled, bool bOnPreSaveWorld, UWorld *InOnPreSaveWorld, const TArray<UHoudiniAssetComponent*> &InSuccessfulComponents);
+	static void RefineHoudiniProxyMeshesToStaticMeshesNotifyDone(uint32 InNumTotalComponents, uint32 InNumSkippedComponents, uint32 InNumFailedToCook, FSlowTask *InTaskProgress, bool bCancelled, bool bOnPreSaveWorld, UWorld *InOnPreSaveWorld, const TArray<UT2HoudiniAssetComponent*> &InSuccessfulComponents);
 
 	// Handle OnPostSaveWorld for refining proxy meshes: this saves all the dirty UPackages of the UStaticMeshes that were created during RefineHoudiniProxyMeshesToStaticMeshes
 	// if it was called as a result of a PreSaveWorld.
-	static void RefineProxyMeshesHandleOnPostSaveWorld(const TArray<UHoudiniAssetComponent*> &InSuccessfulComponents, uint32 InSaveFlags, UWorld* InWorld, bool bInSuccess);
+	static void RefineProxyMeshesHandleOnPostSaveWorld(const TArray<UT2HoudiniAssetComponent*> &InSuccessfulComponents, uint32 InSaveFlags, UWorld* InWorld, bool bInSuccess);
 
 	// Helper function used to indicate to all HAC that they need to be instantiated in the new HE session
 	// Needs to be call after starting/restarting/connecting/session syncing a HE session..

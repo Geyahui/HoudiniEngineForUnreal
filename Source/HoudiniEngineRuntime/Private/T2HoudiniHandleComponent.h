@@ -28,7 +28,7 @@
 
 #include "Components/SceneComponent.h"
 
-#include "HoudiniHandleComponent.generated.h"
+#include "T2HoudiniHandleComponent.generated.h"
 
 class UHoudiniParameter;
 
@@ -42,7 +42,7 @@ enum class EXformParameter : uint8
 };
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniHandleParameter : public UObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniHandleParameter : public UObject
 {
 public:
 	GENERATED_UCLASS_BODY()
@@ -53,9 +53,9 @@ public:
 	UPROPERTY()
 	int32 TupleIndex;
 
-	
+
 	bool Bind(
-	    float & OutValue,
+		float & OutValue,
 		const char * CmpName,
 		int32 InTupleIdx,
 		const FString & HandleParmName,
@@ -75,7 +75,7 @@ public:
 };
 
 UENUM()
-enum class EHoudiniHandleType : uint8 
+enum class ET2HoudiniHandleType : uint8 
 {
 	Xform,
 	Bounder,
@@ -83,11 +83,11 @@ enum class EHoudiniHandleType : uint8
 };
 
 UCLASS(Blueprintable, BlueprintType, EditInlineNew, config = Engine, meta = (BlueprintSpawnableComponent))
-class HOUDINIENGINERUNTIME_API UHoudiniHandleComponent : public USceneComponent 
+class T2HOUDINIENGINERUNTIME_API UT2HoudiniHandleComponent : public USceneComponent 
 {
 public:	
 
-	friend class UHoudiniAssetComponent;
+	friend class UT2HoudiniAssetComponent;
 
 	friend class FHoudiniHandleComponentVisualizer;
 
@@ -96,18 +96,18 @@ public:
 	virtual void Serialize(FArchive & Ar) override;
 
 	FString GetHandleName() const { return HandleName; };
-	EHoudiniHandleType GetHandleType() const { return HandleType; };
+	ET2HoudiniHandleType GetHandleType() const { return HandleType; };
 
 	void SetHandleName(const FString& InHandleName) { HandleName = InHandleName; };
-	void SetHandleType(const EHoudiniHandleType& InHandleType) { HandleType = InHandleType; };
+	void SetHandleType(const ET2HoudiniHandleType& InHandleType) { HandleType = InHandleType; };
 
 	// Equality, consider two handle equals if they have the same name, type, tuple size and disabled status
-	bool operator==(const UHoudiniHandleComponent& other) const
+	bool operator==(const UT2HoudiniHandleComponent& other) const
 	{
 		return (HandleType == other.HandleType && HandleName.Equals(other.HandleName));
 	}
 
-	bool Matches(const UHoudiniHandleComponent& other) const { return (*this == other); };
+	bool Matches(const UT2HoudiniHandleComponent& other) const { return (*this == other); };
 
 	void InitializeHandleParameters();
 
@@ -127,7 +127,7 @@ public:
 
 private:
 	UPROPERTY()
-	EHoudiniHandleType HandleType;
+	ET2HoudiniHandleType HandleType;
 
 	UPROPERTY()
 	FString HandleName;

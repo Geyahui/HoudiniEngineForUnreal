@@ -30,12 +30,12 @@
 #include "HoudiniApi.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniEngineRuntimeUtils.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 #include "HoudiniEngineScheduler.h"
 #include "HoudiniEngineManager.h"
 #include "HoudiniEngineTask.h"
 #include "HoudiniEngineTaskInfo.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HAPI/HAPI_Version.h"
 
 #include "Modules/ModuleManager.h"
@@ -54,7 +54,7 @@
 
 #define LOCTEXT_NAMESPACE "HoudiniEngine"
 
-IMPLEMENT_MODULE(FHoudiniEngine, HoudiniEngine)
+IMPLEMENT_MODULE(FHoudiniEngine, T2HoudiniEngine)
 DEFINE_LOG_CATEGORY( LogHoudiniEngine );
 
 FHoudiniEngine *
@@ -118,7 +118,7 @@ FHoudiniEngine::StartupModule()
 			"Project", "Plugins", "HoudiniEngine",
 			LOCTEXT("RuntimeSettingsName", "Houdini Engine"),
 			LOCTEXT("RuntimeSettingsDescription", "Configure the HoudiniEngine plugin"),
-			GetMutableDefault< UHoudiniRuntimeSettings >());
+			GetMutableDefault< UT2HoudiniRuntimeSettings >());
 	}
 #endif
 
@@ -209,11 +209,11 @@ FHoudiniEngine::StartupModule()
 	SetSessionStatus(EHoudiniSessionStatus::NotStarted);
 
 	// Set the default value for pausing houdini engine cooking
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	bEnableCookingGlobal = !HoudiniRuntimeSettings->bPauseCookingOnStart;
 
 	// Check if a null session is set
-	bool bNoneSession = (HoudiniRuntimeSettings->SessionType == EHoudiniRuntimeSettingsSessionType::HRSST_None);
+	bool bNoneSession = (HoudiniRuntimeSettings->SessionType == ET2HoudiniRuntimeSettingsSessionType::HRSST_None);
 	if (bNoneSession)
 		SetSessionStatus(EHoudiniSessionStatus::None);
 
@@ -379,7 +379,7 @@ FHoudiniEngine::RetrieveTaskInfo(const FGuid& InHapiGUID, FHoudiniEngineTaskInfo
 
 /*
 void
-FHoudiniEngine::AddHoudiniAssetComponent(UHoudiniAssetComponent* HAC)
+FHoudiniEngine::AddT2HoudiniAssetComponent(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return;
@@ -410,8 +410,8 @@ FHoudiniEngine::GetSessionStatus() const
 void
 FHoudiniEngine::SetSessionStatus(const EHoudiniSessionStatus& InSessionStatus)
 {
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
-	if (HoudiniRuntimeSettings->SessionType == EHoudiniRuntimeSettingsSessionType::HRSST_None)
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
+	if (HoudiniRuntimeSettings->SessionType == ET2HoudiniRuntimeSettingsSessionType::HRSST_None)
 	{
 		// Check for none sessions first
 		SessionStatus = EHoudiniSessionStatus::None;
@@ -483,7 +483,7 @@ bool
 FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 	const bool& StartAutomaticServer,
 	const float& AutomaticServerTimeout,
-	const EHoudiniRuntimeSettingsSessionType& SessionType,
+	const ET2HoudiniRuntimeSettingsSessionType& SessionType,
 	const FString& ServerPipeName,
 	const int32& ServerPort,
 	const FString& ServerHost)
@@ -530,7 +530,7 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 
 	switch ( SessionType )
 	{
-		case EHoudiniRuntimeSettingsSessionType::HRSST_Socket:
+		case ET2HoudiniRuntimeSettingsSessionType::HRSST_Socket:
 		{
 			// Try to connect to an existing socket session first
 			SessionResult = FHoudiniApi::CreateThriftSocketSession(
@@ -552,29 +552,31 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 		}
 		break;
 
-		case EHoudiniRuntimeSettingsSessionType::HRSST_NamedPipe:
+		case ET2HoudiniRuntimeSettingsSessionType::HRSST_NamedPipe:
 		{
 			// Try to connect to an existing pipe session first
+			HAPI_SessionInfo SessionInfo;
+			FHoudiniApi::SessionInfo_Init(&SessionInfo);
 			SessionResult = FHoudiniApi::CreateThriftNamedPipeSession(
-				SessionPtr, TCHAR_TO_UTF8(*ServerPipeName) );
-
+				SessionPtr, TCHAR_TO_UTF8(*ServerPipeName) ,&SessionInfo );
+			// SessionResult = 	HAPI_RESULT_INVALID_ARGUMENT;
 			// Start a session and try to connect to it if we failed
 			if (StartAutomaticServer && SessionResult != HAPI_RESULT_SUCCESS)
 			{
 				UpdatePathForServer();
 				FHoudiniApi::StartThriftNamedPipeServer(
-					&ServerOptions, TCHAR_TO_UTF8(*ServerPipeName), nullptr);
+					&ServerOptions, TCHAR_TO_UTF8(*ServerPipeName), nullptr,nullptr);
 
 				// We've started the server manually, disable session sync
 				bEnableSessionSync = false;
 
 				SessionResult = FHoudiniApi::CreateThriftNamedPipeSession(
-					SessionPtr, TCHAR_TO_UTF8(*ServerPipeName));
+					SessionPtr, TCHAR_TO_UTF8(*ServerPipeName),&SessionInfo);
 			}
 		}
 		break;
 
-		case EHoudiniRuntimeSettingsSessionType::HRSST_None:
+		case ET2HoudiniRuntimeSettingsSessionType::HRSST_None:
 		{
 			HOUDINI_LOG_MESSAGE(TEXT("Session type set to None, Cooking is disabled."));
 			// Disable session sync
@@ -583,7 +585,7 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 		}
 
 		// As of Unreal 4.19, InProcess sessions are not supported anymore
-		case EHoudiniRuntimeSettingsSessionType::HRSST_InProcess:			
+		case ET2HoudiniRuntimeSettingsSessionType::HRSST_InProcess:			
 		default:
 			HOUDINI_LOG_ERROR(TEXT("Unsupported Houdini Engine session type"));
 			// Disable session sync
@@ -591,7 +593,7 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 			break;
 	}
 
-	if(SessionType != EHoudiniRuntimeSettingsSessionType::HRSST_None)
+	if(SessionType != ET2HoudiniRuntimeSettingsSessionType::HRSST_None)
 		FHoudiniEngine::Get().SetFirstSessionCreated(true);
 
 	if (SessionResult != HAPI_RESULT_SUCCESS || !SessionPtr)
@@ -610,7 +612,7 @@ FHoudiniEngine::StartSession(HAPI_Session*& SessionPtr,
 
 bool
 FHoudiniEngine::SessionSyncConnect(
-	const EHoudiniRuntimeSettingsSessionType& SessionType,
+	const ET2HoudiniRuntimeSettingsSessionType& SessionType,
 	const FString& ServerPipeName,
 	const FString& ServerHost,
 	const int32& ServerPort)
@@ -627,7 +629,7 @@ FHoudiniEngine::SessionSyncConnect(
 	SetSessionStatus(EHoudiniSessionStatus::Failed);
 
 	HAPI_Result SessionResult = HAPI_RESULT_FAILURE;
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	
 	HAPI_ThriftServerOptions ServerOptions;
 	FMemory::Memzero< HAPI_ThriftServerOptions >(ServerOptions);
@@ -636,7 +638,7 @@ FHoudiniEngine::SessionSyncConnect(
 
 	switch (SessionType)
 	{
-	case EHoudiniRuntimeSettingsSessionType::HRSST_Socket:
+	case ET2HoudiniRuntimeSettingsSessionType::HRSST_Socket:
 	{
 		// Try to connect to an existing socket session first
 		SessionResult = FHoudiniApi::CreateThriftSocketSession(
@@ -644,16 +646,16 @@ FHoudiniEngine::SessionSyncConnect(
 	}
 	break;
 
-	case EHoudiniRuntimeSettingsSessionType::HRSST_NamedPipe:
+	case ET2HoudiniRuntimeSettingsSessionType::HRSST_NamedPipe:
 	{
 		// Try to connect to an existing pipe session first
 		SessionResult = FHoudiniApi::CreateThriftNamedPipeSession(
-			&Session, TCHAR_TO_UTF8(*ServerPipeName));
+			&Session, TCHAR_TO_UTF8(*ServerPipeName),nullptr);
 	}
 	break;
 
-	case EHoudiniRuntimeSettingsSessionType::HRSST_None:
-	case EHoudiniRuntimeSettingsSessionType::HRSST_InProcess:
+	case ET2HoudiniRuntimeSettingsSessionType::HRSST_None:
+	case ET2HoudiniRuntimeSettingsSessionType::HRSST_InProcess:
 	default:
 		HOUDINI_LOG_ERROR(TEXT("Unsupported Houdini Engine Session Sync Type!!"));
 		bEnableSessionSync = false;
@@ -688,7 +690,7 @@ FHoudiniEngine::InitializeHAPISession()
 		HOUDINI_LOG_ERROR(TEXT("Failed to initialize HAPI: The Houdini API stubs have not been properly initialized."));
 		return false;
 	}
-
+	HAPI_Result AASWE =   FHoudiniApi::IsSessionValid(GetSession());
 	// We need a Valid Session
 	if (HAPI_RESULT_SUCCESS != FHoudiniApi::IsSessionValid(GetSession()))
 	{
@@ -739,7 +741,7 @@ FHoudiniEngine::InitializeHAPISession()
 			TEXT("This could cause instabilities and crashes when using the Houdini Engine plugin"));
 	}
 
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 
 	// Default CookOptions
 	HAPI_CookOptions CookOptions = FHoudiniEngine::GetDefaultCookOptions();
@@ -859,7 +861,7 @@ FHoudiniEngine::RestartSession()
 	else
 	{
 		// Try to reconnect/start a new session
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 		if (!StartSession(
 			SessionPtr, 
 			HoudiniRuntimeSettings->bStartAutomaticServer,
@@ -902,7 +904,7 @@ FHoudiniEngine::RestartSession()
 }
 
 bool
-FHoudiniEngine::CreateSession(const EHoudiniRuntimeSettingsSessionType& SessionType, FName OverrideServerPipeName)
+FHoudiniEngine::CreateSession(const ET2HoudiniRuntimeSettingsSessionType& SessionType, FName OverrideServerPipeName)
 {
 	HAPI_Session* SessionPtr = &Session;
 
@@ -913,7 +915,7 @@ FHoudiniEngine::CreateSession(const EHoudiniRuntimeSettingsSessionType& SessionT
 	bool bSuccess = false;
 
 	// Try to reconnect/start a new session
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 	if (!StartSession(
 		SessionPtr,
 		true,
@@ -955,7 +957,7 @@ FHoudiniEngine::CreateSession(const EHoudiniRuntimeSettingsSessionType& SessionT
 }
 
 bool
-FHoudiniEngine::ConnectSession(const EHoudiniRuntimeSettingsSessionType& SessionType)
+FHoudiniEngine::ConnectSession(const ET2HoudiniRuntimeSettingsSessionType& SessionType)
 {
 	HAPI_Session* SessionPtr = &Session;
 
@@ -966,7 +968,7 @@ FHoudiniEngine::ConnectSession(const EHoudiniRuntimeSettingsSessionType& Session
 	bool bSuccess = false;
 
 	// Try to reconnect/start a new session
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 	if (!StartSession(
 		SessionPtr,
 		false,
@@ -1057,7 +1059,7 @@ FHoudiniEngine::CreateTaskSlateNotification(
 
 	// Check whether we want to display Slate cooking and instantiation notifications.
 	bool bDisplaySlateCookingNotifications = false;
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	if (HoudiniRuntimeSettings)
 		bDisplaySlateCookingNotifications = HoudiniRuntimeSettings->bDisplaySlateCookingNotifications;
 
@@ -1197,7 +1199,7 @@ FHoudiniEngine::UnregisterPostEngineInitCallback()
 
 bool FHoudiniEngine::IsSyncWithHoudiniCookEnabled() const
 {
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	return HoudiniRuntimeSettings ? HoudiniRuntimeSettings->bSyncWithHoudiniCook : false;
 }
 

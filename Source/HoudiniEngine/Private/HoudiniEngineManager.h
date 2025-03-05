@@ -35,8 +35,8 @@
 
 #include "HoudiniPDGManager.h"
 
-class UHoudiniAsset;
-class UHoudiniAssetComponent;
+class UT2HoudiniAsset;
+class UT2HoudiniAssetComponent;
 
 struct FHoudiniEngineTaskInfo;
 struct FGuid;
@@ -55,11 +55,11 @@ public:
 	bool Tick(float DeltaTime);
 
 	// Updates / Process a component
-	void ProcessComponent(UHoudiniAssetComponent* HAC);
+	void ProcessComponent(UT2HoudiniAssetComponent* HAC);
 
 	// Build UStaticMesh for all UHoudiniStaticMesh in a HAC.
 	// This is fired by the OnRefinedMeshesTimerDelegate on a HAC
-	void BuildStaticMeshesForAllHoudiniStaticMeshes(UHoudiniAssetComponent* HAC);
+	void BuildStaticMeshesForAllHoudiniStaticMeshes(UT2HoudiniAssetComponent* HAC);
 
 	void StartPDGCommandlet()
 	{
@@ -88,13 +88,13 @@ protected:
 	// Returns true if the given task's status was properly found
 	bool UpdateTaskStatus(FGuid& OutTaskGUID, FHoudiniEngineTaskInfo& OutTaskInfo);
 
-	// Start a task to instantiate the given HoudiniAsset
+	// Start a task to instantiate the given T2HoudiniAsset
 	// Return true if the task was successfully created
-	bool StartTaskAssetInstantiation(UHoudiniAsset* HoudiniAsset, const FString& DisplayName, FGuid& OutTaskGUID);
+	bool StartTaskAssetInstantiation(UT2HoudiniAsset* HoudiniAsset, const FString& DisplayName, FGuid& OutTaskGUID);
 
 	// Updates progress of the instantiation task
 	// Returns true if a state change should be made
-	bool UpdateInstantiating(UHoudiniAssetComponent* HAC, EHoudiniAssetState& NewState);
+	bool UpdateInstantiating(UT2HoudiniAssetComponent* HAC, EHoudiniAssetState& NewState);
 
 	// Start a task to instantiate the Houdini Asset with the given node Id
 	// Returns true if the task was successfully created
@@ -102,20 +102,20 @@ protected:
 
 	// Updates progress of the cooking task
 	// Returns true if a state change should be made
-	bool UpdateCooking(UHoudiniAssetComponent* HAC, EHoudiniAssetState& NewState);
+	bool UpdateCooking(UT2HoudiniAssetComponent* HAC, EHoudiniAssetState& NewState);
 
 	// Called to update template components. 
-	bool PreCookTemplate(UHoudiniAssetComponent* HAC);
+	bool PreCookTemplate(UT2HoudiniAssetComponent* HAC);
 
 	// Called to update all houdini nodes/params/inputs before a cook has started
-	bool PreCook(UHoudiniAssetComponent* HAC);
+	bool PreCook(UT2HoudiniAssetComponent* HAC);
 
 	// Called after a cook has finished 
-	bool PostCook(UHoudiniAssetComponent* HAC, const bool& bSuccess, const HAPI_NodeId& TaskAssetId);
+	bool PostCook(UT2HoudiniAssetComponent* HAC, const bool& bSuccess, const HAPI_NodeId& TaskAssetId);
 
-	bool StartTaskAssetProcess(UHoudiniAssetComponent* HAC);
+	bool StartTaskAssetProcess(UT2HoudiniAssetComponent* HAC);
 
-	bool UpdateProcess(UHoudiniAssetComponent* HAC);
+	bool UpdateProcess(UT2HoudiniAssetComponent* HAC);
 
 	// Starts a rebuild task (delete then re instantiate)
 	// The NodeID should be invalidated after a successful call
@@ -125,7 +125,7 @@ protected:
 	// The NodeID should be invalidated after a successful call
 	bool StartTaskAssetDelete(const HAPI_NodeId& InAssetId, FGuid& OutTaskGUID, bool bShouldDeleteParent);
 
-	bool IsCookingEnabledForHoudiniAsset(UHoudiniAssetComponent* HAC);
+	bool IsCookingEnabledForHoudiniAsset(UT2HoudiniAssetComponent* HAC);
 
 	// Syncs the houdini viewport to Unreal's viewport
 	// Returns true if the Houdini viewport has been modified
@@ -136,9 +136,9 @@ protected:
 	bool SyncUnrealViewportToHoudini();
 
 	// Disable auto save by setting min time till auto save to the max value
-	void DisableEditorAutoSave(const UHoudiniAssetComponent* HAC);
+	void DisableEditorAutoSave(const UT2HoudiniAssetComponent* HAC);
 
-	void EnableEditorAutoSave(const UHoudiniAssetComponent* HAC);
+	void EnableEditorAutoSave(const UT2HoudiniAssetComponent* HAC);
 
 private:
 
@@ -175,5 +175,5 @@ private:
 	bool bOffsetZeroed;
 
 	// Indicates which HACs disable auto-saving
-	TSet<const UHoudiniAssetComponent*> DisableAutoSavingHACs;
+	TSet<const UT2HoudiniAssetComponent*> DisableAutoSavingHACs;
 };

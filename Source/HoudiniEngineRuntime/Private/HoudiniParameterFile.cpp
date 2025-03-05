@@ -26,8 +26,8 @@
 
 #include "HoudiniParameterFile.h"
 
-#include "HoudiniAsset.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAsset.h"
+#include "T2HoudiniAssetComponent.h"
 
 #include "Misc/Paths.h"
 

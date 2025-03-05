@@ -36,12 +36,12 @@
 #include "HoudiniPackageParams.h"
 #include "HoudiniTranslatorTypes.h"
 
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 class ULandscapeLayerInfoObject;
 struct FHoudiniGenericAttribute;
 struct FHoudiniPackageParams;
 
-struct HOUDINIENGINE_API FHoudiniLandscapeTranslator
+struct T2HOUDINIENGINE_API FHoudiniLandscapeTranslator
 {
 	public:
 		enum class LandscapeActorType : uint8
@@ -174,7 +174,7 @@ struct HOUDINIENGINE_API FHoudiniLandscapeTranslator
 			ALandscapeProxy* LandscapeActor);
 
 		/**
-		 * Attach the given actor the HoudiniAssetComponent that 
+		 * Attach the given actor the T2HoudiniAssetComponent that 
 		 * owns `InOutput`, if any.
 		 * @returns True if the actor was attached. Otherwise, return false.
 		 */

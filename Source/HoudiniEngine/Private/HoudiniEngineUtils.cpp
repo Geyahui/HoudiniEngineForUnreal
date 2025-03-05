@@ -39,16 +39,16 @@
 
 #include "HoudiniEnginePrivatePCH.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
-#include "HoudiniRuntimeSettings.h"
+#include "T2HoudiniRuntimeSettings.h"
 #include "HoudiniApi.h"
 #include "HoudiniEngine.h"
-#include "HoudiniAsset.h"
-#include "HoudiniAssetActor.h"
+#include "T2HoudiniAsset.h"
+#include "T2HoudiniAssetActor.h"
 #include "HoudiniEngineString.h"
 #include "HoudiniGeoPartObject.h"
 #include "HoudiniGenericAttribute.h"
 #include "HoudiniInput.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniParameter.h"
 #include "HoudiniEngineRuntimeUtils.h"
 #include "HoudiniEngineRuntime.h"
@@ -326,7 +326,7 @@ FHoudiniEngineUtils::GetNodeErrorsWarningsAndMessages(const HAPI_NodeId& InNodeI
 }
 
 const FString
-FHoudiniEngineUtils::GetCookLog(TArray<UHoudiniAssetComponent*>& InHACs)
+FHoudiniEngineUtils::GetCookLog(TArray<UT2HoudiniAssetComponent*>& InHACs)
 {
 	FString CookLog;
 
@@ -393,7 +393,7 @@ FHoudiniEngineUtils::GetCookLog(TArray<UHoudiniAssetComponent*>& InHACs)
 }
 
 const FString
-FHoudiniEngineUtils::GetAssetHelp(UHoudiniAssetComponent* HoudiniAssetComponent)
+FHoudiniEngineUtils::GetAssetHelp(UT2HoudiniAssetComponent* HoudiniAssetComponent)
 {
 	FString HelpString = TEXT("");
 	if (!HoudiniAssetComponent)
@@ -950,13 +950,13 @@ FHoudiniEngineUtils::IsOuterHoudiniAssetComponent(UObject* Obj)
 {
 	if (!Obj)
 		return false;
-	return Obj->GetOuter() && Obj->GetOuter()->IsA<UHoudiniAssetComponent>();
+	return Obj->GetOuter() && Obj->GetOuter()->IsA<UT2HoudiniAssetComponent>();
 }
 
-UHoudiniAssetComponent*
+UT2HoudiniAssetComponent*
 FHoudiniEngineUtils::GetOuterHoudiniAssetComponent(UObject* Obj)
 {
-	return Cast<UHoudiniAssetComponent>(Obj->GetOuter());
+	return Cast<UT2HoudiniAssetComponent>(Obj->GetOuter());
 }
 
 FString
@@ -996,7 +996,7 @@ FHoudiniEngineUtils::LoadLibHAPI(FString & StoredLibHAPILocation)
 
 	// If we have a custom location specified through settings, attempt to use that.
 	bool bCustomPathFound = false;
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 	if (HoudiniRuntimeSettings && HoudiniRuntimeSettings->bUseCustomHoudiniLocation)
 	{
 		// Create full path to libHAPI binary.
@@ -1286,11 +1286,11 @@ FHoudiniEngineUtils::LocateLibHAPIInRegistry(
 #endif
 
 bool
-FHoudiniEngineUtils::LoadHoudiniAsset(UHoudiniAsset * HoudiniAsset, HAPI_AssetLibraryId& OutAssetLibraryId)
+FHoudiniEngineUtils::LoadT2HoudiniAsset(UT2HoudiniAsset * T2HoudiniAsset, HAPI_AssetLibraryId& OutAssetLibraryId)
 {
 	OutAssetLibraryId = -1;
 
-	if (!HoudiniAsset || HoudiniAsset->IsPendingKill())
+	if (!T2HoudiniAsset || T2HoudiniAsset->IsPendingKill())
 		return false;
 
 	if (!FHoudiniEngineUtils::IsInitialized())
@@ -1302,13 +1302,13 @@ FHoudiniEngineUtils::LoadHoudiniAsset(UHoudiniAsset * HoudiniAsset, HAPI_AssetLi
 
 	// Get the preferences
 	bool bMemoryCopyFirst = false;
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	if (HoudiniRuntimeSettings)
 		bMemoryCopyFirst = HoudiniRuntimeSettings->bPreferHdaMemoryCopyOverHdaSourceFile;
 
 	// Get the HDA's file path
 	// We need to convert relative file path to absolute
-	FString AssetFileName = HoudiniAsset->GetAssetFileName();
+	FString AssetFileName = T2HoudiniAsset->GetAssetFileName();
 	if (FPaths::IsRelative(AssetFileName))
 		AssetFileName = FPaths::ConvertRelativePathToFull(AssetFileName);
 
@@ -1321,14 +1321,14 @@ FHoudiniEngineUtils::LoadHoudiniAsset(UHoudiniAsset * HoudiniAsset, HAPI_AssetLi
 	}
 
 	//Check whether we can Load from file/memory
-	bool bCanLoadFromMemory = (!HoudiniAsset->IsExpandedHDA() && HoudiniAsset->GetAssetBytesCount() > 0);
+	bool bCanLoadFromMemory = (!T2HoudiniAsset->IsExpandedHDA() && T2HoudiniAsset->GetAssetBytesCount() > 0);
 		
 	// If the hda file exists, we can simply load it directly
 	bool bCanLoadFromFile = false;
 	if ( !AssetFileName.IsEmpty() )
 	{
 		if (FPaths::FileExists(AssetFileName)
-			|| (HoudiniAsset->IsExpandedHDA() && FPaths::DirectoryExists(AssetFileName)))
+			|| (T2HoudiniAsset->IsExpandedHDA() && FPaths::DirectoryExists(AssetFileName)))
 		{
 			bCanLoadFromFile = true;
 		}
@@ -1366,19 +1366,22 @@ FHoudiniEngineUtils::LoadHoudiniAsset(UHoudiniAsset * HoudiniAsset, HAPI_AssetLi
 		// Load the asset from file.
 		std::string AssetFileNamePlain;
 		FHoudiniEngineUtils::ConvertUnrealString(InAssetFileName, AssetFileNamePlain);
+		const HAPI_Session *sss =  FHoudiniEngine::Get().GetSession();
+		HAPI_Result AASWE =   FHoudiniApi::IsSessionValid(sss);
+		UE_LOG(LogHoudiniEngine, Log, TEXT("Setting process to per monitor DPI aware %d"),AASWE);
 		Result = FHoudiniApi::LoadAssetLibraryFromFile(
-			FHoudiniEngine::Get().GetSession(), AssetFileNamePlain.c_str(), true, &OutAssetLibraryId);
+			sss, AssetFileNamePlain.c_str(), true, &OutAssetLibraryId);
 
 	};
 
 	// Lambda to load an HDA from memory
-	auto LoadAssetFromMemory = [&Result, &OutAssetLibraryId](UHoudiniAsset* InHoudiniAsset)
+	auto LoadAssetFromMemory = [&Result, &OutAssetLibraryId](UT2HoudiniAsset* InT2HoudiniAsset)
 	{
 		// Load the asset from the cached memory buffer
 		Result = FHoudiniApi::LoadAssetLibraryFromMemory(
 			FHoudiniEngine::Get().GetSession(),
-			reinterpret_cast<const char *>(InHoudiniAsset->GetAssetBytes()),
-			InHoudiniAsset->GetAssetBytesCount(), 
+			reinterpret_cast<const char *>(InT2HoudiniAsset->GetAssetBytes()),
+			InT2HoudiniAsset->GetAssetBytesCount(), 
 			true,
 			&OutAssetLibraryId);
 	};
@@ -1404,7 +1407,7 @@ FHoudiniEngineUtils::LoadHoudiniAsset(UHoudiniAsset * HoudiniAsset, HAPI_AssetLi
 			// Attempt to load from memory
 			if (bCanLoadFromMemory)
 			{
-				LoadAssetFromMemory(HoudiniAsset);
+				LoadAssetFromMemory(T2HoudiniAsset);
 
 				// Detect license issues when loading the HDA
 				if (!CheckLicenseValid(Result))
@@ -1422,7 +1425,7 @@ FHoudiniEngineUtils::LoadHoudiniAsset(UHoudiniAsset * HoudiniAsset, HAPI_AssetLi
 		// Load from Memory first
 		if(bCanLoadFromMemory)
 		{
-			LoadAssetFromMemory(HoudiniAsset);
+			LoadAssetFromMemory(T2HoudiniAsset);
 
 			// Detect license issues when loading the HDA
 			if (!CheckLicenseValid(Result))
@@ -1962,7 +1965,7 @@ FHoudiniEngineUtils::TranslateUnrealTransform(
 }
 
 bool
-FHoudiniEngineUtils::UploadHACTransform(UHoudiniAssetComponent* HAC)
+FHoudiniEngineUtils::UploadHACTransform(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || !HAC->bUploadTransformsToHoudiniEngine)
 		return false;
@@ -2036,7 +2039,7 @@ FHoudiniEngineUtils::HapiGetParentNodeId(const HAPI_NodeId& NodeId)
 
 // Assign a unique Actor Label if needed
 void
-FHoudiniEngineUtils::AssignUniqueActorLabelIfNeeded(UHoudiniAssetComponent* HAC)
+FHoudiniEngineUtils::AssignUniqueActorLabelIfNeeded(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return;
@@ -2052,7 +2055,7 @@ FHoudiniEngineUtils::AssignUniqueActorLabelIfNeeded(UHoudiniAssetComponent* HAC)
 	if (!OwnerActor)
 		return;
 
-	if (!OwnerActor->GetName().StartsWith(AHoudiniAssetActor::StaticClass()->GetName()))
+	if (!OwnerActor->GetName().StartsWith(AT2HoudiniAssetActor::StaticClass()->GetName()))
 		return;
 
 	// Assign unique actor label based on asset name if it seems to have not been renamed already
@@ -2127,11 +2130,11 @@ FHoudiniEngineUtils::IsHoudiniAssetComponentCooking(UObject* InObj)
 	if (!InObj)
 		return false;
 
-	UHoudiniAssetComponent* HoudiniAssetComponent = nullptr;
+	UT2HoudiniAssetComponent* HoudiniAssetComponent = nullptr;
 
-	if (InObj->IsA<UHoudiniAssetComponent>()) 
+	if (InObj->IsA<UT2HoudiniAssetComponent>()) 
 	{
-		HoudiniAssetComponent = Cast<UHoudiniAssetComponent>(InObj);
+		HoudiniAssetComponent = Cast<UT2HoudiniAssetComponent>(InObj);
 	}
 	else if (InObj->IsA<UHoudiniParameter>())
 	{
@@ -2139,7 +2142,7 @@ FHoudiniEngineUtils::IsHoudiniAssetComponentCooking(UObject* InObj)
 		if (!Parameter)
 			return false;
 
-		HoudiniAssetComponent = Cast<UHoudiniAssetComponent>(Parameter->GetOuter());
+		HoudiniAssetComponent = Cast<UT2HoudiniAssetComponent>(Parameter->GetOuter());
 	}
 
 	if (!HoudiniAssetComponent)
@@ -2189,7 +2192,7 @@ FHoudiniEngineUtils::UpdateEditorProperties(TArray<UObject*> ObjectsToUpdate, co
 	}
 }
 
-void FHoudiniEngineUtils::UpdateBlueprintEditor(UHoudiniAssetComponent* HAC)
+void FHoudiniEngineUtils::UpdateBlueprintEditor(UT2HoudiniAssetComponent* HAC)
 {
 	if (!IsInGameThread())
 	{
@@ -2348,9 +2351,9 @@ FHoudiniEngineUtils::UpdateEditorProperties_Internal(TArray<UObject*> ObjectsToU
 #endif
 }
 
-void FHoudiniEngineUtils::UpdateBlueprintEditor_Internal(UHoudiniAssetComponent* HAC)
+void FHoudiniEngineUtils::UpdateBlueprintEditor_Internal(UT2HoudiniAssetComponent* HAC)
 {
-	//UHoudiniAssetComponent* HACTemplate = HAC->GetCachedTemplate();
+	//UT2HoudiniAssetComponent* HACTemplate = HAC->GetCachedTemplate();
 	//UBlueprintGeneratedClass* OwnerBPClass = Cast<UBlueprintGeneratedClass>(HACTemplate->GetOuter());
 	//if (!OwnerBPClass)
 	//	return;
@@ -2470,7 +2473,7 @@ FHoudiniEngineUtils::FreeRawStringMemory(TArray<const char*>& InRawStringArray)
 }
 
 bool
-FHoudiniEngineUtils::AddHoudiniLogoToComponent(UHoudiniAssetComponent* HAC)
+FHoudiniEngineUtils::AddHoudiniLogoToComponent(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -2500,7 +2503,7 @@ FHoudiniEngineUtils::AddHoudiniLogoToComponent(UHoudiniAssetComponent* HAC)
 }
 
 bool
-FHoudiniEngineUtils::RemoveHoudiniLogoFromComponent(UHoudiniAssetComponent* HAC)
+FHoudiniEngineUtils::RemoveHoudiniLogoFromComponent(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -2536,7 +2539,7 @@ FHoudiniEngineUtils::RemoveHoudiniLogoFromComponent(UHoudiniAssetComponent* HAC)
 }
 
 bool
-FHoudiniEngineUtils::HasHoudiniLogo(UHoudiniAssetComponent* HAC)
+FHoudiniEngineUtils::HasHoudiniLogo(UT2HoudiniAssetComponent* HAC)
 {
 	if (!HAC || HAC->IsPendingKill())
 		return false;
@@ -4653,7 +4656,7 @@ FHoudiniEngineUtils::CreateSlateNotification(
 
 	// Check whether we want to display Slate notifications.
 	bool bDisplaySlateCookingNotifications = true;
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	if (HoudiniRuntimeSettings)
 		bDisplaySlateCookingNotifications = HoudiniRuntimeSettings->bDisplaySlateCookingNotifications;
 
@@ -4680,15 +4683,15 @@ FHoudiniEngineUtils::CreateSlateNotification(
 FString
 FHoudiniEngineUtils::GetHoudiniEnginePluginDir()
 {
-	FString EnginePluginDir = FPaths::EnginePluginsDir() / TEXT("Runtime/HoudiniEngine");
+	FString EnginePluginDir = FPaths::EnginePluginsDir() / TEXT("Runtime/HoudiniEngineXXX");
 	if (FPaths::DirectoryExists(EnginePluginDir))
 		return EnginePluginDir;
 
-	FString ProjectPluginDir = FPaths::ProjectPluginsDir() / TEXT("Runtime/HoudiniEngine");
+	FString ProjectPluginDir = FPaths::ProjectPluginsDir() / TEXT("Runtime/HoudiniEngineXXX");
 	if (FPaths::DirectoryExists(ProjectPluginDir))
 		return ProjectPluginDir;
 
-	TSharedPtr<IPlugin> HoudiniPlugin = IPluginManager::Get().FindPlugin(TEXT("HoudiniEngine"));
+	TSharedPtr<IPlugin> HoudiniPlugin = IPluginManager::Get().FindPlugin(TEXT("T2HoudiniEngine"));
 	FString PluginBaseDir = HoudiniPlugin.IsValid() ? HoudiniPlugin->GetBaseDir() : EnginePluginDir;
 	if (FPaths::DirectoryExists(PluginBaseDir))
 		return PluginBaseDir;

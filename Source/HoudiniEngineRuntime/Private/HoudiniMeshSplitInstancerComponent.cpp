@@ -24,9 +24,9 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "HoudiniMeshSplitInstancerComponent.h"
+#include "T2HoudiniMeshSplitInstancerComponent.h"
 
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniEngineRuntimePrivatePCH.h"
 
 #include "HoudiniPluginSerializationVersion.h"
@@ -49,14 +49,14 @@
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE  
 
-UHoudiniMeshSplitInstancerComponent::UHoudiniMeshSplitInstancerComponent(const FObjectInitializer& ObjectInitializer)
+UT2HoudiniMeshSplitInstancerComponent::UT2HoudiniMeshSplitInstancerComponent(const FObjectInitializer& ObjectInitializer)
 	: Super( ObjectInitializer )
 	, InstancedMesh( nullptr )
 {
 }
 
 void
-UHoudiniMeshSplitInstancerComponent::Serialize(FArchive& Ar)
+UT2HoudiniMeshSplitInstancerComponent::Serialize(FArchive& Ar)
 {
 	int64 InitialOffset = Ar.Tell();
 
@@ -74,21 +74,21 @@ UHoudiniMeshSplitInstancerComponent::Serialize(FArchive& Ar)
 	{
 		// Legacy serialization
 		// Either try to convert or skip depending on the setting value
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 		bool bEnableBackwardCompatibility = HoudiniRuntimeSettings->bEnableBackwardCompatibility;
 		if (bEnableBackwardCompatibility)
 		{
-			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniMeshSplitInstancerComponent : converting v1 object to v2."));
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UT2HoudiniMeshSplitInstancerComponent : converting v1 object to v2."));
 
 			Super::Serialize(Ar);
 
-			UHoudiniMeshSplitInstancerComponent_V1* CompatibilityMSIC = NewObject<UHoudiniMeshSplitInstancerComponent_V1>();
+			UT2HoudiniMeshSplitInstancerComponent_V1* CompatibilityMSIC = NewObject<UT2HoudiniMeshSplitInstancerComponent_V1>();
 			CompatibilityMSIC->Serialize(Ar);
 			CompatibilityMSIC->UpdateFromLegacyData(this);
 		}
 		else
 		{
-			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniMeshSplitInstancerComponent : serialization will be skipped."));
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UT2HoudiniMeshSplitInstancerComponent : serialization will be skipped."));
 
 			Super::Serialize(Ar);
 
@@ -110,7 +110,7 @@ UHoudiniMeshSplitInstancerComponent::Serialize(FArchive& Ar)
 }
 
 void
-UHoudiniMeshSplitInstancerComponent::OnComponentDestroyed( bool bDestroyingHierarchy )
+UT2HoudiniMeshSplitInstancerComponent::OnComponentDestroyed( bool bDestroyingHierarchy )
 {
     ClearInstances(0);
     Super::OnComponentDestroyed( bDestroyingHierarchy );
@@ -118,9 +118,9 @@ UHoudiniMeshSplitInstancerComponent::OnComponentDestroyed( bool bDestroyingHiera
 
 
 void 
-UHoudiniMeshSplitInstancerComponent::AddReferencedObjects( UObject * InThis, FReferenceCollector & Collector )
+UT2HoudiniMeshSplitInstancerComponent::AddReferencedObjects( UObject * InThis, FReferenceCollector & Collector )
 {
-    UHoudiniMeshSplitInstancerComponent * ThisMSIC = Cast< UHoudiniMeshSplitInstancerComponent >(InThis);
+    UT2HoudiniMeshSplitInstancerComponent * ThisMSIC = Cast< UT2HoudiniMeshSplitInstancerComponent >(InThis);
     if ( ThisMSIC && !ThisMSIC->IsPendingKill() )
     {
         Collector.AddReferencedObject(ThisMSIC->InstancedMesh, ThisMSIC);
@@ -131,7 +131,7 @@ UHoudiniMeshSplitInstancerComponent::AddReferencedObjects( UObject * InThis, FRe
 }
 
 bool 
-UHoudiniMeshSplitInstancerComponent::SetInstanceTransforms( 
+UT2HoudiniMeshSplitInstancerComponent::SetInstanceTransforms( 
     const TArray<FTransform>& InstanceTransforms)
 {
 	if (Instances.Num() <= 0 && InstanceTransforms.Num() <= 0)
@@ -206,7 +206,7 @@ UHoudiniMeshSplitInstancerComponent::SetInstanceTransforms(
 		/*
 		// TODO:
         // Properties not being propagated to newly created UStaticMeshComponents
-        if (UHoudiniAssetComponent * pHoudiniAsset = Cast<UHoudiniAssetComponent>(GetAttachParent()))
+        if (UT2HoudiniAssetComponent * pHoudiniAsset = Cast<UT2HoudiniAssetComponent>(GetAttachParent()))
         {
             pHoudiniAsset->CopyComponentPropertiesTo(SMC);
         }
@@ -217,7 +217,7 @@ UHoudiniMeshSplitInstancerComponent::SetInstanceTransforms(
 }
 
 void 
-UHoudiniMeshSplitInstancerComponent::ClearInstances(int32 NumToKeep)
+UT2HoudiniMeshSplitInstancerComponent::ClearInstances(int32 NumToKeep)
 {
     if (NumToKeep <= 0)
     {

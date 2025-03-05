@@ -55,7 +55,7 @@ FHoudiniEngineStyle::Get()
 FName
 FHoudiniEngineStyle::GetStyleSetName()
 {
-	static FName HoudiniStyleName(TEXT("HoudiniEngineStyle"));
+	static FName HoudiniStyleName(TEXT("T2HoudiniEngineStyle"));
 	return HoudiniStyleName;
 }
 
@@ -93,22 +93,23 @@ FHoudiniEngineStyle::Initialize()
 	const FVector2D Icon128x128(128.0f, 128.0f);
 
 	static FString IconsDir = FHoudiniEngineUtils::GetHoudiniEnginePluginDir() / TEXT("Resources/Icons/");
+	IconsDir = FPaths::ConvertRelativePathToFull(IconsDir);
 	StyleSet->Set(
-		"HoudiniEngine.HoudiniEngineLogo",
+		"T2HoudiniEngine.HoudiniEngineLogo",
 		new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
 	StyleSet->Set(
-		"ClassIcon.HoudiniAssetActor",
+		"ClassIcon.T2HoudiniAssetActor",
 		new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_16.png"), Icon16x16));
 	StyleSet->Set(
-		"HoudiniEngine.HoudiniEngineLogo40",
+		"T2HoudiniEngine.HoudiniEngineLogo40",
 		new FSlateImageBrush(IconsDir + TEXT("icon_houdini_logo_40.png"), Icon40x40));
 
 	StyleSet->Set(
-		"ClassIcon.HoudiniAsset",
+		"ClassIcon.T2HoudiniAsset",
 		new FSlateImageBrush(IconsDir + TEXT("houdini_digital_asset.png"), Icon16x16));
 
 	StyleSet->Set(
-		"ClassThumbnail.HoudiniAsset",
+		"ClassThumbnail.T2HoudiniAsset",
 		new FSlateImageBrush(IconsDir + TEXT("houdini_digital_asset_128.png"), Icon64x64));
 
 	static FString ResourcesDir = FHoudiniEngineUtils::GetHoudiniEnginePluginDir() / TEXT("Resources/");
@@ -156,49 +157,49 @@ FHoudiniEngineStyle::Initialize()
 	FString InfoIcon = FEditorStyle::GetBrush("Icons.Info")->GetResourceName().ToString();
 	FString SettingsIcon = FEditorStyle::GetBrush("Launcher.EditSettings")->GetResourceName().ToString();
 
-	StyleSet->Set("HoudiniEngine._CreateSession", new FSlateImageBrush(SessionCreateIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._ConnectSession", new FSlateImageBrush(SessionConnectIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._StopSession", new FSlateImageBrush(SessionStopIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._RestartSession", new FSlateImageBrush(SessionRestartIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._CreateSession", new FSlateImageBrush(SessionCreateIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._ConnectSession", new FSlateImageBrush(SessionConnectIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._StopSession", new FSlateImageBrush(SessionStopIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._RestartSession", new FSlateImageBrush(SessionRestartIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._SessionSync", new FSlateImageBrush(SessionSyncIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._OpenSessionSync", new FSlateImageBrush(SessionSyncStartIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._CloseSessionSync", new FSlateImageBrush(SessionSyncStopIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._SessionSync", new FSlateImageBrush(SessionSyncIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._OpenSessionSync", new FSlateImageBrush(SessionSyncStartIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._CloseSessionSync", new FSlateImageBrush(SessionSyncStopIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._SyncViewport", new FSlateImageBrush(ViewportSyncIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._ViewportSyncNone", new FSlateImageBrush(ViewportSyncOffIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._ViewportSyncBoth", new FSlateImageBrush(ViewportSyncBothIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._ViewportSyncUnreal", new FSlateImageBrush(ViewportSyncUnrealIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._ViewportSyncHoudini", new FSlateImageBrush(ViewportSyncHoudiniIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._SyncViewport", new FSlateImageBrush(ViewportSyncIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._ViewportSyncNone", new FSlateImageBrush(ViewportSyncOffIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._ViewportSyncBoth", new FSlateImageBrush(ViewportSyncBothIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._ViewportSyncUnreal", new FSlateImageBrush(ViewportSyncUnrealIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._ViewportSyncHoudini", new FSlateImageBrush(ViewportSyncHoudiniIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._InstallInfo", new FSlateImageBrush(InfoIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._PluginSettings", new FSlateImageBrush(SettingsIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._InstallInfo", new FSlateImageBrush(InfoIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._PluginSettings", new FSlateImageBrush(SettingsIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._OpenInHoudini", new FSlateImageBrush(OpenInHIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._SaveHIPFile", new FSlateImageBrush(SaveToHipIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._CleanUpTempFolder", new FSlateImageBrush(CleanTempIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._OpenInHoudini", new FSlateImageBrush(OpenInHIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._SaveHIPFile", new FSlateImageBrush(SaveToHipIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._CleanUpTempFolder", new FSlateImageBrush(CleanTempIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._OnlineDoc", new FSlateImageBrush(OnlineHelpIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._OnlineForum", new FSlateImageBrush(OnlineForumIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._ReportBug", new FSlateImageBrush(ReportBugIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._OnlineDoc", new FSlateImageBrush(OnlineHelpIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._OnlineForum", new FSlateImageBrush(OnlineForumIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._ReportBug", new FSlateImageBrush(ReportBugIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._CookAll", new FSlateImageBrush(CookAllIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._CookSelected", new FSlateImageBrush(CookSelIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._CookAll", new FSlateImageBrush(CookAllIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._CookSelected", new FSlateImageBrush(CookSelIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._BakeSelected", new FSlateImageBrush(BakeSelIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._BakeAll", new FSlateImageBrush(BakeAllIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._BakeSelected", new FSlateImageBrush(BakeSelIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._BakeAll", new FSlateImageBrush(BakeAllIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._RebuildAll", new FSlateImageBrush(RebuildAllIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._RebuildSelected", new FSlateImageBrush(RebuildSelIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._RebuildAll", new FSlateImageBrush(RebuildAllIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._RebuildSelected", new FSlateImageBrush(RebuildSelIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._RefineAll", new FSlateImageBrush(RefineAllIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine._RefineSelected", new FSlateImageBrush(RefineSelIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._RefineAll", new FSlateImageBrush(RefineAllIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._RefineSelected", new FSlateImageBrush(RefineSelIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._PauseAssetCooking", new FSlateImageBrush(PauseIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._PauseAssetCooking", new FSlateImageBrush(PauseIcon, Icon16x16));
 
-	StyleSet->Set("HoudiniEngine._Reset", new FSlateImageBrush(ResetIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine.DigitalAsset", new FSlateImageBrush(DigitalAssetIcon, Icon16x16));
-	StyleSet->Set("HoudiniEngine.PDGLink", new FSlateImageBrush(PDGLinkIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine._Reset", new FSlateImageBrush(ResetIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine.DigitalAsset", new FSlateImageBrush(DigitalAssetIcon, Icon16x16));
+	StyleSet->Set("T2HoudiniEngine.PDGLink", new FSlateImageBrush(PDGLinkIcon, Icon16x16));
 
 	/*
 	FString StopIcon = FEditorStyle::GetBrush("PropertyWindow.Button_Clear")->GetResourceName().ToString();

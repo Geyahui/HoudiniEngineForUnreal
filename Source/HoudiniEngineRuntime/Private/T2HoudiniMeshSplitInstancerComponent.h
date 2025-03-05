@@ -29,20 +29,20 @@
 #include "Components/SceneComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
-#include "HoudiniMeshSplitInstancerComponent.generated.h"
+#include "T2HoudiniMeshSplitInstancerComponent.generated.h"
 
 /**
-* UHoudiniMeshSplitInstancerComponent is used to manage a single static mesh being
+* UT2HoudiniMeshSplitInstancerComponent is used to manage a single static mesh being
 * 'instanced' multiple times by multiple UStaticMeshComponents.  This is as opposed to the
 * UInstancedStaticMeshComponent wherein a single mesh is instanced multiple times by one component.
 */
 
 UCLASS()//( config = Engine )
-class HOUDINIENGINERUNTIME_API UHoudiniMeshSplitInstancerComponent : public USceneComponent
+class T2HOUDINIENGINERUNTIME_API UT2HoudiniMeshSplitInstancerComponent : public USceneComponent
 {
 	GENERATED_UCLASS_BODY()
 
-	friend class UHoudiniMeshSplitInstancerComponent_V1;
+	friend class UT2HoudiniMeshSplitInstancerComponent_V1;
 
 	public:
 

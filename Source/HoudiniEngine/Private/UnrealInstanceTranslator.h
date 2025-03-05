@@ -33,7 +33,7 @@
 
 class UInstancedStaticMeshComponent;
 
-struct HOUDINIENGINE_API FUnrealInstanceTranslator
+struct T2HOUDINIENGINE_API FUnrealInstanceTranslator
 {
 	public:
 

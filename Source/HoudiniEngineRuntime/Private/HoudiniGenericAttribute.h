@@ -52,7 +52,7 @@ enum class EAttribOwner : int8
 };
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FHoudiniGenericAttribute
+struct T2HOUDINIENGINERUNTIME_API FHoudiniGenericAttribute
 {
 	GENERATED_USTRUCT_BODY()
 

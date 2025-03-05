@@ -33,7 +33,7 @@
 #include "HoudiniParameterDetails.h"
 #include "HoudiniEngineDetails.h"
 
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 class UStaticMesh;
 
 class FHoudiniAssetComponentDetails : public IDetailCustomization
@@ -63,7 +63,7 @@ private:
 	void AddIndieLicenseRow(IDetailCategoryBuilder& InCategory);
 
 	// Adds a category for baking options
-	void AddBakeMenu(IDetailCategoryBuilder& InCategory, UHoudiniAssetComponent* HAC);
+	void AddBakeMenu(IDetailCategoryBuilder& InCategory, UT2HoudiniAssetComponent* HAC);
 
 	// Handler for double clicking the static mesh thumbnail, opens the editor.
 	FReply OnThumbnailDoubleClick(
@@ -73,7 +73,7 @@ private:
 private:
 
 	// Components which are being customized.
-	TArray<TWeakObjectPtr<UHoudiniAssetComponent>> HoudiniAssetComponents;
+	TArray<TWeakObjectPtr<UT2HoudiniAssetComponent>> HoudiniAssetComponents;
 
 	// Structure holding the output's details
 	TSharedPtr<FHoudiniOutputDetails, ESPMode::NotThreadSafe> OutputDetails;

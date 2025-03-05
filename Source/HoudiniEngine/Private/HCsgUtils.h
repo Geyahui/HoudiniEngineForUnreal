@@ -53,7 +53,7 @@
 // The main purpose was to remove parts of the code that store state in global/static variables as well
 // as dependency on editor state (such as retrieving selected brushes).
 UCLASS()
-class HOUDINIENGINE_API UHCsgUtils : public UObject
+class T2HOUDINIENGINE_API UHCsgUtils : public UObject
 {
 	GENERATED_BODY()
 public:

@@ -28,9 +28,9 @@ using UnrealBuildTool;
 using System;
 using System.IO;
 
-public class HoudiniEngineEditor : ModuleRules
+public class T2HoudiniEngineEditor : ModuleRules
 {
-    public HoudiniEngineEditor( ReadOnlyTargetRules Target ) : base( Target )
+    public T2HoudiniEngineEditor( ReadOnlyTargetRules Target ) : base( Target )
     {
         bPrecompile = true;
         PCHUsage = PCHUsageMode.NoSharedPCHs;
@@ -71,8 +71,8 @@ public class HoudiniEngineEditor : ModuleRules
             {
                 "Core",
                 "CoreUObject",
-                "HoudiniEngine",
-                "HoudiniEngineRuntime",
+                "T2HoudiniEngine",
+                "T2HoudiniEngineRuntime",
                 "Slate",
                 "SlateCore",
                 "Landscape",

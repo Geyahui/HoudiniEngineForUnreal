@@ -29,7 +29,7 @@
 #include "EditorViewportClient.h"
 
 #include "HoudiniHandleTranslator.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 
 #define LOCTEXT_NAMESPACE HOUDINI_LOCTEXT_NAMESPACE 
 
@@ -71,12 +71,12 @@ void
 FHoudiniHandleComponentVisualizer::DrawVisualization(const UActorComponent * Component,
 									const FSceneView * View, FPrimitiveDrawInterface * PDI) 
 {
-	const UHoudiniHandleComponent* HandleComponent = Cast<const UHoudiniHandleComponent>(Component);
+	const UT2HoudiniHandleComponent* HandleComponent = Cast<const UT2HoudiniHandleComponent>(Component);
 
 	if (!HandleComponent)
 		return;
 
-	UHoudiniAssetComponent* HAC = Cast<UHoudiniAssetComponent>(HandleComponent->GetOuter());
+	UT2HoudiniAssetComponent* HAC = Cast<UT2HoudiniAssetComponent>(HandleComponent->GetOuter());
 
 	if (!HAC)
 		return;
@@ -105,7 +105,7 @@ FHoudiniHandleComponentVisualizer::DrawVisualization(const UActorComponent * Com
 
 	if (IsActive)
 	{
-		UHoudiniAssetComponent* EditedComponentParent = Cast<UHoudiniAssetComponent>(EditedComponent->GetOuter());
+		UT2HoudiniAssetComponent* EditedComponentParent = Cast<UT2HoudiniAssetComponent>(EditedComponent->GetOuter());
 		IsActive &= EditedComponentParent && EditedComponentParent->GetAssetId() == HAC->GetAssetId();
 	}
 
@@ -118,7 +118,7 @@ FHoudiniHandleComponentVisualizer::DrawVisualization(const UActorComponent * Com
 		PDI->DrawPoint(HandleComponent->GetComponentTransform().GetLocation(), IsActive ? ActiveColor : InactiveColor, IsActive ? GrabHandleSizeActive : GrabHandleSizeInactive, SDPG_Foreground);
 	}
 
-	if (HandleComponent->HandleType == EHoudiniHandleType::Bounder)
+	if (HandleComponent->HandleType == ET2HoudiniHandleType::Bounder)
 	{
 		// draw the scale box
 		FTransform BoxTransform = HandleComponent->GetComponentTransform();
@@ -143,15 +143,15 @@ FHoudiniHandleComponentVisualizer::VisProxyHandleClick(
 
 	if (VisProxy && VisProxy->Component.IsValid())
 	{
-		const UHoudiniHandleComponent * Component =
-			CastChecked< const UHoudiniHandleComponent >(VisProxy->Component.Get());
+		const UT2HoudiniHandleComponent * Component =
+			CastChecked< const UT2HoudiniHandleComponent >(VisProxy->Component.Get());
 
 		const TArray<UHoudiniHandleParameter*> &XformParms = Component->XformParms;
 
 		if (!Component->CheckHandleValid())
 			return bEditing;
 
-		EditedComponent = const_cast<UHoudiniHandleComponent *>(Component);
+		EditedComponent = const_cast<UT2HoudiniHandleComponent *>(Component);
 
 		if (Component)
 		{

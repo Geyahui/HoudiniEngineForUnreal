@@ -29,8 +29,8 @@
 //#include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
 
-#include "HoudiniAsset.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAsset.h"
+#include "T2HoudiniAssetComponent.h"
 #include "HoudiniTranslatorTypes.h"
 
 #include "HoudiniPDGAssetLink.generated.h"
@@ -91,7 +91,7 @@ enum class EPDGBakePackageReplaceModeOption : uint8
 #endif
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FOutputActorOwner
+struct T2HOUDINIENGINERUNTIME_API FOutputActorOwner
 {
 	GENERATED_BODY();
 public:
@@ -119,7 +119,7 @@ private:
 };
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FTOPWorkResultObject
+struct T2HOUDINIENGINERUNTIME_API FTOPWorkResultObject
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -181,7 +181,7 @@ private:
 };
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FTOPWorkResult
+struct T2HOUDINIENGINERUNTIME_API FTOPWorkResult
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -227,7 +227,7 @@ public:
 };
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FWorkItemTallyBase
+struct T2HOUDINIENGINERUNTIME_API FWorkItemTallyBase
 {
 	GENERATED_USTRUCT_BODY()
 	
@@ -261,7 +261,7 @@ public:
 };
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FWorkItemTally : public FWorkItemTallyBase
+struct T2HOUDINIENGINERUNTIME_API FWorkItemTally : public FWorkItemTallyBase
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -323,7 +323,7 @@ protected:
 };
 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FAggregatedWorkItemTally : public FWorkItemTallyBase
+struct T2HOUDINIENGINERUNTIME_API FAggregatedWorkItemTally : public FWorkItemTallyBase
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -365,7 +365,7 @@ protected:
 
 // Container for baked outputs of a PDG work result object. 
 USTRUCT()
-struct HOUDINIENGINERUNTIME_API FHoudiniPDGWorkResultObjectBakedOutput
+struct T2HOUDINIENGINERUNTIME_API FHoudiniPDGWorkResultObjectBakedOutput
 {
 	GENERATED_BODY()
 
@@ -379,7 +379,7 @@ struct HOUDINIENGINERUNTIME_API FHoudiniPDGWorkResultObjectBakedOutput
 class UTOPNetwork;
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UTOPNode : public UObject
+class T2HOUDINIENGINERUNTIME_API UTOPNode : public UObject
 {
 	GENERATED_BODY()
 
@@ -579,7 +579,7 @@ private:
 
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UTOPNetwork : public UObject
+class T2HOUDINIENGINERUNTIME_API UTOPNetwork : public UObject
 {
 	GENERATED_BODY()
 
@@ -634,13 +634,13 @@ class UHoudiniPDGAssetLink;
 DECLARE_MULTICAST_DELEGATE_FourParams(FHoudiniPDGAssetLinkWorkResultObjectLoaded, UHoudiniPDGAssetLink*, UTOPNode*, int32 /*WorkItemHAPIIndex*/, int32 /*WorkItemResultInfoIndex*/);
 
 UCLASS()
-class HOUDINIENGINERUNTIME_API UHoudiniPDGAssetLink : public UObject
+class T2HOUDINIENGINERUNTIME_API UHoudiniPDGAssetLink : public UObject
 {
 	GENERATED_UCLASS_BODY()
 
 public:
 
-	friend class UHoudiniAssetComponent;
+	friend class UT2HoudiniAssetComponent;
 	
 	static FString GetAssetLinkStatus(const EPDGLinkState& InLinkState);
 	static FString GetTOPNodeStatus(const UTOPNode* InTOPNode);
@@ -730,10 +730,10 @@ private:
 public:
 
 	//UPROPERTY()
-	//UHoudiniAsset*				HoudiniAsset;
+	//UT2HoudiniAsset*				HoudiniAsset;
 
 	//UPROPERTY()
-	//UHoudiniAssetComponent*		ParentHAC;
+	//UT2HoudiniAssetComponent*		ParentHAC;
 
 	UPROPERTY(DuplicateTransient, NonTransactional)
 	FString						AssetName;

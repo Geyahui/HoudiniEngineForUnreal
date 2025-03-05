@@ -26,12 +26,12 @@
 
 #include "HoudiniAssetComponentDetails.h"
 
-#include "HoudiniAssetComponent.h"
-#include "HoudiniAsset.h"
+#include "T2HoudiniAssetComponent.h"
+#include "T2HoudiniAsset.h"
 #include "HoudiniEngine.h"
 #include "HoudiniEngineUtils.h"
 #include "HoudiniParameter.h"
-#include "HoudiniHandleComponent.h"
+#include "T2HoudiniHandleComponent.h"
 #include "HoudiniParameterDetails.h"
 #include "HoudiniInput.h"
 #include "HoudiniInputDetails.h"
@@ -238,7 +238,7 @@ FHoudiniAssetComponentDetails::GetSessionStatusAndColor(
 }
 
 void 
-FHoudiniAssetComponentDetails::AddBakeMenu(IDetailCategoryBuilder& InCategory, UHoudiniAssetComponent* HAC) 
+FHoudiniAssetComponentDetails::AddBakeMenu(IDetailCategoryBuilder& InCategory, UT2HoudiniAssetComponent* HAC) 
 {
 	FString CategoryName = "Bake";
 	InCategory.AddGroup(FName(*CategoryName), FText::FromString(CategoryName), false, false);
@@ -260,7 +260,7 @@ FHoudiniAssetComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 			UObject * Object = ObjectsCustomized[i].Get();
 			if (Object)
 			{
-				UHoudiniAssetComponent * HAC = Cast< UHoudiniAssetComponent >(Object);
+				UT2HoudiniAssetComponent * HAC = Cast< UT2HoudiniAssetComponent >(Object);
 				if (HAC && !HAC->IsPendingKill())
 					HoudiniAssetComponents.Add(HAC);
 			}
@@ -273,24 +273,24 @@ FHoudiniAssetComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 	// To handle multiselection parameter edit, we try to group the selected components by their houdini assets
 	// TODO? ignore multiselection if all are not the same HDA?
 	// TODO do the same for inputs
-	TMap<TWeakObjectPtr<UHoudiniAsset>, TArray<TWeakObjectPtr<UHoudiniAssetComponent>>> HoudiniAssetToHACs;
+	TMap<TWeakObjectPtr<UT2HoudiniAsset>, TArray<TWeakObjectPtr<UT2HoudiniAssetComponent>>> HoudiniAssetToHACs;
 	for (auto HAC : HoudiniAssetComponents)
 	{ 
-		TWeakObjectPtr<UHoudiniAsset> HoudiniAsset = HAC->GetHoudiniAsset();
+		TWeakObjectPtr<UT2HoudiniAsset> HoudiniAsset = HAC->GetHoudiniAsset();
 		if (!HoudiniAsset.IsValid())
 			continue;
 
-		TArray<TWeakObjectPtr<UHoudiniAssetComponent>>& ValueRef = HoudiniAssetToHACs.FindOrAdd(HoudiniAsset);
+		TArray<TWeakObjectPtr<UT2HoudiniAssetComponent>>& ValueRef = HoudiniAssetToHACs.FindOrAdd(HoudiniAsset);
 		ValueRef.Add(HAC);
 	}
 
 	for (auto Iter : HoudiniAssetToHACs)
 	{
-		TArray<TWeakObjectPtr<UHoudiniAssetComponent>> HACs = Iter.Value;
+		TArray<TWeakObjectPtr<UT2HoudiniAssetComponent>> HACs = Iter.Value;
 		if (HACs.Num() < 1)
 			continue;
 			   
-		TWeakObjectPtr<UHoudiniAssetComponent> MainComponent = HACs[0];
+		TWeakObjectPtr<UT2HoudiniAssetComponent> MainComponent = HACs[0];
 		if (!MainComponent.IsValid())
 			continue;
 
@@ -328,7 +328,7 @@ FHoudiniAssetComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 			if (bIsIndieLicense)
 				AddIndieLicenseRow(HouEngineCategory);
 
-			TArray<UHoudiniAssetComponent*> MultiSelectedHACs;
+			TArray<UT2HoudiniAssetComponent*> MultiSelectedHACs;
 			for (auto& NextHACWeakPtr : HACs) 
 			{
 				if (NextHACWeakPtr.IsValid())
@@ -388,7 +388,7 @@ FHoudiniAssetComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 			
 			// TODO: remove ? unneeded?
 			// ensure the parameter is actually owned by a HAC
-			/*const TWeakObjectPtr<UHoudiniAssetComponent> Owner = Cast<UHoudiniAssetComponent>(CurrentParam->GetOuter());
+			/*const TWeakObjectPtr<UT2HoudiniAssetComponent> Owner = Cast<UT2HoudiniAssetComponent>(CurrentParam->GetOuter());
 			if (!Owner.IsValid())
 				continue;*/
 
@@ -435,18 +435,18 @@ FHoudiniAssetComponentDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuil
 		// Iterate through the component's Houdini handles
 		for (int32 HandleIdx = 0; HandleIdx < MainComponent->GetNumHandles(); ++HandleIdx) 
 		{
-			UHoudiniHandleComponent* CurrentHandleComponent = MainComponent->GetHandleComponentAt(HandleIdx);
+			UT2HoudiniHandleComponent* CurrentHandleComponent = MainComponent->GetHandleComponentAt(HandleIdx);
 
 			if (!CurrentHandleComponent || CurrentHandleComponent->IsPendingKill())
 				continue;
 
-			TArray<UHoudiniHandleComponent*> EditedHandles;
+			TArray<UT2HoudiniHandleComponent*> EditedHandles;
 			EditedHandles.Add(CurrentHandleComponent);
 
 			// Add the corresponding params in the other HAC
 			for (int LinkedIdx = 1; LinkedIdx < HACs.Num(); ++LinkedIdx) 
 			{
-				UHoudiniHandleComponent* LinkedHandle = HACs[LinkedIdx]->GetHandleComponentAt(HandleIdx);
+				UT2HoudiniHandleComponent* LinkedHandle = HACs[LinkedIdx]->GetHandleComponentAt(HandleIdx);
 				if (!LinkedHandle || LinkedHandle->IsPendingKill())
 					continue;
 

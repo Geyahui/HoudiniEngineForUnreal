@@ -30,7 +30,7 @@
 
 class FString;
 class UObject;
-class UHoudiniAsset;
+class UT2HoudiniAsset;
 
 enum class EHoudiniCurveType : int8;
 enum class EHoudiniCurveMethod : int8;
@@ -65,10 +65,10 @@ public:
 	static FTransform GetMeanWorldSelectionTransform();
 
 	// Instantiate a HoudiniAsset at a given position
-	static void InstantiateHoudiniAssetAt(UHoudiniAsset* InHoudiniAsset, const FTransform& InTransform);
+	static void InstantiateHoudiniAssetAt(UT2HoudiniAsset* InHoudiniAsset, const FTransform& InTransform);
 
 	// Instantiate the given HDA, and handles the current CB/World selection
-	static void InstantiateHoudiniAsset(UHoudiniAsset* InHoudiniAsset, const EHoudiniToolType& InType, const EHoudiniToolSelectionType& InSelectionType);
+	static void InstantiateHoudiniAsset(UT2HoudiniAsset* InHoudiniAsset, const EHoudiniToolType& InType, const EHoudiniToolSelectionType& InSelectionType);
 
 	// Helper function used to save all temporary packages when the level is saved
 	static void SaveAllHoudiniTemporaryCookData(UWorld *InSaveWorld);

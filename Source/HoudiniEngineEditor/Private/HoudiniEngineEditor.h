@@ -56,7 +56,7 @@ enum class EPDGBakeSelectionOption : uint8;
 enum class EPDGBakePackageReplaceModeOption : uint8;
 enum class EPackageReplaceMode : int8;
 
-class HOUDINIENGINEEDITOR_API FHoudiniEngineEditor : public IHoudiniEngineEditor
+class T2HOUDINIENGINEEDITOR_API FHoudiniEngineEditor : public IHoudiniEngineEditor
 {
 	public:
 		FHoudiniEngineEditor();

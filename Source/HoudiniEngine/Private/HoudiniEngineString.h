@@ -33,7 +33,7 @@ class FText;
 class FString;
 class FName;
 
-class HOUDINIENGINE_API FHoudiniEngineString
+class T2HOUDINIENGINE_API FHoudiniEngineString
 {
 	public:
 

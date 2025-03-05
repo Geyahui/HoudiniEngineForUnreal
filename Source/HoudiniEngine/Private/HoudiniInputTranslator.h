@@ -34,7 +34,7 @@ class AActor;
 
 class UHoudiniInput;
 class UHoudiniParameter;
-class UHoudiniAssetComponent;
+class UT2HoudiniAssetComponent;
 
 class UHoudiniInputObject;
 class UHoudiniInputStaticMesh;
@@ -48,7 +48,7 @@ class UHoudiniInputHoudiniAsset;
 class UHoudiniInputActor;
 class UHoudiniInputLandscape;
 class UHoudiniInputBrush;
-class UHoudiniSplineComponent;
+class UT2HoudiniSplineComponent;
 class UHoudiniInputCameraComponent;
 class UHoudiniInputDataTable;
 
@@ -57,10 +57,10 @@ class AActor;
 enum class EHoudiniInputType : uint8;
 enum class EHoudiniLandscapeExportType : uint8;
 
-struct HOUDINIENGINE_API FHoudiniInputTranslator
+struct T2HOUDINIENGINE_API FHoudiniInputTranslator
 {
 	// 
-	static bool UpdateInputs(UHoudiniAssetComponent* HAC);
+	static bool UpdateInputs(UT2HoudiniAssetComponent* HAC);
 
 	// Update inputs from the asset
 	// @AssetId: NodeId of the digital asset
@@ -76,10 +76,10 @@ struct HOUDINIENGINE_API FHoudiniInputTranslator
 		TArray<UHoudiniParameter*>& Parameters);
 
 	// Update loaded inputs and their input objects so they can be uploaded properly
-	static bool	UpdateLoadedInputs(UHoudiniAssetComponent * HAC);
+	static bool	UpdateLoadedInputs(UT2HoudiniAssetComponent * HAC);
 
 	// Update all the inputs that have been marked as change
-	static bool UploadChangedInputs(UHoudiniAssetComponent * HAC);
+	static bool UploadChangedInputs(UT2HoudiniAssetComponent * HAC);
 
 	// Only update simple input properties
 	static bool UpdateInputProperties(UHoudiniInput* InInput);
@@ -108,7 +108,7 @@ struct HOUDINIENGINE_API FHoudiniInputTranslator
 		UHoudiniInput* InInput, UHoudiniInputObject* InInputObject);
 
 	// Updates/ticks world inputs in the given HAC
-	static bool UpdateWorldInputs(UHoudiniAssetComponent* HAC);
+	static bool UpdateWorldInputs(UT2HoudiniAssetComponent* HAC);
 
 	// Updates/ticks the given world input
 	static bool UpdateWorldInput(UHoudiniInput* InInput);

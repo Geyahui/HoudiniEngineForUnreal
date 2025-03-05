@@ -29,9 +29,9 @@ using UnrealBuildTool;
 using System;
 using System.IO;
 
-public class HoudiniEngineRuntime : ModuleRules
+public class T2HoudiniEngineRuntime : ModuleRules
 {
-    public HoudiniEngineRuntime( ReadOnlyTargetRules Target ) : base( Target )
+    public T2HoudiniEngineRuntime( ReadOnlyTargetRules Target ) : base( Target )
     {
         bPrecompile = true;
         PCHUsage = PCHUsageMode.NoSharedPCHs;
@@ -51,9 +51,10 @@ public class HoudiniEngineRuntime : ModuleRules
 			new string[] {}
 		);
 
-        PrivateIncludePaths.AddRange(
-            new string[] { }
-        );
+		// PrivateIncludePaths.Clear();
+  //       PublicIncludePaths.AddRange(
+  //           new string[] { ModuleDirectory + "/Privatexxx" }
+  //       );
 
         // Add common dependencies.
         PublicDependencyModuleNames.AddRange(

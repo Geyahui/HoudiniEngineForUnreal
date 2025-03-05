@@ -32,7 +32,7 @@
 #include "IDetailsView.h"
 
 class UHoudiniInput;
-class UHoudiniSplineComponent;
+class UT2HoudiniSplineComponent;
 
 class IDetailCategoryBuilder;
 class FDetailWidgetRow;

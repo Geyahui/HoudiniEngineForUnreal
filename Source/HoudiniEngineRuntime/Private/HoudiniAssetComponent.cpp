@@ -24,19 +24,19 @@
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 
 #include "HoudiniEngineRuntimePrivatePCH.h"
 
-#include "HoudiniAsset.h"
-#include "HoudiniAssetActor.h"
+#include "T2HoudiniAsset.h"
+#include "T2HoudiniAssetActor.h"
 #include "HoudiniInput.h"
 #include "HoudiniOutput.h"
 #include "HoudiniParameter.h"
 #include "HoudiniParameterButton.h"
 #include "HoudiniParameterButtonStrip.h"
 #include "HoudiniParameterOperatorPath.h"
-#include "HoudiniHandleComponent.h"
+#include "T2HoudiniHandleComponent.h"
 #include "HoudiniPDGAssetLink.h"
 #include "HoudiniEngineRuntime.h"
 #include "HoudiniStaticMeshComponent.h"
@@ -85,7 +85,7 @@
 
 
 void
-UHoudiniAssetComponent::Serialize(FArchive& Ar)
+UT2HoudiniAssetComponent::Serialize(FArchive& Ar)
 {
 	int64 InitialOffset = Ar.Tell();
 	Ar.UsingCustomVersion(FHoudiniCustomSerializationVersion::GUID);
@@ -102,7 +102,7 @@ UHoudiniAssetComponent::Serialize(FArchive& Ar)
 
 	if (bLegacyComponent)
 	{
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 		bool bEnableBackwardCompatibility = HoudiniRuntimeSettings->bEnableBackwardCompatibility;
 
 		// Legacy serialization
@@ -110,7 +110,7 @@ UHoudiniAssetComponent::Serialize(FArchive& Ar)
 		if (bEnableBackwardCompatibility)
 		{
 			// Attemp to convert the v1 object to v2
-			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniAssetComponent : converting v1 object to v2."));
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UT2HoudiniAssetComponent : converting v1 object to v2."));
 
 			Super::Serialize(Ar);
 			// Deserialize the legacy data, we'll do the actual conversion in PostLoad()
@@ -121,7 +121,7 @@ UHoudiniAssetComponent::Serialize(FArchive& Ar)
 		else
 		{
 			// Skip the v1 object
-			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UHoudiniAssetComponent : serialization will be skipped."));
+			HOUDINI_LOG_WARNING(TEXT("Loading deprecated version of UT2HoudiniAssetComponent : serialization will be skipped."));
 
 			Super::Serialize(Ar);
 
@@ -143,7 +143,7 @@ UHoudiniAssetComponent::Serialize(FArchive& Ar)
 }
 
 bool
-UHoudiniAssetComponent::ConvertLegacyData()
+UT2HoudiniAssetComponent::ConvertLegacyData()
 {
 	if (!Version1CompatibilityHAC || Version1CompatibilityHAC->IsPendingKill())
 		return false;
@@ -425,7 +425,7 @@ UHoudiniAssetComponent::ConvertLegacyData()
 	// ... then Spline Components (for Curve IN)
 	for (auto& LegacyCurve : Version1CompatibilityHAC->SplineComponents)
 	{
-		UHoudiniSplineComponent* CurSplineComp = LegacyCurve.Value;
+		UT2HoudiniSplineComponent* CurSplineComp = LegacyCurve.Value;
 		if (!CurSplineComp || CurSplineComp->IsPendingKill())
 			continue;
 
@@ -476,7 +476,7 @@ UHoudiniAssetComponent::ConvertLegacyData()
 	for (auto& LegacyHandle : Version1CompatibilityHAC->HandleComponents)
 	{
 		// TODO: Handles!!
-		UHoudiniHandleComponent* NewHandle = nullptr;
+		UT2HoudiniHandleComponent* NewHandle = nullptr;
 		HandleComponents.Add(NewHandle);
 	}
 
@@ -529,7 +529,7 @@ UHoudiniAssetComponent::ConvertLegacyData()
 	// ... then Downstream asset connections (due to Asset inputs)
 	for (auto& LegacyDownstreamHAC : Version1CompatibilityHAC->DownstreamAssetConnections)
 	{
-		//TSet<UHoudiniAssetComponent*> DownstreamHoudiniAssets;
+		//TSet<UT2HoudiniAssetComponent*> DownstreamHoudiniAssets;
 	}
 
 	// Then convert all remaing flags and properties
@@ -603,7 +603,7 @@ UHoudiniAssetComponent::ConvertLegacyData()
 }
 
 
-UHoudiniAssetComponent::UHoudiniAssetComponent(const FObjectInitializer & ObjectInitializer)
+UT2HoudiniAssetComponent::UT2HoudiniAssetComponent(const FObjectInitializer & ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	HoudiniAsset = nullptr;	
@@ -659,7 +659,7 @@ UHoudiniAssetComponent::UHoudiniAssetComponent(const FObjectInitializer & Object
 
 	StaticMeshMethod = EHoudiniStaticMeshMethod::RawMesh;
 
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 	if (HoudiniRuntimeSettings)
 	{
 		bEnableProxyStaticMeshOverride = HoudiniRuntimeSettings->bEnableProxyStaticMesh;
@@ -704,7 +704,7 @@ UHoudiniAssetComponent::UHoudiniAssetComponent(const FObjectInitializer & Object
 	Bounds = FBox(ForceInitToZero);
 }
 
-UHoudiniAssetComponent::~UHoudiniAssetComponent()
+UT2HoudiniAssetComponent::~UT2HoudiniAssetComponent()
 {
 	// Unregister ourself so our houdini node can be delete.
 
@@ -714,11 +714,11 @@ UHoudiniAssetComponent::~UHoudiniAssetComponent()
 	FHoudiniEngineRuntime::Get().UnRegisterHoudiniComponent(this);
 }
 
-void UHoudiniAssetComponent::PostInitProperties()
+void UT2HoudiniAssetComponent::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	if (HoudiniRuntimeSettings)
 	{
 		// Copy default static mesh generation parameters from settings.
@@ -741,20 +741,20 @@ void UHoudiniAssetComponent::PostInitProperties()
 	RegisterHoudiniComponent(this);
 }
 
-UHoudiniAsset *
-UHoudiniAssetComponent::GetHoudiniAsset() const
+UT2HoudiniAsset *
+UT2HoudiniAssetComponent::GetHoudiniAsset() const
 {
 	return HoudiniAsset;
 }
 
 FString
-UHoudiniAssetComponent::GetDisplayName() const
+UT2HoudiniAssetComponent::GetDisplayName() const
 {
 	return GetOwner() ? GetOwner()->GetName() : GetName();
 }
 
 void
-UHoudiniAssetComponent::GetOutputs(TArray<UHoudiniOutput*>& OutOutputs) const
+UT2HoudiniAssetComponent::GetOutputs(TArray<UHoudiniOutput*>& OutOutputs) const
 {
 	for (UHoudiniOutput* Output : Outputs)
 	{
@@ -763,7 +763,7 @@ UHoudiniAssetComponent::GetOutputs(TArray<UHoudiniOutput*>& OutOutputs) const
 }
 
 bool 
-UHoudiniAssetComponent::IsProxyStaticMeshEnabled() const
+UT2HoudiniAssetComponent::IsProxyStaticMeshEnabled() const
 {
 	if (bOverrideGlobalProxyStaticMeshSettings)
 	{
@@ -771,7 +771,7 @@ UHoudiniAssetComponent::IsProxyStaticMeshEnabled() const
 	}
 	else
 	{
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 		if (HoudiniRuntimeSettings)
 		{
 			return HoudiniRuntimeSettings->bEnableProxyStaticMesh;
@@ -784,7 +784,7 @@ UHoudiniAssetComponent::IsProxyStaticMeshEnabled() const
 }
 
 bool 
-UHoudiniAssetComponent::IsProxyStaticMeshRefinementByTimerEnabled() const
+UT2HoudiniAssetComponent::IsProxyStaticMeshRefinementByTimerEnabled() const
 {
 	if (bOverrideGlobalProxyStaticMeshSettings)
 	{
@@ -792,7 +792,7 @@ UHoudiniAssetComponent::IsProxyStaticMeshRefinementByTimerEnabled() const
 	}
 	else
 	{
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 		if (HoudiniRuntimeSettings)
 		{
 			return HoudiniRuntimeSettings->bEnableProxyStaticMesh && HoudiniRuntimeSettings->bEnableProxyStaticMeshRefinementByTimer;
@@ -805,7 +805,7 @@ UHoudiniAssetComponent::IsProxyStaticMeshRefinementByTimerEnabled() const
 }
 
 float
-UHoudiniAssetComponent::GetProxyMeshAutoRefineTimeoutSeconds() const
+UT2HoudiniAssetComponent::GetProxyMeshAutoRefineTimeoutSeconds() const
 {
 	if (bOverrideGlobalProxyStaticMeshSettings)
 	{
@@ -813,7 +813,7 @@ UHoudiniAssetComponent::GetProxyMeshAutoRefineTimeoutSeconds() const
 	}
 	else
 	{
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 		if (HoudiniRuntimeSettings)
 		{
 			return HoudiniRuntimeSettings->ProxyMeshAutoRefineTimeoutSeconds;
@@ -826,7 +826,7 @@ UHoudiniAssetComponent::GetProxyMeshAutoRefineTimeoutSeconds() const
 }
 
 bool
-UHoudiniAssetComponent::IsProxyStaticMeshRefinementOnPreSaveWorldEnabled() const
+UT2HoudiniAssetComponent::IsProxyStaticMeshRefinementOnPreSaveWorldEnabled() const
 {
 	if (bOverrideGlobalProxyStaticMeshSettings)
 	{
@@ -834,7 +834,7 @@ UHoudiniAssetComponent::IsProxyStaticMeshRefinementOnPreSaveWorldEnabled() const
 	}
 	else
 	{
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 		if (HoudiniRuntimeSettings)
 		{
 			return HoudiniRuntimeSettings->bEnableProxyStaticMesh && HoudiniRuntimeSettings->bEnableProxyStaticMeshRefinementOnPreSaveWorld;
@@ -847,7 +847,7 @@ UHoudiniAssetComponent::IsProxyStaticMeshRefinementOnPreSaveWorldEnabled() const
 }
 
 bool 
-UHoudiniAssetComponent::IsProxyStaticMeshRefinementOnPreBeginPIEEnabled() const
+UT2HoudiniAssetComponent::IsProxyStaticMeshRefinementOnPreBeginPIEEnabled() const
 {
 	if (bOverrideGlobalProxyStaticMeshSettings)
 	{
@@ -855,7 +855,7 @@ UHoudiniAssetComponent::IsProxyStaticMeshRefinementOnPreBeginPIEEnabled() const
 	}
 	else
 	{
-		const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UHoudiniRuntimeSettings >();
+		const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault< UT2HoudiniRuntimeSettings >();
 		if (HoudiniRuntimeSettings)
 		{
 			return HoudiniRuntimeSettings->bEnableProxyStaticMesh && HoudiniRuntimeSettings->bEnableProxyStaticMeshRefinementOnPreBeginPIE;
@@ -868,7 +868,7 @@ UHoudiniAssetComponent::IsProxyStaticMeshRefinementOnPreBeginPIEEnabled() const
 }
 
 void
-UHoudiniAssetComponent::SetHoudiniAsset(UHoudiniAsset * InHoudiniAsset)
+UT2HoudiniAssetComponent::SetHoudiniAsset(UT2HoudiniAsset * InHoudiniAsset)
 {
 	// Check the asset validity
 	if (!InHoudiniAsset || InHoudiniAsset->IsPendingKill())
@@ -883,7 +883,7 @@ UHoudiniAssetComponent::SetHoudiniAsset(UHoudiniAsset * InHoudiniAsset)
 
 
 void 
-UHoudiniAssetComponent::OnHoudiniAssetChanged()
+UT2HoudiniAssetComponent::OnHoudiniAssetChanged()
 {
 	// TODO: clear input/params/outputs?
 	Parameters.Empty();
@@ -896,7 +896,7 @@ UHoudiniAssetComponent::OnHoudiniAssetChanged()
 }
 
 bool
-UHoudiniAssetComponent::NeedUpdateParameters() const
+UT2HoudiniAssetComponent::NeedUpdateParameters() const
 {
 	// This is being split into a separate function to that it can
 	// be called separately for component templates.
@@ -926,7 +926,7 @@ UHoudiniAssetComponent::NeedUpdateParameters() const
 }
 
 bool 
-UHoudiniAssetComponent::NeedUpdateInputs() const
+UT2HoudiniAssetComponent::NeedUpdateInputs() const
 {
 	// Go through all our inputs, return true if they have been updated
 	for (auto CurrentInput : Inputs)
@@ -950,7 +950,7 @@ UHoudiniAssetComponent::NeedUpdateInputs() const
 }
 
 bool
-UHoudiniAssetComponent::HasPreviousBakeOutput() const
+UT2HoudiniAssetComponent::HasPreviousBakeOutput() const
 {
 	// Look for any bake output objects in the output array
 	for (const UHoudiniOutput* Output : Outputs)
@@ -972,7 +972,7 @@ UHoudiniAssetComponent::HasPreviousBakeOutput() const
 }
 
 bool
-UHoudiniAssetComponent::NeedUpdate() const
+UT2HoudiniAssetComponent::NeedUpdate() const
 {	
 	if (AssetState != DebugLastAssetState)
 	{
@@ -1021,7 +1021,7 @@ UHoudiniAssetComponent::NeedUpdate() const
 		for (auto& NextPair : OutputObjects)
 		{
 			// For now, only editable curves can trigger update
-			UHoudiniSplineComponent* HoudiniSplineComponent = Cast<UHoudiniSplineComponent>(NextPair.Value.OutputComponent);
+			UT2HoudiniSplineComponent* HoudiniSplineComponent = Cast<UT2HoudiniSplineComponent>(NextPair.Value.OutputComponent);
 			if (!HoudiniSplineComponent)
 				continue;
 
@@ -1039,7 +1039,7 @@ UHoudiniAssetComponent::NeedUpdate() const
 
 // Indicates if any of the HAC's output components needs to be updated (no recook needed)
 bool
-UHoudiniAssetComponent::NeedOutputUpdate() const
+UT2HoudiniAssetComponent::NeedOutputUpdate() const
 {
 	// Go through all outputs
 	for (auto CurrentOutput : Outputs)
@@ -1057,26 +1057,26 @@ UHoudiniAssetComponent::NeedOutputUpdate() const
 	return false;
 }
 
-bool UHoudiniAssetComponent::NeedBlueprintStructureUpdate() const
+bool UT2HoudiniAssetComponent::NeedBlueprintStructureUpdate() const
 {
 	// TODO: Add similar flags to inputs, parametsr
 	return bBlueprintStructureModified;
 }
 
-bool UHoudiniAssetComponent::NeedBlueprintUpdate() const
+bool UT2HoudiniAssetComponent::NeedBlueprintUpdate() const
 {
 	// TODO: Add similar flags to inputs, parametsr
 	return bBlueprintModified;
 }
 
 bool 
-UHoudiniAssetComponent::NotifyCookedToDownstreamAssets()
+UT2HoudiniAssetComponent::NotifyCookedToDownstreamAssets()
 {
 	// Before notifying, clean up our downstream assets
 	// - check that they are still valid
 	// - check that we are still connected to one of its asset input
 	// - check that the asset as the CookOnAssetInputCook trigger enabled
-	TArray<UHoudiniAssetComponent*> DownstreamToDelete;	
+	TArray<UT2HoudiniAssetComponent*> DownstreamToDelete;	
 	for(auto& CurrentDownstreamHAC : DownstreamHoudiniAssets)
 	{
 		// Remove the downstream connection by default,
@@ -1122,7 +1122,7 @@ UHoudiniAssetComponent::NotifyCookedToDownstreamAssets()
 }
 
 bool
-UHoudiniAssetComponent::NeedsToWaitForInputHoudiniAssets()
+UT2HoudiniAssetComponent::NeedsToWaitForInputHoudiniAssets()
 {
 	for (auto& CurrentInput : Inputs)
 	{
@@ -1140,8 +1140,8 @@ UHoudiniAssetComponent::NeedsToWaitForInputHoudiniAssets()
 		for (auto& CurrentInputObject : (*ObjectArray))
 		{
 			// Get the input HDA
-			UHoudiniAssetComponent* InputHAC = CurrentInputObject 
-				? Cast<UHoudiniAssetComponent>(CurrentInputObject->GetObject()) 
+			UT2HoudiniAssetComponent* InputHAC = CurrentInputObject 
+				? Cast<UT2HoudiniAssetComponent>(CurrentInputObject->GetObject()) 
 				: nullptr;
 
 			if (!InputHAC)
@@ -1170,7 +1170,7 @@ UHoudiniAssetComponent::NeedsToWaitForInputHoudiniAssets()
 }
 
 void
-UHoudiniAssetComponent::BeginDestroy()
+UT2HoudiniAssetComponent::BeginDestroy()
 {
 	if (CanDeleteHoudiniNodes())
 	{
@@ -1186,7 +1186,7 @@ UHoudiniAssetComponent::BeginDestroy()
 }
 
 void 
-UHoudiniAssetComponent::MarkAsNeedCook()
+UT2HoudiniAssetComponent::MarkAsNeedCook()
 {
 	// Force the asset state to NeedCook
 	//AssetCookCount = 0;
@@ -1227,7 +1227,7 @@ UHoudiniAssetComponent::MarkAsNeedCook()
 }
 
 void
-UHoudiniAssetComponent::MarkAsNeedRebuild()
+UT2HoudiniAssetComponent::MarkAsNeedRebuild()
 {
 	// Invalidate the asset ID
 	//AssetId = -1;
@@ -1277,7 +1277,7 @@ UHoudiniAssetComponent::MarkAsNeedRebuild()
 
 // Marks the asset as needing to be instantiated
 void
-UHoudiniAssetComponent::MarkAsNeedInstantiation()
+UT2HoudiniAssetComponent::MarkAsNeedInstantiation()
 {
 	// Invalidate the asset ID
 	AssetId = -1;
@@ -1341,22 +1341,22 @@ UHoudiniAssetComponent::MarkAsNeedInstantiation()
 	ClearRefineMeshesTimer();
 }
 
-void UHoudiniAssetComponent::MarkAsBlueprintStructureModified()
+void UT2HoudiniAssetComponent::MarkAsBlueprintStructureModified()
 {
 	bBlueprintStructureModified = true;
 }
 
-void UHoudiniAssetComponent::MarkAsBlueprintModified()
+void UT2HoudiniAssetComponent::MarkAsBlueprintModified()
 {
 	bBlueprintModified = true;
 }
 
 void
-UHoudiniAssetComponent::PostLoad()
+UT2HoudiniAssetComponent::PostLoad()
 {
 	Super::PostLoad();
 
-	const UHoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UHoudiniRuntimeSettings>();
+	const UT2HoudiniRuntimeSettings * HoudiniRuntimeSettings = GetDefault<UT2HoudiniRuntimeSettings>();
 	bool bEnableBackwardCompatibility = HoudiniRuntimeSettings->bEnableBackwardCompatibility;
 	bool bAutomaticLegacyHDARebuild = HoudiniRuntimeSettings->bAutomaticLegacyHDARebuild;
 
@@ -1388,7 +1388,7 @@ UHoudiniAssetComponent::PostLoad()
 }
 
 void 
-UHoudiniAssetComponent::PostEditImport()
+UT2HoudiniAssetComponent::PostEditImport()
 {
 	Super::PostEditImport();
 
@@ -1409,7 +1409,7 @@ UHoudiniAssetComponent::PostEditImport()
 }
 
 void
-UHoudiniAssetComponent::UpdatePostDuplicate()
+UT2HoudiniAssetComponent::UpdatePostDuplicate()
 {
 	// TODO:
 	// - Keep the output objects/components (remove duplicatetransient on the output object uproperties)
@@ -1435,10 +1435,10 @@ UHoudiniAssetComponent::UpdatePostDuplicate()
 			ComponentToRemove = NextChild;
 		}
 		/*  do not destroy attached duplicated editable curves, they are needed to restore editable curves
-		else if (NextChild->IsA<UHoudiniSplineComponent>())  
+		else if (NextChild->IsA<UT2HoudiniSplineComponent>())  
 		{
 			// Remove duplicated editable curve output's Houdini Spline Component, since they will be re-built at duplication.
-			UHoudiniSplineComponent * HoudiniSplineComponent = Cast<UHoudiniSplineComponent>(NextChild);
+			UT2HoudiniSplineComponent * HoudiniSplineComponent = Cast<UT2HoudiniSplineComponent>(NextChild);
 			if (HoudiniSplineComponent && HoudiniSplineComponent->IsEditableOutputCurve())
 				ComponentToRemove = NextChild;
 		}
@@ -1461,35 +1461,35 @@ UHoudiniAssetComponent::UpdatePostDuplicate()
 	SetHasBeenDuplicated(false);
 }
 
-bool UHoudiniAssetComponent::IsInputTypeSupported(EHoudiniInputType InType) const
+bool UT2HoudiniAssetComponent::IsInputTypeSupported(EHoudiniInputType InType) const
 {
 	return true;
 }
 
-bool UHoudiniAssetComponent::IsOutputTypeSupported(EHoudiniOutputType InType) const
+bool UT2HoudiniAssetComponent::IsOutputTypeSupported(EHoudiniOutputType InType) const
 {
 	return true;
 }
 
 bool
-UHoudiniAssetComponent::IsPreview() const
+UT2HoudiniAssetComponent::IsPreview() const
 {
 	return bCachedIsPreview;
 }
 
-bool UHoudiniAssetComponent::IsValidComponent() const
+bool UT2HoudiniAssetComponent::IsValidComponent() const
 {
 	return true;
 }
 
-void UHoudiniAssetComponent::OnFullyLoaded()
+void UT2HoudiniAssetComponent::OnFullyLoaded()
 {
 	bFullyLoaded = true;
 }
 
 
 void
-UHoudiniAssetComponent::OnComponentCreated()
+UT2HoudiniAssetComponent::OnComponentCreated()
 {
 	// This event will only be fired for native Actor and native Component.
  	Super::OnComponentCreated();
@@ -1515,7 +1515,7 @@ UHoudiniAssetComponent::OnComponentCreated()
 }
 
 void
-UHoudiniAssetComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
+UT2HoudiniAssetComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 {
 
 	if (CanDeleteHoudiniNodes())
@@ -1680,7 +1680,7 @@ UHoudiniAssetComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 	Super::OnComponentDestroyed(bDestroyingHierarchy);
 }
 
-void UHoudiniAssetComponent::RegisterHoudiniComponent(UHoudiniAssetComponent* InComponent)
+void UT2HoudiniAssetComponent::RegisterHoudiniComponent(UT2HoudiniAssetComponent* InComponent)
 {
 	// Registration of this component is wrapped in this virtual function to allow
 	// derived classed to override this behaviour.
@@ -1688,7 +1688,7 @@ void UHoudiniAssetComponent::RegisterHoudiniComponent(UHoudiniAssetComponent* In
 }
 
 void
-UHoudiniAssetComponent::OnRegister()
+UT2HoudiniAssetComponent::OnRegister()
 {
 	Super::OnRegister();
 
@@ -1754,7 +1754,7 @@ UHoudiniAssetComponent::OnRegister()
 }
 
 UHoudiniParameter*
-UHoudiniAssetComponent::FindMatchingParameter(UHoudiniParameter* InOtherParam)
+UT2HoudiniAssetComponent::FindMatchingParameter(UHoudiniParameter* InOtherParam)
 {
 	if (!InOtherParam || InOtherParam->IsPendingKill())
 		return nullptr;
@@ -1772,7 +1772,7 @@ UHoudiniAssetComponent::FindMatchingParameter(UHoudiniParameter* InOtherParam)
 }
 
 UHoudiniInput*
-UHoudiniAssetComponent::FindMatchingInput(UHoudiniInput* InOtherInput)
+UT2HoudiniAssetComponent::FindMatchingInput(UHoudiniInput* InOtherInput)
 {
 	if (!InOtherInput || InOtherInput->IsPendingKill())
 		return nullptr;
@@ -1789,8 +1789,8 @@ UHoudiniAssetComponent::FindMatchingInput(UHoudiniInput* InOtherInput)
 	return nullptr;
 }
 
-UHoudiniHandleComponent* 
-UHoudiniAssetComponent::FindMatchingHandle(UHoudiniHandleComponent* InOtherHandle) 
+UT2HoudiniHandleComponent* 
+UT2HoudiniAssetComponent::FindMatchingHandle(UT2HoudiniHandleComponent* InOtherHandle) 
 {
 	if (!InOtherHandle || InOtherHandle->IsPendingKill())
 		return nullptr;
@@ -1808,7 +1808,7 @@ UHoudiniAssetComponent::FindMatchingHandle(UHoudiniHandleComponent* InOtherHandl
 }
 
 UHoudiniParameter*
-UHoudiniAssetComponent::FindParameterByName(const FString& InParamName)
+UT2HoudiniAssetComponent::FindParameterByName(const FString& InParamName)
 {
 	for (auto CurrentParam : Parameters)
 	{
@@ -1824,7 +1824,7 @@ UHoudiniAssetComponent::FindParameterByName(const FString& InParamName)
 
 
 void
-UHoudiniAssetComponent::OnChildAttached(USceneComponent* ChildComponent)
+UT2HoudiniAssetComponent::OnChildAttached(USceneComponent* ChildComponent)
 {
 	Super::OnChildAttached(ChildComponent);
 
@@ -1834,14 +1834,14 @@ UHoudiniAssetComponent::OnChildAttached(USceneComponent* ChildComponent)
 
 
 void
-UHoudiniAssetComponent::OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport)
+UT2HoudiniAssetComponent::OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport)
 {
 	Super::OnUpdateTransform(UpdateTransformFlags, Teleport);
 
 	SetHasComponentTransformChanged(true);
 }
 
-void UHoudiniAssetComponent::HoudiniEngineTick()
+void UT2HoudiniAssetComponent::HoudiniEngineTick()
 {
 	if (!IsFullyLoaded())
 	{
@@ -1852,7 +1852,7 @@ void UHoudiniAssetComponent::HoudiniEngineTick()
 
 #if WITH_EDITOR
 void
-UHoudiniAssetComponent::PostEditChangeProperty(FPropertyChangedEvent & PropertyChangedEvent)
+UT2HoudiniAssetComponent::PostEditChangeProperty(FPropertyChangedEvent & PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -1863,7 +1863,7 @@ UHoudiniAssetComponent::PostEditChangeProperty(FPropertyChangedEvent & PropertyC
 	FName PropertyName = Property->GetFName();
 
 	// Changing the Houdini Asset?
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(UHoudiniAssetComponent, HoudiniAsset))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(UT2HoudiniAssetComponent, HoudiniAsset))
 	{
 		OnHoudiniAssetChanged();
 	}
@@ -1873,16 +1873,16 @@ UHoudiniAssetComponent::PostEditChangeProperty(FPropertyChangedEvent & PropertyC
 	{
 		SetHasComponentTransformChanged(true);
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(UHoudiniAssetComponent, bOverrideGlobalProxyStaticMeshSettings)
-			|| PropertyName == GET_MEMBER_NAME_CHECKED(UHoudiniAssetComponent, bEnableProxyStaticMeshRefinementByTimerOverride)
-			|| PropertyName == GET_MEMBER_NAME_CHECKED(UHoudiniAssetComponent, ProxyMeshAutoRefineTimeoutSecondsOverride))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(UT2HoudiniAssetComponent, bOverrideGlobalProxyStaticMeshSettings)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UT2HoudiniAssetComponent, bEnableProxyStaticMeshRefinementByTimerOverride)
+			|| PropertyName == GET_MEMBER_NAME_CHECKED(UT2HoudiniAssetComponent, ProxyMeshAutoRefineTimeoutSecondsOverride))
 	{
 		ClearRefineMeshesTimer();
 		// Reset the timer
 		// SetRefineMeshesTimer will check the relevant settings and only set the timer if enabled via settings
 		SetRefineMeshesTimer();
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(UHoudiniAssetComponent, Mobility))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(UT2HoudiniAssetComponent, Mobility))
 	{
 		// Changed GetAttachChildren to 'GetAllDescendants' due to HoudiniMeshSplitInstanceComponent 
 		// not propagating property changes to their own child StaticMeshComponents.
@@ -1901,7 +1901,7 @@ UHoudiniAssetComponent::PostEditChangeProperty(FPropertyChangedEvent & PropertyC
 		// Visibility has changed, propagate it to children.
 		SetVisibility(IsVisible(), true);
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(UHoudiniAssetComponent, bHiddenInGame))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(UT2HoudiniAssetComponent, bHiddenInGame))
 	{
 		// Visibility has changed, propagate it to children.
 		SetHiddenInGame(bHiddenInGame, true);
@@ -2179,7 +2179,7 @@ UHoudiniAssetComponent::PostEditChangeProperty(FPropertyChangedEvent & PropertyC
 
 #if WITH_EDITOR
 void
-UHoudiniAssetComponent::PostEditUndo()
+UT2HoudiniAssetComponent::PostEditUndo()
 {
 	Super::PostEditUndo();
 
@@ -2204,7 +2204,7 @@ UHoudiniAssetComponent::PostEditUndo()
 
 #if WITH_EDITOR
 void
-UHoudiniAssetComponent::OnActorMoved(AActor* Actor)
+UT2HoudiniAssetComponent::OnActorMoved(AActor* Actor)
 {
 	if (GetOwner() != Actor)
 		return;
@@ -2214,7 +2214,7 @@ UHoudiniAssetComponent::OnActorMoved(AActor* Actor)
 #endif
 
 void 
-UHoudiniAssetComponent::SetHasComponentTransformChanged(const bool& InHasChanged)
+UT2HoudiniAssetComponent::SetHasComponentTransformChanged(const bool& InHasChanged)
 {
 	// Only update the value if we're fully loaded
 	// This avoid triggering a recook when loading a level
@@ -2223,7 +2223,7 @@ UHoudiniAssetComponent::SetHasComponentTransformChanged(const bool& InHasChanged
 }
 
 void
-UHoudiniAssetComponent::SetPDGAssetLink(UHoudiniPDGAssetLink* InPDGAssetLink)
+UT2HoudiniAssetComponent::SetPDGAssetLink(UHoudiniPDGAssetLink* InPDGAssetLink)
 {
 	// Check the object validity
 	if (!InPDGAssetLink || InPDGAssetLink->IsPendingKill())
@@ -2238,7 +2238,7 @@ UHoudiniAssetComponent::SetPDGAssetLink(UHoudiniPDGAssetLink* InPDGAssetLink)
 
 
 FBoxSphereBounds
-UHoudiniAssetComponent::CalcBounds(const FTransform & LocalToWorld) const
+UT2HoudiniAssetComponent::CalcBounds(const FTransform & LocalToWorld) const
 {
 	FBoxSphereBounds LocalBounds;
 	FBox BoundingBox = GetAssetBounds(nullptr, false);
@@ -2265,7 +2265,7 @@ UHoudiniAssetComponent::CalcBounds(const FTransform & LocalToWorld) const
 
 
 FBox
-UHoudiniAssetComponent::GetAssetBounds(UHoudiniInput* IgnoreInput, const bool& bIgnoreGeneratedLandscape) const
+UT2HoudiniAssetComponent::GetAssetBounds(UHoudiniInput* IgnoreInput, const bool& bIgnoreGeneratedLandscape) const
 {
 	FBox BoxBounds(ForceInitToZero);
 
@@ -2345,7 +2345,7 @@ UHoudiniAssetComponent::GetAssetBounds(UHoudiniInput* IgnoreInput, const bool& b
 }
 
 void
-UHoudiniAssetComponent::ClearRefineMeshesTimer()
+UT2HoudiniAssetComponent::ClearRefineMeshesTimer()
 {
 	UWorld *World = GetWorld();
 	if (!World)
@@ -2358,7 +2358,7 @@ UHoudiniAssetComponent::ClearRefineMeshesTimer()
 }
 
 void
-UHoudiniAssetComponent::SetRefineMeshesTimer()
+UT2HoudiniAssetComponent::SetRefineMeshesTimer()
 {
 	UWorld *World = GetWorld();
 	if (!World)
@@ -2372,7 +2372,7 @@ UHoudiniAssetComponent::SetRefineMeshesTimer()
 	const float TimeSeconds = GetProxyMeshAutoRefineTimeoutSeconds();
 	if (bEnableTimer)
 	{
-		World->GetTimerManager().SetTimer(RefineMeshesTimer, this, &UHoudiniAssetComponent::OnRefineMeshesTimerFired, 1.0f, false, TimeSeconds);
+		World->GetTimerManager().SetTimer(RefineMeshesTimer, this, &UT2HoudiniAssetComponent::OnRefineMeshesTimerFired, 1.0f, false, TimeSeconds);
 	}
 	else
 	{
@@ -2381,9 +2381,9 @@ UHoudiniAssetComponent::SetRefineMeshesTimer()
 }
 
 void 
-UHoudiniAssetComponent::OnRefineMeshesTimerFired()
+UT2HoudiniAssetComponent::OnRefineMeshesTimerFired()
 {
-	HOUDINI_LOG_MESSAGE(TEXT("UHoudiniAssetComponent::OnRefineMeshesTimerFired()"));
+	HOUDINI_LOG_MESSAGE(TEXT("UT2HoudiniAssetComponent::OnRefineMeshesTimerFired()"));
 	if (OnRefineMeshesTimerDelegate.IsBound())
 	{
 		OnRefineMeshesTimerDelegate.Broadcast(this);
@@ -2391,7 +2391,7 @@ UHoudiniAssetComponent::OnRefineMeshesTimerFired()
 }
 
 bool
-UHoudiniAssetComponent::HasAnyCurrentProxyOutput() const
+UT2HoudiniAssetComponent::HasAnyCurrentProxyOutput() const
 {
 	for (const UHoudiniOutput *Output : Outputs)
 	{
@@ -2405,7 +2405,7 @@ UHoudiniAssetComponent::HasAnyCurrentProxyOutput() const
 }
 
 bool
-UHoudiniAssetComponent::HasAnyProxyOutput() const
+UT2HoudiniAssetComponent::HasAnyProxyOutput() const
 {
 	for (const UHoudiniOutput *Output : Outputs)
 	{
@@ -2419,7 +2419,7 @@ UHoudiniAssetComponent::HasAnyProxyOutput() const
 }
 
 bool
-UHoudiniAssetComponent::HasAnyOutputComponent() const
+UT2HoudiniAssetComponent::HasAnyOutputComponent() const
 {
 	for (UHoudiniOutput *Output : Outputs)
 	{
@@ -2434,7 +2434,7 @@ UHoudiniAssetComponent::HasAnyOutputComponent() const
 }
 
 bool
-UHoudiniAssetComponent::HasOutputObject(UObject* InOutputObjectToFind) const
+UT2HoudiniAssetComponent::HasOutputObject(UObject* InOutputObjectToFind) const
 {
 	for (const auto& CurOutput : Outputs)
 	{
@@ -2455,7 +2455,7 @@ UHoudiniAssetComponent::HasOutputObject(UObject* InOutputObjectToFind) const
 }
 
 bool
-UHoudiniAssetComponent::IsHoudiniCookedDataAvailable(bool &bOutNeedsRebuildOrDelete, bool &bOutInvalidState) const
+UT2HoudiniAssetComponent::IsHoudiniCookedDataAvailable(bool &bOutNeedsRebuildOrDelete, bool &bOutInvalidState) const
 {
 	// Get the state of the asset and check if it is pre-cook, cooked, pending delete/rebuild or invalid
 	bOutNeedsRebuildOrDelete = false;
@@ -2489,7 +2489,7 @@ UHoudiniAssetComponent::IsHoudiniCookedDataAvailable(bool &bOutNeedsRebuildOrDel
 }
 
 void
-UHoudiniAssetComponent::SetInputPresets(const TMap<UObject*, int32>& InPresets)
+UT2HoudiniAssetComponent::SetInputPresets(const TMap<UObject*, int32>& InPresets)
 {
 	// Set the input preset for this HAC
 #if WITH_EDITOR
@@ -2499,7 +2499,7 @@ UHoudiniAssetComponent::SetInputPresets(const TMap<UObject*, int32>& InPresets)
 
 
 void
-UHoudiniAssetComponent::ApplyInputPresets()
+UT2HoudiniAssetComponent::ApplyInputPresets()
 {
 	if (InputPresets.Num() <= 0)
 		return;
@@ -2555,7 +2555,7 @@ UHoudiniAssetComponent::ApplyInputPresets()
 			InputArray[InputNumber]->SetInputObjectAt(EHoudiniInputType::Geometry, InsertNum, Object);
 		}
 
-		if (Object->IsA<AHoudiniAssetActor>())
+		if (Object->IsA<AT2HoudiniAssetActor>())
 		{
 			// selecting a Houdini Asset 
 			int32 InsertNum = InputArray[InputNumber]->GetNumberOfInputObjects(EHoudiniInputType::Asset);
@@ -2613,7 +2613,7 @@ UHoudiniAssetComponent::ApplyInputPresets()
 
 
 bool
-UHoudiniAssetComponent::IsComponentValid() const
+UT2HoudiniAssetComponent::IsComponentValid() const
 {
 	if (!IsValidLowLevel())
 		return false;
@@ -2631,14 +2631,14 @@ UHoudiniAssetComponent::IsComponentValid() const
 }
 
 bool
-UHoudiniAssetComponent::IsInstantiatingOrCooking() const
+UT2HoudiniAssetComponent::IsInstantiatingOrCooking() const
 {
 	return HapiGUID.IsValid();
 }
 
 
 void
-UHoudiniAssetComponent::SetStaticMeshGenerationProperties(UStaticMesh* InStaticMesh) const
+UT2HoudiniAssetComponent::SetStaticMeshGenerationProperties(UStaticMesh* InStaticMesh) const
 {
 #if WITH_EDITOR
 	if (!InStaticMesh)

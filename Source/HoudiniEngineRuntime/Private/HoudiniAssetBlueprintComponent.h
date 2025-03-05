@@ -30,7 +30,7 @@
 
 #include "Delegates/IDelegateInstance.h"
 #include "Engine/Blueprint.h"
-#include "HoudiniAssetComponent.h"
+#include "T2HoudiniAssetComponent.h"
 
 #if WITH_EDITOR
 	#include "Subsystems/AssetEditorSubsystem.h"
@@ -41,7 +41,7 @@
 class USCS_Node;
 
 UCLASS(NotBlueprintType, Experimental, meta=(BlueprintSpawnableComponent, DisplayName="Houdini Asset"))
-class HOUDINIENGINERUNTIME_API UHoudiniAssetBlueprintComponent : public UHoudiniAssetComponent
+class T2HOUDINIENGINERUNTIME_API UHoudiniAssetBlueprintComponent : public UT2HoudiniAssetComponent
 {
 	GENERATED_BODY()
 
@@ -85,7 +85,7 @@ public:
 	AActor* GetPreviewActor() const;  
 #endif
 
-	virtual UHoudiniAssetComponent* GetCachedTemplate() const override;
+	virtual UT2HoudiniAssetComponent* GetCachedTemplate() const override;
 
 	//------------------------------------------------------------------------------------------------
 	// Supported Features
@@ -137,7 +137,7 @@ public:
 	void ApplyComponentInstanceData(struct FHoudiniAssetBlueprintInstanceData* ComponentInstanceData, const bool bPostUCS);
 
 	//------------------------------------------------------------------------------------------------
-	// UHoudiniAssetComponent overrides
+	// UT2HoudiniAssetComponent overrides
 	//------------------------------------------------------------------------------------------------
 	
 	FHoudiniAssetComponentEvent OnParametersChangedEvent;
@@ -147,7 +147,7 @@ public:
 	virtual void OnFullyLoaded() override;
 	virtual void OnTemplateParametersChanged() override;
 	virtual void OnHoudiniAssetChanged() override;
-	virtual void RegisterHoudiniComponent(UHoudiniAssetComponent* InComponent) override;
+	virtual void RegisterHoudiniComponent(UT2HoudiniAssetComponent* InComponent) override;
 	
 	virtual void OnBlueprintStructureModified() override;
 	virtual void OnBlueprintModified() override;
@@ -182,7 +182,7 @@ protected:
 	template<typename ParamT, typename ValueT>
 	void SetTypedValueAt(const FString& Name, ValueT& Value, int Index=0);
 	
-	void OnTemplateParametersChangedHandler(UHoudiniAssetComponent* ComponentTemplate);
+	void OnTemplateParametersChangedHandler(UT2HoudiniAssetComponent* ComponentTemplate);
 	void InvalidateData();
 
 	USceneComponent* FindOwnerComponentByName(FName ComponentName) const;
@@ -194,7 +194,7 @@ protected:
 	USimpleConstructionScript* GetSCS() const;
 
 	//// The output translation has finished.
-	//void OnOutputProcessingCompletedHandler(UHoudiniAssetComponent * InComponent);
+	//void OnOutputProcessingCompletedHandler(UT2HoudiniAssetComponent * InComponent);
 
 #if WITH_EDITOR
 	//void ReceivedAssetEditorRequestCloseEvent(UObject* Asset, EAssetEditorCloseReason CloseReason);
@@ -286,7 +286,7 @@ public:
 
 	// Persist all the required properties for being able to recook the HoudiniAsset from its existing state.
 	UPROPERTY()
-	UHoudiniAsset* HoudiniAsset;
+	UT2HoudiniAsset* HoudiniAsset;
 
 	UPROPERTY()
 	int32 AssetId;
@@ -326,7 +326,7 @@ public:
 	bool bLastCookSuccess;
 
 	/*UPROPERTY(DuplicateTransient)
-	TSet<UHoudiniAssetComponent*> DownstreamHoudiniAssets;*/
+	TSet<UT2HoudiniAssetComponent*> DownstreamHoudiniAssets;*/
 
 	UPROPERTY()
 	FGuid ComponentGUID;

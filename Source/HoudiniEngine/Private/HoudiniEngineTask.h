@@ -68,7 +68,7 @@ enum class EHoudiniEngineTaskType : uint8
 	AssetProcess,
 };
 
-struct HOUDINIENGINE_API FHoudiniEngineTask
+struct T2HOUDINIENGINE_API FHoudiniEngineTask
 {
 	// Constructors.
 	FHoudiniEngineTask();
@@ -81,7 +81,7 @@ struct HOUDINIENGINE_API FHoudiniEngineTask
 	EHoudiniEngineTaskType TaskType;
 
 	// Houdini asset for instantiation.
-	TWeakObjectPtr< class UHoudiniAsset > Asset;
+	TWeakObjectPtr< class UT2HoudiniAsset > Asset;
 
 	// Name of the actor requesting this task.
 	FString ActorName;
