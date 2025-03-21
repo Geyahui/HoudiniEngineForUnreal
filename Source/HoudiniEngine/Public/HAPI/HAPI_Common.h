@@ -84,12 +84,15 @@
 /// Cache Manager window in Houdini (Windows > Cache Manager).
 #define HAPI_CACHE_COP_COOK                 "COP Cook Cache"
 #define HAPI_CACHE_COP_FLIPBOOK             "COP Flipbook Cache"
+#define HAPI_CACHE_COP2_COOK                 "COP Cook Cache"   //(UE5使用)？？
+#define HAPI_CACHE_COP2_FLIPBOOK             "COP Flipbook Cache"
 #define HAPI_CACHE_IMAGE                    "Image Cache"
 #define HAPI_CACHE_OBJ                      "Object Transform Cache"
 #define HAPI_CACHE_GL_TEXTURE               "OpenGL Texture Cache"
 #define HAPI_CACHE_GL_VERTEX                "OpenGL Vertex Cache"
 #define HAPI_CACHE_SOP                      "SOP Cache"
 #define HAPI_CACHE_VEX                      "VEX File Cache"
+
 /// [HAPI_CACHE]
 /// [HAPI_InputCurve]    //(UE5使用)
 /// HAPI input curve attribute
