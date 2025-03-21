@@ -1,4 +1,4 @@
-/*
+﻿/*
  * PROPRIETARY INFORMATION.  This software is proprietary to
  * Side Effects Software Inc., and is not to be reproduced,
  * transmitted, or disclosed in any way without written permission.
@@ -28,6 +28,8 @@
 
 #define HAPI_INVALID_PARM_ID                -1
 
+#define HAPI_MAX_NUM_CONNECTIONS            128
+
 /// Common Default Attributes' Names
 /// @{
 #define HAPI_ATTRIB_POSITION                "P"
@@ -39,6 +41,8 @@
 #define HAPI_ATTRIB_COLOR                   "Cd"
 #define HAPI_ATTRIB_NAME                    "name"
 #define HAPI_ATTRIB_INSTANCE                "instance"
+#define HAPI_ATTRIB_ROT                     "rot"     //(UE5使用)？？
+#define HAPI_ATTRIB_SCALE                   "scale"
 /// @}
 
 /// This is the name of the primitive group created from all the primitives
@@ -87,7 +91,10 @@
 #define HAPI_CACHE_SOP                      "SOP Cache"
 #define HAPI_CACHE_VEX                      "VEX File Cache"
 /// [HAPI_CACHE]
-
+/// [HAPI_InputCurve]    //(UE5使用)
+/// HAPI input curve attribute
+#define HAPI_ATTRIB_INPUT_CURVE_COORDS                "hapi_input_curve_coords"
+/// [HAPI_InputCurve]
 // Make sure our enums and structs are usable without those keywords, as-is,
 // in C.
 #ifdef __cplusplus
@@ -213,7 +220,14 @@ enum HAPI_StatusVerbosity
     HAPI_STATUSVERBOSITY_MESSAGES = HAPI_STATUSVERBOSITY_2,
 };
 HAPI_C_ENUM_TYPEDEF( HAPI_StatusVerbosity )
-
+// (UE5使用)
+enum HAPI_JobStatus
+{
+    HAPI_JOB_STATUS_RUNNING,
+    HAPI_JOB_STATUS_IDLE,
+    HAPI_JOB_STATUS_MAX
+};
+HAPI_C_ENUM_TYPEDEF( HAPI_JobStatus )
 enum HAPI_Result
 {
     HAPI_RESULT_SUCCESS                                 = 0,
@@ -522,8 +536,11 @@ enum HAPI_NodeFlags
 
     /// TOP Node Specific Flags
     /// All TOP nodes except schedulers
-    HAPI_NODEFLAGS_TOP_NONSCHEDULER = 1 << 13
+    HAPI_NODEFLAGS_TOP_NONSCHEDULER = 1 << 13,
 
+    /// Recursive Flag
+    /// Nodes that are not bypassed
+    HAPI_NODEFLAGS_NON_BYPASS   = 1 << 14 
 };
 HAPI_C_ENUM_TYPEDEF( HAPI_NodeFlags )
 typedef int HAPI_NodeFlagsBits;
@@ -533,6 +550,7 @@ enum HAPI_GroupType
     HAPI_GROUPTYPE_INVALID = -1,
     HAPI_GROUPTYPE_POINT,
     HAPI_GROUPTYPE_PRIM,
+    HAPI_GROUPTYPE_EDGE,
     HAPI_GROUPTYPE_MAX
 };
 HAPI_C_ENUM_TYPEDEF( HAPI_GroupType )
@@ -981,6 +999,21 @@ enum HAPI_PDG_WorkitemState
 };
 HAPI_C_ENUM_TYPEDEF( HAPI_PDG_WorkitemState )
 
+enum HAPI_TCP_PortType
+{
+    HAPI_TCP_PORT_ANY,
+    HAPI_TCP_PORT_RANGE,
+    HAPI_TCP_PORT_LIST
+};
+HAPI_C_ENUM_TYPEDEF( HAPI_TCP_PortType )
+
+enum HAPI_ThriftSharedMemoryBufferType
+{
+    HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER,
+    HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER
+};
+HAPI_C_ENUM_TYPEDEF( HAPI_ThriftSharedMemoryBufferType )
+
 /////////////////////////////////////////////////////////////////////////////
 // Main API Structs
 
@@ -1026,24 +1059,6 @@ struct HAPI_API HAPI_Session
 };
 HAPI_C_STRUCT_TYPEDEF( HAPI_Session )
 
-
-enum HAPI_TCP_PortType
-{
-    HAPI_TCP_PORT_ANY,
-    HAPI_TCP_PORT_RANGE,
-    HAPI_TCP_PORT_LIST
-};
-HAPI_C_ENUM_TYPEDEF( HAPI_TCP_PortType )
-
-enum HAPI_ThriftSharedMemoryBufferType
-{
-    HAPI_THRIFT_SHARED_MEMORY_FIXED_LENGTH_BUFFER,
-    HAPI_THRIFT_SHARED_MEMORY_RING_BUFFER
-};
-HAPI_C_ENUM_TYPEDEF( HAPI_ThriftSharedMemoryBufferType )
-
-#define HAPI_MAX_NUM_CONNECTIONS            128
-
 /// Configurations for sessions
 struct HAPI_API HAPI_SessionInfo
 {
@@ -1082,6 +1097,21 @@ struct HAPI_API HAPI_ThriftServerOptions
     /// to signal within this time interval, the start server call fails
     /// and the server process is terminated.
     float timeoutMs;
+
+    // Specifies the maximum status verbosity that will be logged.
+    HAPI_StatusVerbosity verbosity;
+
+    // Only used when starting a Thrift shared memory server. This controls the
+    // type of buffer that is used in the underlying communication protocol. A
+    // fixed length buffer is faster but the data passed to any single HAPI API
+    // call cannot exceed the total length of the buffer. A ring buffer is
+    // slower but has no limitations on the size of the data.
+    HAPI_ThriftSharedMemoryBufferType sharedMemoryBufferType;
+
+    // Only used when starting a Thrift shared memory server. This variable
+    // specifies the size in megabytes (MB) of the allocated shared memory
+    // buffer.
+    HAPI_Int64 sharedMemoryBufferSize;
 };
 HAPI_C_STRUCT_TYPEDEF( HAPI_ThriftServerOptions )
 
@@ -1239,13 +1269,17 @@ struct HAPI_API HAPI_CookOptions
     /// gain when disabled.
     HAPI_Bool checkPartChanges;
 
-
     /// This toggle lets you enable the caching of the mesh topology.
     /// By default, this is false.  If this is set to true, cooking a mesh 
     /// geometry will update only the topology if the number of points changed.
     /// Use this to get better performance on deforming meshes.
     HAPI_Bool cacheMeshTopology;
+
+    /// If enabled, calls to ::HAPI_CookNode() on an OBJ node will cook the output
+    /// nodes of any nested SOP nodes. If none exist or the option is disabled,
+    /// HAPI will instead cook the display nodes of any nested SOP nodes.
     HAPI_Bool preferOutputNodes;
+
     /// For internal use only. :)
     int extraFlags;
 };
